@@ -1,0 +1,59 @@
+# Business Rules & Decision Log
+
+**Product:** LeaveIt — *Leave it to us.*  
+**Status:** Working specification for prototype; unresolved items are explicitly marked.
+
+## 1. Annual and quarterly leave balances
+- The employee's full annual entitlement is also displayed in a Q1–Q4 breakdown for tracking time-proportional usage. Quarters are not independent annual entitlements.
+- Unused balance carries forward from Q1 to Q2, Q2 to Q3, and Q3 to Q4.
+- At year-end, only unused age-based additional leave may carry into the next year. Other Q4 remainder expires, subject to final HR/payroll confirmation if policy changes.
+- Age-based additional leave is generated automatically. The entitlement applies in the calendar year in which the employee reaches the relevant age threshold, even if the birthday is on 31 December.
+- Child-related additional leave is entered manually by HR based on the employee's annual declaration; do not calculate it automatically.
+- For a mid-year joiner, add the full-year base and additional entitlements first, prorate by employment time in the calendar year, then round: fraction > 0.5 rounds up; fraction < 0.5 rounds down. Exactly 0.5 is not specified; keep configurable / flag for HR confirmation. HR can apply a manual correction. Payroll-provided values may be used as a double-check.
+- Pending requests do not reserve or reduce available balance.
+
+## 2. Requests and approvals
+- Every leave request requires manager approval; no automatic approval.
+- Approved requests cannot be edited in place. The employee cancels (stornoes) the future request and submits a new one.
+- Employee may cancel their own approved request only before its start date.
+- HR Admin may revoke/cancel on behalf of the employee; preserve the audit trail.
+- Prototype policy: manager decision due within 3 working days. Send a reminder on the morning of the final due date if still pending. Exceeding the deadline never auto-approves or auto-rejects.
+- Rejected/cancelled/revoked requests remain in history and do not consume balance.
+
+## 3. Half-day leave and payroll pairing
+- Half-day requests distinguish AM and PM.
+- Each approved half-day consumes 0.5 day from the employee's leave balance.
+- Within each calendar month, approved and active half-days are sorted chronologically. The first active half-day in the month has payroll value 1 day; the second has payroll value 0 days. Pairing restarts each month.
+- If an earlier half-day is cancelled before it takes place, recalculate the chronological order of remaining active half-days. The remaining half-day becomes first for payroll (1 day).
+- Do not allow retrospective edits. Before the leave starts, cancellation is allowed under the same rules as full-day leave.
+- Store balance deduction and payroll value separately; never represent both with a single `days` field.
+- Pairing eligibility should be based on approved, non-cancelled requests. Confirm edge cases with payroll before production.
+
+## 4. Access and entities
+- Roles: Employee, Manager, HR Admin.
+- Managers can see only their direct team's leave data and can see the leave reason/type.
+- HR Admin can manage employees in both Virgo Kft. and Virgo Zrt.
+- The two legal entities follow the same leave rules but remain separate employee attributes for filtering and reporting.
+- Enforce authorization in the backend in production; a client-side role switch is demo-only.
+
+## 5. Non-working days and SLA calendar
+- Leave cannot be booked on Hungarian public holidays or statutory non-working days.
+- **Recommendation for prototype:** use a versioned Hungarian working-day calendar dataset that includes public holidays, substitute rest days and transferred working Saturdays. For the 3-working-day approval SLA, count Monday–Friday only when the date is a working day; skip statutory rest days and weekends, but count officially designated working Saturdays.
+- Keep calendar data separate from business logic so HR can correct exceptional company-specific non-working days.
+- Do not rely on a browser's locale or a hard-coded weekday-only calculation.
+- Production should use a maintained, HR-approved calendar source and define how calendar updates are applied.
+
+## 6. Leave types from source brief
+Base leave; age-based additional leave; child-related additional leave; paternity leave; extraordinary leave; paid leave; sick leave (up to 15 days); sick pay / táppénz (after 15 days). Exact entitlements and payroll export mapping need HR confirmation.
+
+## 7. Open questions / not yet specified
+- Exact treatment when a prorated result is exactly x.5 (the response says above/below 0.5 but does not explicitly state the tie).
+- Detailed Q1–Q4 allocation formula and whether quarterly display is based on calendar days, working days, or payroll-specific allocation.
+- Whether the Q4 carryover rule has any expiry/use-by date in the next year.
+- Payroll export columns, grouping, codes, file format, and period rules (awaiting Zsuzsanna).
+- Half-day pairing edge cases: multiple half-days, AM/PM ordering on same date, cancellation after payroll export, and whether all leave types are eligible.
+- Exact rules for sickness, paternity, extraordinary leave and other leave types.
+- Official source / process for maintaining Hungarian working-day calendar.
+- Reminder delivery channel and exact time/time zone.
+- Whether a manager's 3-working-day SLA is measured from submission timestamp or next working day. Prototype assumption: submission day excluded if submitted after working hours; confirm with HR.
+- Company-specific closure days and approval delegation / out-of-office cover.

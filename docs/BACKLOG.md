@@ -1,0 +1,30 @@
+# MVP Backlog
+
+Priority definitions: **P0** demo must-have · **P1** valuable if time · **P2** stretch / production follow-up.
+
+| ID | Priority | Story / task | Acceptance criteria |
+|---|---|---|---|
+| LI-01 | P0 | App shell and role navigation | Employee, Manager and HR views are reachable using demo role switcher. |
+| LI-02 | P0 | Synthetic seed dataset | Includes multiple teams, both legal entities, balances and sample requests; no real personal data. |
+| LI-03 | P0 | Employee balance dashboard | Shows annual, used, remaining and Q1–Q4 tracking values with clear labels. |
+| LI-04 | P0 | Submit leave request | Employee can choose leave type, dates and full/AM/PM; validation feedback is visible. |
+| LI-05 | P0 | Request validation | Rejects invalid date range, statutory non-working days and insufficient balance; detects overlap. |
+| LI-06 | P0 | Manager approval queue | Manager sees only direct-team pending requests and can approve/reject. |
+| LI-07 | P0 | Approval updates state | Approved request updates employee balance and team calendar; rejected does not deduct. |
+| LI-08 | P0 | Team calendar | Shows direct-team approved absences and overlap warnings. |
+| LI-09 | P0 | HR overview | HR can filter employees/requests across Kft. and Zrt. |
+| LI-10 | P1 | Cancel and resubmit | Future approved request can be cancelled; history remains; employee can submit replacement. |
+| LI-11 | P1 | Half-day pairing | Each half-day deducts 0.5; monthly chronological first payroll=1, second=0; cancellation recalculates. |
+| LI-12 | P1 | Three-working-day SLA | Due date skips weekends/rest days and counts designated working Saturdays; reminder can be simulated. |
+| LI-13 | P1 | HR manual adjustment | HR changes entitlement with reason; audit event is created. |
+| LI-14 | P1 | CSV export | Export includes clearly labelled provisional fields; final schema awaits HR. |
+| LI-15 | P2 | AI conflict explanation | Explains deterministic overlap results and suggests alternatives; never approves or calculates balance. |
+| LI-16 | P2 | Google Calendar/email/SSO | Integration feasibility and permissions confirmed before implementation. |
+
+## Definition of Done
+- Acceptance criteria met.
+- Build succeeds.
+- Relevant tests pass.
+- No secrets or real employee data committed.
+- PR reviewed by one teammate.
+- UI states include empty/loading/error where relevant.
