@@ -12,6 +12,7 @@ import {
   employeeAdminText,
   entitlementAdminText,
   leaveRequestAdminText,
+  myLeaveRequestText,
   roleLabel,
   teamAdminText,
   viewLabel,
@@ -19,12 +20,12 @@ import {
 import type { Employee, Role } from './types/model'
 
 const ALL_ROLES: readonly Role[] = ['EMPLOYEE', 'MANAGER', 'HR_ADMIN']
-type AdminSection = 'REQUESTS' | 'ENTITLEMENTS' | 'EMPLOYEES' | 'TEAMS'
+type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'EMPLOYEES' | 'TEAMS'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
   const [activeRole, setActiveRole] = useState<Role>('HR_ADMIN')
-  const [section, setSection] = useState<AdminSection>('REQUESTS')
+  const [section, setSection] = useState<AdminSection>('MY_REQUESTS')
 
   function handleLoginSuccess(session: LoginResponse) {
     setCurrentUser(session.employee)
@@ -44,9 +45,9 @@ export default function App() {
   // Employees page: HR Admin manages everyone; managers see their direct reports read-only.
   const canSeeEmployees = activeRole !== 'EMPLOYEE'
   const visibleSection: AdminSection =
-    (section === 'TEAMS' && !isHrAdmin) ||
+    ((section === 'TEAMS' || section === 'REQUESTS') && !isHrAdmin) ||
     (section === 'EMPLOYEES' && !canSeeEmployees)
-      ? 'REQUESTS'
+      ? 'MY_REQUESTS'
       : section
 
   const heading =
@@ -56,7 +57,9 @@ export default function App() {
         ? employeeAdminText
         : visibleSection === 'ENTITLEMENTS'
           ? entitlementAdminText
-          : leaveRequestAdminText
+          : visibleSection === 'REQUESTS'
+            ? leaveRequestAdminText
+            : myLeaveRequestText
 
   return (
     <div className="page">
@@ -115,12 +118,23 @@ export default function App() {
           <button
             type="button"
             role="tab"
+            aria-selected={visibleSection === 'MY_REQUESTS'}
+            className={`section-tab ${visibleSection === 'MY_REQUESTS' ? 'section-tab-active' : ''}`}
+            onClick={() => setSection('MY_REQUESTS')}
+          >
+            {myLeaveRequestText.tabLabel}
+          </button>
+          {isHrAdmin && (
+          <button
+            type="button"
+            role="tab"
             aria-selected={visibleSection === 'REQUESTS'}
             className={`section-tab ${visibleSection === 'REQUESTS' ? 'section-tab-active' : ''}`}
             onClick={() => setSection('REQUESTS')}
           >
             {leaveRequestAdminText.tabLabel}
           </button>
+          )}
           <button
             type="button"
             role="tab"
@@ -200,6 +214,8 @@ export default function App() {
           )
         ) : (
           <LeaveRequestAdminCrud
+            key={visibleSection}
+            mode={visibleSection === 'REQUESTS' ? 'ALL' : 'MINE'}
             activeRole={activeRole}
             onRequestRoleChange={setActiveRole}
             currentUserId={currentUser.id}

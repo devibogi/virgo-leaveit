@@ -279,8 +279,18 @@ export const entitlementAdminText = {
   deleteError: 'Hiba történt a szabadságkeret törlésekor.',
 } as const
 
+export const myLeaveRequestText = {
+  tabLabel: 'Saját kérelmeim',
+  eyebrow: 'SAJÁT SZABADSÁGKÉRELMEK',
+  pageTitle: 'Saját szabadságkérelmeim',
+  pageIntro:
+    'Új szabadságkérelem beadása a saját nevedre és a korábbi kérelmeid állapotának követése.',
+  listTitle: 'Saját kérelmeim',
+  empty: 'Még nincs beadott szabadságkérelmed.',
+}
+
 export const leaveRequestAdminText = {
-  tabLabel: 'Szabadságkérelmek (Requests)',
+  tabLabel: 'Összes kérelem (Requests)',
   eyebrow: 'HR ADMINISZTRÁCIÓ · SZABADSÁGKÉRELMEK',
   pageTitle: 'Szabadságkérelmek (LeaveRequest) kezelése',
   pageIntro:

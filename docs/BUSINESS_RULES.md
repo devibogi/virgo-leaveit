@@ -21,6 +21,7 @@
 - Every leave request requires approval; no automatic approval. The direct manager decides, except **unpaid leave (UNPAID), which HR Admin approves** (HR wish 2026-11-13; flow details Q25).
 - Approved requests cannot be edited in place. The employee cancels (stornoes) the future request and submits a new one.
 - **Request submission (product-owner request 2026-11-13):** every role (Employee, Manager, HR Admin) can submit a new request, always for themselves (employeeId = signed-in user). Listing, editing and revoking all requests stay HR Admin only. Demo identity comes from the `X-Actor-Role`/`X-Actor-Id` headers; a real deployment must take both from a verified session.
+- **Own requests page (product-owner request 2026-11-13):** every role, HR Admin included, has a separate "Saját kérelmeim" page to submit requests and see their own requests read-only. The "Összes kérelem" page (all employees' requests: filter, edit, revoke) is a separate HR Admin-only page. Non-HR actors may list only their own requests (backend-enforced).
 - Employee may cancel their own approved request only before its start date.
 - HR Admin may revoke/cancel on behalf of the employee; preserve the audit trail.
 - Prototype policy: manager decision due within 3 working days. Send a reminder on the morning of the final due date if still pending. Exceeding the deadline never auto-approves or auto-rejects.

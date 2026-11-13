@@ -118,16 +118,20 @@ export function createLeaveRequestApiHandler(
     const isCreate = isCollection && method === 'POST'
     const isSelfServiceCreate =
       isCreate && !!actorRole && !canManageLeaveRequests(actorRole)
-    if (isSelfServiceCreate && !actorId) {
+    // Every role may list its own requests; non-HR actors are forced to themselves.
+    const isList = isCollection && method === 'GET'
+    const isSelfServiceList =
+      isList && !!actorRole && !canManageLeaveRequests(actorRole)
+    if ((isSelfServiceCreate || isSelfServiceList) && !actorId) {
       return {
         status: 403,
         body: {
           error: 'Forbidden',
-          details: ['Kérelem beadásához a bejelentkezett felhasználó azonosítója szükséges.'],
+          details: ['A művelethez a bejelentkezett felhasználó azonosítója szükséges.'],
         },
       }
     }
-    if (!actorRole || (!isCreate && !canManageLeaveRequests(actorRole))) {
+    if (!actorRole || (!isCreate && !isList && !canManageLeaveRequests(actorRole))) {
       return {
         status: 403,
         body: {
@@ -141,7 +145,9 @@ export function createLeaveRequestApiHandler(
 
     if (isCollection) {
       if (method === 'GET') {
-        const employeeId = query.employeeId || undefined
+        const employeeId = isSelfServiceList
+          ? (actorId ?? undefined)
+          : query.employeeId || undefined
         const legalEntityId = isLegalEntityId(query.legalEntityId)
           ? query.legalEntityId
           : undefined

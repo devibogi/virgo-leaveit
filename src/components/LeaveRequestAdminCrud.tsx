@@ -25,6 +25,7 @@ import {
   leaveRequestAdminText,
   leaveTypeLabel,
   legalEntityLabel,
+  myLeaveRequestText,
   roleLabel,
   statusLabel,
 } from '../i18n/hu'
@@ -35,14 +36,21 @@ export interface LeaveRequestAdminCrudProps {
   apiClientOptions?: LeaveRequestApiClientOptions
   /** Signed-in user; new requests are filed for them (D21: employeeId is automatic). */
   currentUserId: string
+  /**
+   * MINE: own requests page (every role) — submit form + own read-only list.
+   * ALL: HR Admin page for every employee's requests (filter / edit / revoke).
+   */
+  mode?: 'MINE' | 'ALL'
 }
 
 export function LeaveRequestAdminCrud({
   activeRole,
   apiClientOptions,
   currentUserId,
+  mode = 'ALL',
 }: LeaveRequestAdminCrudProps) {
-  const isAuthorized = canManageLeaveRequests(activeRole)
+  const isMine = mode === 'MINE'
+  const isAuthorized = isMine || canManageLeaveRequests(activeRole)
 
   const apiClient = useMemo(
     () =>
@@ -89,7 +97,7 @@ export function LeaveRequestAdminCrud({
       setError(null)
       try {
         const data = await apiClient.listRequests({
-          employeeId: emp.trim() || undefined,
+          employeeId: isMine ? currentUserId : emp.trim() || undefined,
           legalEntityId: entity || undefined,
           status: st || undefined,
         })
@@ -104,7 +112,7 @@ export function LeaveRequestAdminCrud({
         setLoading(false)
       }
     },
-    [apiClient, isAuthorized],
+    [apiClient, isAuthorized, isMine, currentUserId],
   )
 
   useEffect(() => {
@@ -196,7 +204,8 @@ export function LeaveRequestAdminCrud({
   return (
     <section className="admin-container">
       <div className="admin-grid">
-        {/* Form Card */}
+        {/* Form Card: own page always; HR all-requests page only while editing */}
+        {(isMine || editingId) && (
         <div className="card">
           <h2 className="card-title">
             {editingId
@@ -306,13 +315,16 @@ export function LeaveRequestAdminCrud({
             </div>
           </form>
         </div>
+        )}
 
         {/* Table Card: HR admin only (list / edit / revoke) */}
         {isAuthorized ? (
         <div className="card">
           <div className="card-header-row">
             <div>
-              <h2 className="card-title">{leaveRequestAdminText.listTitle}</h2>
+              <h2 className="card-title">
+                {isMine ? myLeaveRequestText.listTitle : leaveRequestAdminText.listTitle}
+              </h2>
               <p className="card-subtitle">
                 <strong>
                   {leaveRequestAdminText.totalCount(requests.length)}
@@ -320,6 +332,7 @@ export function LeaveRequestAdminCrud({
               </p>
             </div>
 
+            {!isMine && (
             <div className="filter-bar">
               <select
                 value={entityFilter}
@@ -374,6 +387,7 @@ export function LeaveRequestAdminCrud({
                 {leaveRequestAdminText.refreshButton}
               </button>
             </div>
+            )}
           </div>
 
           {error && (
@@ -385,7 +399,9 @@ export function LeaveRequestAdminCrud({
           {loading ? (
             <div className="empty-state">{leaveRequestAdminText.loading}</div>
           ) : requests.length === 0 ? (
-            <div className="empty-state">{leaveRequestAdminText.empty}</div>
+            <div className="empty-state">
+              {isMine ? myLeaveRequestText.empty : leaveRequestAdminText.empty}
+            </div>
           ) : (
             <div className="table-wrapper">
               <table className="crud-table">
@@ -397,9 +413,11 @@ export function LeaveRequestAdminCrud({
                     <th>{leaveRequestAdminText.colApprover}</th>
                     <th>{leaveRequestAdminText.colStatus}</th>
                     <th>{leaveRequestAdminText.colDetails}</th>
+                    {!isMine && (
                     <th className="actions-col">
                       {leaveRequestAdminText.colActions}
                     </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -440,6 +458,7 @@ export function LeaveRequestAdminCrud({
                           </div>
                         )}
                       </td>
+                      {!isMine && (
                       <td className="actions-cell">
                         <button
                           type="button"
@@ -460,6 +479,7 @@ export function LeaveRequestAdminCrud({
                           </button>
                         )}
                       </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

@@ -72,6 +72,7 @@ describe('LeaveRequest API endpoints, HR_ADMIN authorization & history preservat
       getActorRole: () => role,
     })
 
+    // Listing without an actor id is rejected for non-HR roles.
     await expect(client.listRequests()).rejects.toMatchObject({ status: 403 })
 
     role = 'MANAGER'
@@ -117,7 +118,7 @@ describe('LeaveRequest API endpoints, HR_ADMIN authorization & history preservat
     })
     expect(forced.employeeId).toBe('emp-anna')
 
-    // Without an actor id a non-HR create is rejected; listing stays HR-only.
+    // Without an actor id a non-HR create is rejected.
     const anonymous = createLeaveRequestApiClient({
       fetchFn: fakeFetch,
       getActorRole: () => 'EMPLOYEE',
@@ -132,7 +133,25 @@ describe('LeaveRequest API endpoints, HR_ADMIN authorization & history preservat
         employeeComment: null,
       }),
     ).rejects.toMatchObject({ status: 403 })
-    await expect(employee.listRequests()).rejects.toMatchObject({ status: 403 })
+  })
+
+  it('lets non-HR roles list only their own requests', async () => {
+    const { fakeFetch } = createInMemoryRequestFetch()
+    const peter = createLeaveRequestApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'MANAGER',
+      getActorId: () => 'emp-peter',
+    })
+    // A foreign employeeId filter is ignored: the list is forced to the actor.
+    const own = await peter.listRequests({ employeeId: 'emp-anna' })
+    expect(own.map((r) => r.id)).toEqual(['req-0001'])
+
+    const anna = createLeaveRequestApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'EMPLOYEE',
+      getActorId: () => 'emp-anna',
+    })
+    expect(await anna.listRequests()).toEqual([])
   })
 
   it('creates, updates, filters and revokes LeaveRequest without hard-deleting', async () => {
