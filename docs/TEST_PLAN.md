@@ -24,6 +24,31 @@
 - Leave range crossing a holiday is handled according to agreed per-day validation.
 - Date range and half-day AM/PM validation.
 
+## Deputy availability
+- No deputies assigned → never blocked.
+- One deputy with approved leave on a requested day → that day blocked; conflict date listed.
+- Two deputies, only one away → not blocked; both away → blocked.
+- Deputy's PENDING, REJECTED, CANCELLED or REVOKED leave → not blocked.
+- SICK_LEAVE, SICK_PAY, PATERNITY → never blocked; ANNUAL, EXTRAORDINARY, UNPAID → checked.
+- One-way: requester is someone else's deputy and that person is away → not blocked.
+- Conflict on a weekend/holiday only → not blocked (working days only).
+- Recheck: deputy's leave approved after submission → manager approval is blocked.
+- Half-day portions: AM vs deputy PM → not blocked; AM vs deputy FULL → blocked (provisional, Q14).
+- Result and AI input contain no deputy id, name, position or leave type.
+- Suggestions: same working-day count, no conflict, within balance, closest first, max 3; AI failure → fallback text shown.
+- Deputy list cannot contain the employee themself.
+
+## Manager delegation
+- A has approved leave today → each of A's deputies can see and decide A's direct-team requests.
+- A not on leave → deputy has no access; A's leave ends → access ends.
+- Pending (not approved) leave of A → no delegation.
+- Deputy cannot decide own request.
+- No chaining: A's deputy's deputy gets nothing.
+- Delegation never grants HR Admin rights.
+- Decision stores `onBehalfOf = A`; audit event shows actor and `onBehalfOf`.
+- Delegated requests appear only in the "Helyettesítés" view, not in the deputy's own team list.
+- Deputy availability recheck still blocks approval.
+
 ## Half-day payroll
 - First active approved half-day in month: balance -0.5, payroll 1.
 - Second active approved half-day in month: balance -0.5, payroll 0.
@@ -37,6 +62,7 @@
 - Manager sees only direct team and leave type.
 - HR sees both legal entities.
 - Demo role switcher is clearly marked prototype-only.
+- All visible UI text is Hungarian.
 
 ## Demo data
 Use synthetic names, email addresses, dates and balances only.

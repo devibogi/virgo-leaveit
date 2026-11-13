@@ -31,10 +31,18 @@
 
 ## 4. Access and entities
 - Roles: Employee, Manager, HR Admin.
+- **Teams (confirmed 2026-11-13):** everyone belongs to exactly one team, defined by who approves their leave (their direct manager). A manager is a member of their own manager's team.
 - Managers can see only their direct team's leave data and can see the leave reason/type.
 - HR Admin can manage employees in both Virgo Kft. and Virgo Zrt.
 - The two legal entities follow the same leave rules but remain separate employee attributes for filtering and reporting.
 - Enforce authorization in the backend in production; a client-side role switch is demo-only.
+- **Manager delegation (confirmed 2026-11-13):** if A manages B and C is A's deputy, C gets A's **manager rights** over A's direct team (approve/reject, team calendar, leave type) **only on days A has approved leave**.
+  - All of A's deputies get the rights; no chaining (C's deputies get nothing from A).
+  - MANAGER rights only, never HR Admin rights.
+  - C can never decide on C's own request (prototype: it waits for A, see Q19).
+  - C acts in a **separate "Helyettesítés" view**, never mixed with C's own team.
+  - The decision records `onBehalfOf = A`; audit shows who acted for whom.
+- **UI language (confirmed 2026-11-13):** the whole user interface is Hungarian. Code, docs and commits stay English.
 
 ## 5. Non-working days and SLA calendar
 - Leave cannot be booked on Hungarian public holidays or statutory non-working days.
@@ -46,7 +54,18 @@
 ## 6. Leave types from source brief
 Base leave; age-based additional leave; child-related additional leave; paternity leave; extraordinary leave; paid leave; sick leave (up to 15 days); sick pay / táppénz (after 15 days). Exact entitlements and payroll export mapping need HR confirmation.
 
-## 7. Open questions / not yet specified
+## 7. Deputy (substitute) availability — confirmed 2026-11-13
+- An employee can have **multiple deputies**. Employees without deputies are not checked.
+- **Planned leave only** (ANNUAL, EXTRAORDINARY, UNPAID) is blocked. SICK_LEAVE, SICK_PAY and PATERNITY are never blocked.
+- A requested working day is **blocked if ALL of the requester's deputies are away** that day.
+- "Away" = the deputy has an **APPROVED**, active leave on that day (any leave type). Pending deputy requests do not block.
+- **One-way:** only the requester's own deputies matter. Being someone else's deputy does not restrict your leave.
+- Checked at **submission** and **re-checked at manager approval**; the manager cannot approve if a conflict appeared in the meantime.
+- **Privacy:** the employee is told only *that* there is a conflict and on which dates — never the deputy's name, position or leave type.
+- Alternative dates are calculated deterministically (working days, deputies available, enough balance). The **AI helper only words the message**; it receives dates only, never decides, and a non-AI fallback text always exists.
+- Open details: see `OPEN_QUESTIONS.md` Q13–Q16.
+
+## 8. Open questions / not yet specified
 - Exact treatment when a prorated result is exactly x.5 (the response says above/below 0.5 but does not explicitly state the tie).
 - Detailed Q1–Q4 allocation formula and whether quarterly display is based on calendar days, working days, or payroll-specific allocation.
 - Whether the Q4 carryover rule has any expiry/use-by date in the next year.
