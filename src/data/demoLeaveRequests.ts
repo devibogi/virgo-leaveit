@@ -16,6 +16,8 @@ const EMP: Record<string, { entity: LeaveRequest['legalEntityId']; approver: str
   'emp-katalin': { entity: 'VIRGO_KFT', approver: 'emp-piri' },
   'emp-peter': { entity: 'VIRGO_KFT', approver: 'emp-katalin' },
   'emp-anna': { entity: 'VIRGO_ZRT', approver: 'emp-katalin' },
+  'emp-eszter': { entity: 'VIRGO_KFT', approver: 'emp-katalin' },
+  'emp-gabor': { entity: 'VIRGO_KFT', approver: 'emp-piri' },
 }
 
 const ROWS: Row[] = [
@@ -47,6 +49,20 @@ const ROWS: Row[] = [
   ['emp-piri', 'SICK_LEAVE', '2027-01-18', '2027-01-20', 'FULL', 'APPROVED', null],
   ['emp-katalin', 'UNPAID', '2027-01-25', '2027-01-26', 'FULL', 'PENDING', null],
   ['emp-anna', 'ANNUAL', '2027-01-27', '2027-01-27', 'PM', 'APPROVED', null],
+  // Already used leave earlier in 2026 (appended so existing ids stay stable)
+  ['emp-piri', 'ANNUAL', '2026-03-09', '2026-03-13', 'FULL', 'APPROVED', 'Tavaszi szünet'],
+  ['emp-piri', 'ANNUAL', '2026-08-03', '2026-08-14', 'FULL', 'APPROVED', 'Nyári szabadság'],
+  ['emp-katalin', 'ANNUAL', '2026-02-16', '2026-02-20', 'FULL', 'APPROVED', 'Síszünet'],
+  ['emp-katalin', 'ANNUAL', '2026-07-20', '2026-07-31', 'FULL', 'APPROVED', 'Nyári szabadság'],
+  ['emp-peter', 'ANNUAL', '2026-04-07', '2026-04-10', 'FULL', 'APPROVED', 'Húsvéti hét'],
+  ['emp-anna', 'ANNUAL', '2026-03-02', '2026-03-06', 'FULL', 'APPROVED', null],
+  ['emp-anna', 'ANNUAL', '2026-08-24', '2026-08-28', 'FULL', 'APPROVED', 'Nyaralás'],
+  ['emp-eszter', 'ANNUAL', '2026-04-20', '2026-04-24', 'FULL', 'APPROVED', null],
+  ['emp-eszter', 'ANNUAL', '2026-09-07', '2026-09-11', 'FULL', 'APPROVED', 'Iskolakezdés'],
+  ['emp-gabor', 'ANNUAL', '2026-05-11', '2026-05-15', 'FULL', 'APPROVED', null],
+  ['emp-gabor', 'ANNUAL', '2026-10-12', '2026-10-16', 'FULL', 'APPROVED', 'Őszi szabadság'],
+  // Katalin is on leave today, so her deputies (Piri, Gábor) act for her (LI-19 demo)
+  ['emp-katalin', 'ANNUAL', '2026-11-12', '2026-11-13', 'FULL', 'APPROVED', 'Hosszú hétvége'],
 ]
 
 export const DEMO_LEAVE_REQUESTS: readonly LeaveRequest[] = ROWS.map(
