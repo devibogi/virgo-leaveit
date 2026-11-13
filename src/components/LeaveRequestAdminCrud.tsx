@@ -9,6 +9,8 @@ import { EmployeeSelect, useEmployeeDirectory } from './employeeDirectory'
 import {
   canManageLeaveRequests,
   DAY_PORTIONS,
+  localIsoDate,
+  requestedWorkingDays,
   DayPortionEnum,
   LEAVE_TYPE_CODES,
   LeaveTypeCodeEnum,
@@ -25,6 +27,7 @@ import {
   dayPortionLabel,
   formatDate,
   leaveRequestAdminText,
+  requestedDaysLabel,
   leaveTypeLabel,
   legalEntityLabel,
   myLeaveRequestText,
@@ -78,8 +81,8 @@ export function LeaveRequestAdminCrud({
   const [leaveTypeCode, setLeaveTypeCode] = useState<LeaveTypeCode>(
     LeaveTypeCodeEnum.ANNUAL,
   )
-  const [startDate, setStartDate] = useState<string>('2026-08-03')
-  const [endDate, setEndDate] = useState<string>('2026-08-07')
+  const [startDate, setStartDate] = useState<string>(() => localIsoDate())
+  const [endDate, setEndDate] = useState<string>(() => localIsoDate())
   const [dayPortion, setDayPortion] = useState<DayPortion>(DayPortionEnum.FULL)
   const [employeeComment, setEmployeeComment] = useState<string>('')
   const [formErrors, setFormErrors] = useState<string[]>([])
@@ -243,7 +246,12 @@ export function LeaveRequestAdminCrud({
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value
+                    setStartDate(next)
+                    // End date may never be earlier than the first day.
+                    if (next && endDate < next) setEndDate(next)
+                  }}
                   disabled={submitting}
                 />
               </label>
@@ -253,6 +261,7 @@ export function LeaveRequestAdminCrud({
                 <input
                   type="date"
                   value={endDate}
+                  min={startDate || undefined}
                   onChange={(e) => setEndDate(e.target.value)}
                   disabled={submitting}
                 />
@@ -461,6 +470,13 @@ export function LeaveRequestAdminCrud({
                       <td className="sub-cell">
                         <div>{formatDate(item.startDate)}</div>
                         <div>– {formatDate(item.endDate)}</div>
+                        <div>
+                          <strong>
+                            {requestedDaysLabel(
+                              requestedWorkingDays(item.startDate, item.endDate, item.dayPortion),
+                            )}
+                          </strong>
+                        </div>
                       </td>
                       <td>{item.approverName ?? '—'}</td>
                       <td>

@@ -30,6 +30,31 @@ export function createCalendarService(dataset: CalendarDataset = HU_CALENDAR_202
 
 export type CalendarService = ReturnType<typeof createCalendarService>
 
+/**
+ * Requested amount in working days (display only): working days in the inclusive range,
+ * AM/PM counts 0.5. Non-working days per the calendar service are skipped.
+ */
+export function requestedWorkingDays(
+  startDate: IsoDate,
+  endDate: IsoDate,
+  dayPortion: DayPortion,
+  calendar: CalendarService = createCalendarService(),
+): number {
+  let days = 0
+  for (let d = new Date(`${startDate}T00:00:00Z`); ; d.setUTCDate(d.getUTCDate() + 1)) {
+    const date = d.toISOString().slice(0, 10)
+    if (date > endDate) break
+    if (calendar.getDay(date).isWorkingDay) days += 1
+  }
+  return dayPortion === 'FULL' ? days : days * 0.5
+}
+
+/** Local calendar date as ISO (YYYY-MM-DD). */
+export function localIsoDate(d: Date = new Date()): IsoDate {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 function toIso(d: Date): IsoDate {
   return d.toISOString().slice(0, 10)
 }

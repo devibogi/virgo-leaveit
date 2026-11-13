@@ -379,6 +379,10 @@ export const formatDate = (iso: string): string => {
   return `${y}. ${m}. ${d}.`
 }
 
+/** Requested amount, e.g. "5 munkanap", "0,5 munkanap". */
+export const requestedDaysLabel = (days: number): string =>
+  `${String(days).replace('.', ',')} munkanap`
+
 export const calendarText = {
   title: 'Naptár',
   subtitle: 'Ünnepnapok, áthelyezett napok és a jóváhagyott / jóváhagyásra váró távollétek.',

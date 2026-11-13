@@ -44,3 +44,19 @@ describe('buildMonthCalendar', () => {
     expect(byDate.get('2026-08-24')!.entries.map((e) => e.requestId)).toEqual(['req-1', 'req-3'])
   })
 })
+
+describe('requestedWorkingDays', () => {
+  it('counts working days only, half days as 0.5', async () => {
+    const { requestedWorkingDays } = await import('./calendar.ts')
+    expect(requestedWorkingDays('2026-08-03', '2026-08-07', 'FULL')).toBe(5)
+    expect(requestedWorkingDays('2026-08-14', '2026-08-17', 'FULL')).toBe(2) // weekend skipped
+    expect(requestedWorkingDays('2026-08-03', '2026-08-03', 'AM')).toBe(0.5)
+    expect(requestedWorkingDays('2026-08-03', '2026-08-04', 'PM')).toBe(1)
+    expect(requestedWorkingDays('2026-08-08', '2026-08-09', 'FULL')).toBe(1) // Sat 08-08 is a transferred working day
+    expect(requestedWorkingDays('2026-08-20', '2026-08-21', 'FULL')).toBe(0) // holiday + transferred rest day
+  })
+  it('localIsoDate formats local date', async () => {
+    const { localIsoDate } = await import('./calendar.ts')
+    expect(localIsoDate(new Date(2026, 10, 3))).toBe('2026-11-03')
+  })
+})
