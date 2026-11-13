@@ -28,6 +28,7 @@ import {
   MariaDbSessionRepository,
 } from './src/server/sessionRepository.ts'
 import { createTeamApiHandler, type ApiRequest } from './src/server/teamApi.ts'
+import { createPayrollExportApiHandler } from './src/server/payrollExportApi.ts'
 import {
   InMemoryTeamRepository,
   MariaDbTeamRepository,
@@ -99,6 +100,7 @@ function leaveItApiPlugin(): Plugin {
     requestRepo,
     employeeRepo,
   )
+  const handlePayrollExportApiRequest = createPayrollExportApiHandler(employeeRepo, requestRepo)
 
   const middleware: Connect.NextHandleFunction = (rawReq, rawRes, next) => {
     const req = rawReq as unknown as NodeRequestLike
@@ -159,10 +161,11 @@ function leaveItApiPlugin(): Plugin {
             handleEmployeeApiRequest(apiReq),
             handleEntitlementApiRequest(apiReq),
             handleLeaveRequestApiRequest(apiReq),
+            handlePayrollExportApiRequest(apiReq),
           ])
         })
-        .then(([authRes, teamRes, empRes, entRes, reqRes]) => {
-          const apiRes = authRes ?? teamRes ?? empRes ?? entRes ?? reqRes
+        .then(([authRes, teamRes, empRes, entRes, reqRes, payrollRes]) => {
+          const apiRes = authRes ?? teamRes ?? empRes ?? entRes ?? reqRes ?? payrollRes
           if (!apiRes) {
             next()
             return
@@ -176,7 +179,9 @@ function leaveItApiPlugin(): Plugin {
               res.setHeader(k, v)
             }
           }
-          if (apiRes.body !== undefined) {
+          if (typeof apiRes.body === 'string') {
+            res.end(apiRes.body)
+          } else if (apiRes.body !== undefined) {
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify(apiRes.body))
           } else {

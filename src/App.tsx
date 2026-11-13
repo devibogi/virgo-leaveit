@@ -7,6 +7,7 @@ import { LoginView } from './components/LoginView'
 import { MyEntitlementsView } from './components/MyEntitlementsView'
 import { MyTeamEmployeesView } from './components/MyTeamEmployeesView'
 import { TeamAdminCrud } from './components/TeamAdminCrud'
+import { PayrollExportView } from './components/PayrollExportView'
 import {
   authText,
   employeeAdminText,
@@ -15,6 +16,7 @@ import {
   myLeaveRequestText,
   myEntitlementText,
   teamAdminText,
+  payrollExportText,
   teamEntitlementText,
   roleLabel,
   themeText,
@@ -31,7 +33,7 @@ function initialTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'TEAM_ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS'
+type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'TEAM_ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS' | 'PAYROLL'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
@@ -111,7 +113,7 @@ export default function App() {
   // entitlement pages are shown in the EMPLOYEE role only.
   const showOwnPages = activeRole === 'EMPLOYEE'
   const visibleSection: AdminSection =
-    ((section === 'TEAMS' || section === 'REQUESTS' || section === 'ENTITLEMENTS_ADMIN') && !isHrAdmin) ||
+    ((section === 'TEAMS' || section === 'PAYROLL' || section === 'REQUESTS' || section === 'ENTITLEMENTS_ADMIN') && !isHrAdmin) ||
     (section === 'EMPLOYEES' && !canSeeEmployees) ||
     (section === 'TEAM_ENTITLEMENTS' && !isManager) ||
     ((section === 'MY_REQUESTS' || section === 'ENTITLEMENTS') && !showOwnPages)
@@ -125,6 +127,8 @@ export default function App() {
   const heading =
     visibleSection === 'TEAMS'
       ? teamAdminText
+      : visibleSection === 'PAYROLL'
+        ? payrollExportText
       : visibleSection === 'EMPLOYEES'
         ? employeeAdminText
         : visibleSection === 'TEAM_ENTITLEMENTS'
@@ -275,6 +279,17 @@ export default function App() {
             {teamAdminText.tabLabel}
           </button>
           )}
+          {isHrAdmin && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visibleSection === 'PAYROLL'}
+            className={`section-tab ${visibleSection === 'PAYROLL' ? 'section-tab-active' : ''}`}
+            onClick={() => setSection('PAYROLL')}
+          >
+            {payrollExportText.tabLabel}
+          </button>
+          )}
         </div>
 
         <div className="page-heading">
@@ -286,7 +301,9 @@ export default function App() {
           <p className="intro">{heading.pageIntro}</p>
         </div>
 
-        {visibleSection === 'TEAMS' ? (
+        {visibleSection === 'PAYROLL' ? (
+          <PayrollExportView />
+        ) : visibleSection === 'TEAMS' ? (
           <TeamAdminCrud
             activeRole={activeRole}
             onRequestRoleChange={(r) => void handleRoleSwitch(r)}

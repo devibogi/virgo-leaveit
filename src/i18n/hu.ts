@@ -398,3 +398,23 @@ export const calendarText = {
   weekdays: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
   months: ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'],
 } as const
+
+export const payrollExportText = {
+  tabLabel: 'Bérszámfejtés',
+  eyebrow: 'HR ADMINISZTRÁCIÓ · BÉRSZÁMFEJTÉS',
+  pageTitle: 'Havi bérszámfejtési export',
+  pageIntro:
+    'Jogi személyenként és hónaponként letölthető CSV a bérszámfejtési sablon szerint: jóváhagyott szabadságok és betegszabadságok Tól–Ig napokkal.',
+  cardTitle: 'Export letöltése',
+  cardSubtitle: 'Csak a jóváhagyott kérelmek és a bérszámfejtési exportba bevont munkavállalók szerepelnek.',
+  yearLabel: 'Év',
+  monthLabel: 'Hónap',
+  legalEntityLabel: 'Jogi személy',
+  download: 'CSV letöltése',
+  assumptionsNote:
+    'Feltételezések (HR megerősítésre vár): fizetés nélküli és temetési szabadság a Szabadság oszlopban; félnapok párosítva, páratlan utolsó félnap a saját napján; 5-nél több időszak új sorba kerül.',
+  months: [
+    'január', 'február', 'március', 'április', 'május', 'június',
+    'július', 'augusztus', 'szeptember', 'október', 'november', 'december',
+  ],
+} as const

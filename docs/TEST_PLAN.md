@@ -80,7 +80,10 @@
 - Tól/Ig are day-of-month numbers; consecutive same-group days merged across weekends/holidays (Q29).
 - Half-day pair appears on the second half-day's date.
 - Every registered employee with the flag listed, also with no leave (Q33).
-- More than 5 periods → warning (Q28).
+- More than 5 periods → extra row with the same name and tax id (Q28 assumption).
+- Odd last half-day of the month exported on its own date (Q26 assumption).
+- Only APPROVED requests on working days; multi-month requests clipped to the month.
+- Endpoint: 403 for EMPLOYEE/MANAGER/no session, 400 for invalid year/month/entity, CSV download headers for HR_ADMIN.
 - Change after export is written out (Q31).
 
 ## Payroll export flag
