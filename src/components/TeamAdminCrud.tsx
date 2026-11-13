@@ -289,6 +289,7 @@ export function TeamAdminCrud({
 
   const teamNameByManager = new Map(teams.map((t) => [t.managerId, t.name]))
   const employeeName = new Map(employees.map((e) => [e.id, e.displayName]))
+  const employeesById = new Map(employees.map((e) => [e.id, e]))
 
   return (
     <section className="admin-container">
@@ -412,6 +413,7 @@ export function TeamAdminCrud({
                   <tr>
                     <th>{teamAdminText.colManagerId}</th>
                     <th>{teamAdminText.colName}</th>
+                    <th>{teamAdminText.colDeputies}</th>
                     <th className="actions-col">{teamAdminText.colActions}</th>
                   </tr>
                 </thead>
@@ -434,6 +436,15 @@ export function TeamAdminCrud({
                           ) : (
                             <strong>{team.name}</strong>
                           )}
+                        </td>
+                        <td>
+                          {/* Deputies of the team's manager (act for them on their leave days) */}
+                          {(employeesById.get(team.managerId)?.deputyIds ?? []).length === 0
+                            ? '—'
+                            : employeesById
+                                .get(team.managerId)!
+                                .deputyIds.map((d) => employeeName.get(d) ?? d)
+                                .join(', ')}
                         </td>
                         <td className="actions-cell">
                           {isEditing ? (

@@ -147,6 +147,7 @@ export const teamAdminText = {
   empty: 'Nincs megjeleníthető csapat a megadott feltételekkel.',
   colManagerId: 'Manager ID (kulcs)',
   colName: 'Csapat megjelenítési neve',
+  colDeputies: 'Vezető helyettese(i)',
   colActions: 'Műveletek',
   editButton: 'Szerkesztés',
   deleteButton: 'Törlés',
