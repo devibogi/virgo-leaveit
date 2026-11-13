@@ -7,7 +7,7 @@ export function useEmployeeDirectory(activeRole: Role, enabled = true) {
   const [employees, setEmployees] = useState<Employee[]>([])
   useEffect(() => {
     if (!enabled || activeRole !== 'HR_ADMIN') return
-    const client = createEmployeeApiClient({ getActorRole: () => activeRole })
+    const client = createEmployeeApiClient()
     client.listEmployees().then(setEmployees, () => setEmployees([]))
   }, [activeRole, enabled])
   return useMemo(() => {
