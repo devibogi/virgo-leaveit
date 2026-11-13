@@ -219,3 +219,26 @@ export function mapEmployeeToRow(employee: Employee): EmployeeRow {
     tax_id: employee.taxId,
   }
 }
+
+/**
+ * True if setting `employeeId`'s manager to `newManagerId` would create a
+ * management cycle (the employee would end up above themselves in the chain).
+ * Used when HR moves an employee to another team (team = direct manager).
+ */
+export function wouldCreateManagementCycle(
+  employees: ReadonlyArray<Pick<Employee, 'id' | 'managerId'>>,
+  employeeId: EmployeeId,
+  newManagerId: EmployeeId | null,
+): boolean {
+  if (!newManagerId) return false
+  const managerOf = new Map(employees.map((e) => [e.id, e.managerId]))
+  const seen = new Set<EmployeeId>()
+  let current: EmployeeId | null = newManagerId
+  while (current) {
+    if (current === employeeId) return true
+    if (seen.has(current)) return false // pre-existing cycle elsewhere; not caused by this change
+    seen.add(current)
+    current = managerOf.get(current) ?? null
+  }
+  return false
+}

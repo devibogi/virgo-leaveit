@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   canManageEmployees,
+  wouldCreateManagementCycle,
   createEmployee,
   mapEmployeeToRow,
   mapRowToEmployee,
@@ -101,5 +102,26 @@ describe('Employee entity (shared DATA_MODEL contract)', () => {
     expect(canManageEmployees(['EMPLOYEE', 'HR_ADMIN'])).toBe(true)
     expect(canManageEmployees('MANAGER')).toBe(false)
     expect(canManageEmployees('EMPLOYEE')).toBe(false)
+  })
+})
+
+describe('wouldCreateManagementCycle (team change by HR)', () => {
+  const people = [
+    { id: 'ceo', managerId: null },
+    { id: 'mgr', managerId: 'ceo' },
+    { id: 'dev', managerId: 'mgr' },
+  ]
+  it('allows moving to a team outside the own subtree', () => {
+    expect(wouldCreateManagementCycle(people, 'dev', 'ceo')).toBe(false)
+    expect(wouldCreateManagementCycle(people, 'mgr', null)).toBe(false)
+  })
+  it('blocks self and moving under an own (indirect) report', () => {
+    expect(wouldCreateManagementCycle(people, 'mgr', 'mgr')).toBe(true)
+    expect(wouldCreateManagementCycle(people, 'mgr', 'dev')).toBe(true)
+    expect(wouldCreateManagementCycle(people, 'ceo', 'dev')).toBe(true)
+  })
+  it('terminates on a pre-existing unrelated cycle', () => {
+    const loop = [...people, { id: 'a', managerId: 'b' }, { id: 'b', managerId: 'a' }]
+    expect(wouldCreateManagementCycle(loop, 'dev', 'a')).toBe(false)
   })
 })

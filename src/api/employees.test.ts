@@ -154,5 +154,38 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
     const anonymous = createEmployeeApiClient({ fetchFn: fakeFetch, getActorRole: () => 'MANAGER' })
     await expect(anonymous.listEmployees()).rejects.toMatchObject({ status: 403 })
   })
-})
 
+  it('HR moves an employee to another team; rejects a management cycle', async () => {
+    const { fakeFetch } = createInMemoryEmployeeFetch()
+    const client = createEmployeeApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'HR_ADMIN',
+    })
+    const base = {
+      email: 'x@virgo.example',
+      legalEntityId: 'VIRGO_KFT' as const,
+      roles: ['EMPLOYEE' as Role],
+      birthDate: '1990-01-01',
+      employmentStart: '2024-01-01',
+    }
+    await client.createEmployee({ ...base, id: 'emp-m', displayName: 'M', managerId: 'emp-piri' })
+    const created = await client.createEmployee({ ...base, id: 'emp-d', displayName: 'D', managerId: 'emp-m' })
+
+    const { id: _id, ...rest } = created
+    void _id
+    const moved = await client.updateEmployee('emp-d', { ...rest, managerId: 'emp-piri' })
+    expect(moved.managerId).toBe('emp-piri')
+
+    // emp-m -> under emp-d is fine now (emp-d no longer reports to emp-m) ...
+    const m = await client.getEmployeeById('emp-m')
+    const { id: _mid, ...mRest } = m
+    void _mid
+    await expect(
+      client.updateEmployee('emp-piri', {
+        ...(await client.getEmployeeById('emp-piri')),
+        managerId: 'emp-m',
+      }),
+    ).rejects.toMatchObject({ status: 400 }) // piri -> m -> piri would be a cycle
+    expect((await client.updateEmployee('emp-m', { ...mRest, managerId: 'emp-d' })).managerId).toBe('emp-d')
+  })
+})

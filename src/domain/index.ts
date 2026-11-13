@@ -53,6 +53,7 @@ export {
   mapEmployeeToRow,
   mapRowToEmployee,
   validateEmployee,
+  wouldCreateManagementCycle,
   type CreateEmployeeInput,
   type Employee,
   type EmployeeRow,

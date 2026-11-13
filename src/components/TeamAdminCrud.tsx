@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
+  createEmployeeApiClient,
   createTeamApiClient,
   TeamApiError,
   type TeamApiClientOptions,
 } from '../api'
-import { canManageTeams, validateTeam, type Role, type Team } from '../domain'
+import {
+  canManageTeams,
+  validateTeam,
+  wouldCreateManagementCycle,
+  type Employee,
+  type Role,
+  type Team,
+} from '../domain'
 import { roleLabel, teamAdminText } from '../i18n/hu'
 
 export interface TeamAdminCrudProps {
@@ -28,6 +36,24 @@ export function TeamAdminCrud({
       }),
     [activeRole, apiClientOptions],
   )
+  const employeeClient = useMemo(
+    () =>
+      createEmployeeApiClient({
+        fetchFn: apiClientOptions?.fetchFn,
+        baseUrl: apiClientOptions?.baseUrl,
+        getActorRole: () => activeRole,
+      }),
+    [activeRole, apiClientOptions],
+  )
+
+  // Team membership (team = direct manager): HR can move anyone to another team.
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [membershipLoading, setMembershipLoading] = useState<boolean>(false)
+  const [membershipMessage, setMembershipMessage] = useState<string | null>(null)
+  const [membershipError, setMembershipError] = useState<string | null>(null)
+
+  // Create form is hidden until "+ Új csapat" is clicked.
+  const [formOpen, setFormOpen] = useState<boolean>(false)
 
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState<boolean>(false)
@@ -75,6 +101,29 @@ export function TeamAdminCrud({
   useEffect(() => {
     void loadTeams(managerFilter)
   }, [loadTeams, managerFilter])
+
+  const loadEmployees = useCallback(async () => {
+    if (!isAuthorized) {
+      setEmployees([])
+      return
+    }
+    setMembershipLoading(true)
+    try {
+      setEmployees(await employeeClient.listEmployees())
+    } catch (err) {
+      setMembershipError(
+        err instanceof TeamApiError
+          ? `${err.message}: ${err.details.join(' ')}`
+          : teamAdminText.loadError,
+      )
+    } finally {
+      setMembershipLoading(false)
+    }
+  }, [employeeClient, isAuthorized])
+
+  useEffect(() => {
+    void loadEmployees()
+  }, [loadEmployees])
 
   if (!isAuthorized) {
     return (
@@ -125,6 +174,7 @@ export function TeamAdminCrud({
       })
       setNewManagerId('')
       setNewName('')
+      setFormOpen(false)
       await loadTeams(managerFilter)
     } catch (err) {
       if (err instanceof TeamApiError) {
@@ -199,10 +249,52 @@ export function TeamAdminCrud({
     }
   }
 
+  async function handleTeamChange(emp: Employee, newManagerId: string) {
+    setMembershipMessage(null)
+    setMembershipError(null)
+    const managerId = newManagerId || null
+    if (wouldCreateManagementCycle(employees, emp.id, managerId)) {
+      setMembershipError(
+        'A vezető-hozzárendelés körkörös vezetési láncot hozna létre.',
+      )
+      return
+    }
+    setSubmitting(true)
+    try {
+      const { id: _id, ...rest } = emp
+      void _id
+      const updated = await employeeClient.updateEmployee(emp.id, {
+        ...rest,
+        managerId,
+      })
+      setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+      setMembershipMessage(teamAdminText.membershipSaved(emp.displayName))
+    } catch (err) {
+      setMembershipError(
+        err instanceof TeamApiError
+          ? err.details.join(' ') || err.message
+          : teamAdminText.membershipError,
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function closeCreateForm() {
+    setFormOpen(false)
+    setNewManagerId('')
+    setNewName('')
+    setFormErrors([])
+  }
+
+  const teamNameByManager = new Map(teams.map((t) => [t.managerId, t.name]))
+  const employeeName = new Map(employees.map((e) => [e.id, e.displayName]))
+
   return (
     <section className="admin-container">
-      <div className="admin-grid">
-        {/* Create Card */}
+      <div className={`admin-grid ${formOpen ? '' : 'admin-grid-single'}`}>
+        {/* Create Card: hidden until "+ Új csapat" */}
+        {formOpen && (
         <div className="card">
           <h2 className="card-title">{teamAdminText.createTitle}</h2>
           <p className="card-subtitle">{teamAdminText.createSubtitle}</p>
@@ -245,8 +337,17 @@ export function TeamAdminCrud({
             >
               {teamAdminText.createButton}
             </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closeCreateForm}
+              disabled={submitting}
+            >
+              {teamAdminText.cancelButton}
+            </button>
           </form>
         </div>
+        )}
 
         {/* List & Edit Card */}
         <div className="card">
@@ -259,6 +360,15 @@ export function TeamAdminCrud({
             </div>
 
             <div className="filter-bar">
+              {!formOpen && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setFormOpen(true)}
+                >
+                  {teamAdminText.newButton}
+                </button>
+              )}
               <input
                 type="search"
                 placeholder={teamAdminText.filterPlaceholder}
@@ -378,6 +488,81 @@ export function TeamAdminCrud({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Team membership card */}
+      <div className="card">
+        <div className="card-header-row">
+          <div>
+            <h2 className="card-title">{teamAdminText.membershipTitle}</h2>
+            <p className="card-subtitle">{teamAdminText.membershipSubtitle}</p>
+          </div>
+        </div>
+
+        {membershipError && (
+          <div className="alert alert-error" role="alert">
+            {membershipError}
+          </div>
+        )}
+        {membershipMessage && (
+          <div className="alert alert-success" role="status">
+            {membershipMessage}
+          </div>
+        )}
+
+        {membershipLoading ? (
+          <div className="empty-state">{teamAdminText.membershipLoading}</div>
+        ) : (
+          <div className="table-wrapper">
+            <table className="crud-table">
+              <thead>
+                <tr>
+                  <th>{teamAdminText.membershipColEmployee}</th>
+                  <th>{teamAdminText.membershipColTeam}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employees.map((emp) => {
+                  const current = emp.managerId ?? ''
+                  // Options: every team except the employee's own; keep the current
+                  // manager selectable even if no Team record exists for them.
+                  const options = teams.filter((t) => t.managerId !== emp.id)
+                  const hasCurrent =
+                    current === '' || options.some((t) => t.managerId === current)
+                  return (
+                    <tr key={emp.id}>
+                      <td>
+                        <strong>{emp.displayName}</strong>{' '}
+                        <span className="badge">{emp.id}</span>
+                      </td>
+                      <td>
+                        <select
+                          value={current}
+                          onChange={(e) => void handleTeamChange(emp, e.target.value)}
+                          disabled={submitting}
+                          aria-label={`${teamAdminText.membershipColTeam}: ${emp.displayName}`}
+                        >
+                          <option value="">{teamAdminText.membershipNoTeam}</option>
+                          {!hasCurrent && (
+                            <option value={current}>
+                              {employeeName.get(current) ?? current} ({current})
+                            </option>
+                          )}
+                          {options.map((t) => (
+                            <option key={t.managerId} value={t.managerId}>
+                              {teamNameByManager.get(t.managerId)} —{' '}
+                              {employeeName.get(t.managerId) ?? t.managerId}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </section>
   )

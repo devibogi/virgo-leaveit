@@ -497,6 +497,16 @@ select:focus {
   color: #BE123C;
 }
 
+.alert-success {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #15803D;
+}
+
+.admin-grid + .card {
+  margin-top: 24px;
+}
+
 .table-wrapper {
   overflow-x: auto;
 }

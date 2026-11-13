@@ -1,6 +1,7 @@
 import {
   canManageEmployees,
   validateEmployee,
+  wouldCreateManagementCycle,
   type CreateEmployeeInput,
   type LegalEntityId,
   type Role,
@@ -238,6 +239,19 @@ export function createEmployeeApiHandler(
             body: {
               error: 'Validation failed',
               details: validation.errors,
+            },
+          }
+        }
+
+        const allEmployees = await repository.findAll()
+        if (wouldCreateManagementCycle(allEmployees, id, candidate.managerId)) {
+          return {
+            status: 400,
+            body: {
+              error: 'Validation failed',
+              details: [
+                'A vezető-hozzárendelés körkörös vezetési láncot hozna létre.',
+              ],
             },
           }
         }
