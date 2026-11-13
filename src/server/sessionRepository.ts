@@ -1,4 +1,5 @@
 import type { Role } from '../types/model.ts'
+import { generateCsrfToken } from './security.ts'
 import type { SqlExecutor } from './teamRepository.ts'
 
 export const SESSION_COOKIE_NAME = 'leaveit_session'
@@ -8,6 +9,7 @@ export interface Session {
   id: string
   employeeId: string
   activeRole: Role
+  csrfToken: string
   createdAt: string
   expiresAt: string
 }
@@ -16,12 +18,14 @@ export interface SessionContext {
   sessionId: string
   employeeId: string
   activeRole: Role
+  csrfToken?: string
 }
 
 export interface SessionRow {
   id: string
   employee_id: string
   active_role: Role
+  csrf_token?: string
   created_at: string
   expires_at: string
 }
@@ -88,6 +92,7 @@ function mapRowToSession(row: SessionRow): Session {
     id: row.id,
     employeeId: row.employee_id,
     activeRole: row.active_role,
+    csrfToken: row.csrf_token || '',
     createdAt: row.created_at,
     expiresAt: row.expires_at,
   }
@@ -113,6 +118,7 @@ export class InMemorySessionRepository implements SessionRepository {
       id: generateSessionId(),
       employeeId,
       activeRole,
+      csrfToken: generateCsrfToken(),
       createdAt: now.toISOString(),
       expiresAt: expires.toISOString(),
     }
@@ -145,7 +151,7 @@ export class MariaDbSessionRepository implements SessionRepository {
 
   async findById(id: string): Promise<Session | null> {
     const rows = await this.db.query<SessionRow>(
-      'SELECT id, employee_id, active_role, created_at, expires_at FROM sessions WHERE id = ? LIMIT 1',
+      'SELECT id, employee_id, active_role, csrf_token, created_at, expires_at FROM sessions WHERE id = ? LIMIT 1',
       [id],
     )
     const row = rows[0]
@@ -165,15 +171,17 @@ export class MariaDbSessionRepository implements SessionRepository {
       id: generateSessionId(),
       employeeId,
       activeRole,
+      csrfToken: generateCsrfToken(),
       createdAt: now.toISOString(),
       expiresAt: expires.toISOString(),
     }
     await this.db.execute(
-      'INSERT INTO sessions (id, employee_id, active_role, created_at, expires_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO sessions (id, employee_id, active_role, csrf_token, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
       [
         session.id,
         session.employeeId,
         session.activeRole,
+        session.csrfToken,
         session.createdAt,
         session.expiresAt,
       ],

@@ -46,6 +46,7 @@ function createInMemoryAuthHarness() {
             sessionId: activeSession.id,
             employeeId: activeSession.employeeId,
             activeRole: activeSession.activeRole,
+            csrfToken: activeSession.csrfToken,
           }
         : null,
     })
@@ -137,8 +138,9 @@ describe('Session-based Auth API (HttpOnly cookie + own-role switching)', () => 
             id: String(params?.[0]),
             employee_id: String(params?.[1]),
             active_role: params?.[2] as SessionRow['active_role'],
-            created_at: String(params?.[3]),
-            expires_at: String(params?.[4]),
+            csrf_token: String(params?.[3]),
+            created_at: String(params?.[4]),
+            expires_at: String(params?.[5]),
           })
           return { affectedRows: 1 }
         }

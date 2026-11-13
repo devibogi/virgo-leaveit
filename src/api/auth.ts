@@ -1,4 +1,5 @@
 import type { Employee, Role } from '../types/model.ts'
+import { attachCsrfHeader, setCsrfToken } from './csrf.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
 export interface LoginRequest {
@@ -10,6 +11,7 @@ export interface LoginResponse {
   employee: Employee
   defaultRole: Role
   activeRole?: Role
+  csrfToken?: string
 }
 
 export interface AuthApiClientOptions {
@@ -52,7 +54,12 @@ export function createAuthApiClient(options: AuthApiClientOptions = {}) {
         body: JSON.stringify(body),
       })
 
-      return parseJsonOrThrow<LoginResponse>(response, 'Login failed')
+      const result = await parseJsonOrThrow<LoginResponse>(
+        response,
+        'Login failed',
+      )
+      setCsrfToken(result.csrfToken)
+      return result
     },
 
     async getSession(): Promise<LoginResponse | null> {
@@ -64,36 +71,48 @@ export function createAuthApiClient(options: AuthApiClientOptions = {}) {
         },
       })
       if (response.status === 401) {
+        setCsrfToken(null)
         return null
       }
-      return parseJsonOrThrow<LoginResponse>(response, 'Session check failed')
+      const result = await parseJsonOrThrow<LoginResponse>(
+        response,
+        'Session check failed',
+      )
+      setCsrfToken(result.csrfToken)
+      return result
     },
 
     async switchRole(role: Role): Promise<LoginResponse> {
       const response = await fetchImpl(`${baseUrl}/auth/role`, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: {
+        headers: attachCsrfHeader({
           'Content-Type': 'application/json',
           Accept: 'application/json',
-        },
+        }),
         body: JSON.stringify({ role }),
       })
 
-      return parseJsonOrThrow<LoginResponse>(response, 'Role switch failed')
+      const result = await parseJsonOrThrow<LoginResponse>(
+        response,
+        'Role switch failed',
+      )
+      setCsrfToken(result.csrfToken)
+      return result
     },
 
     async logout(): Promise<void> {
       const response = await fetchImpl(`${baseUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: {
+        headers: attachCsrfHeader({
           Accept: 'application/json',
-        },
+        }),
       })
       if (!response.ok && response.status !== 204) {
         await parseJsonOrThrow<unknown>(response, 'Logout failed')
       }
+      setCsrfToken(null)
     },
   }
 }

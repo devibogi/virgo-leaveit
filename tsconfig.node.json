@@ -27,6 +27,7 @@
     "src/api/openapi.ts",
     "src/data/demoLeaveRequests.ts",
     "src/server/mariadbClient.ts",
+    "src/server/security.ts",
     "src/server/sessionRepository.ts",
     "src/server/authApi.ts",
     "src/server/teamRepository.ts",

@@ -4,6 +4,7 @@ import type {
   EntitlementComponent,
   LeaveEntitlement,
 } from '../domain/leaveEntitlement.ts'
+import { attachCsrfHeader } from './csrf.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
 export type CreateLeaveEntitlementRequest = CreateLeaveEntitlementInput
@@ -40,7 +41,7 @@ export function createLeaveEntitlementApiClient(
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
     }
-    return headers
+    return attachCsrfHeader(headers)
   }
 
   async function parseResponse<T>(response: Response): Promise<T> {

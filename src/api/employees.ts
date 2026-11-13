@@ -3,6 +3,7 @@ import type {
   Employee,
   LegalEntityId,
 } from '../domain/employee.ts'
+import { attachCsrfHeader } from './csrf.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
 export type CreateEmployeeRequest = CreateEmployeeInput
@@ -31,7 +32,7 @@ export function createEmployeeApiClient(
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
     }
-    return headers
+    return attachCsrfHeader(headers)
   }
 
   async function parseResponse<T>(response: Response): Promise<T> {

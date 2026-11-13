@@ -19,6 +19,10 @@ import {
 } from './src/server/leaveRequestRepository.ts'
 import { createMariaDbSqlExecutor } from './src/server/mariadbClient.ts'
 import {
+  API_SECURITY_HEADERS,
+  sanitizePayloadForXss,
+} from './src/server/security.ts'
+import {
   extractSessionIdFromHeaders,
   InMemorySessionRepository,
   MariaDbSessionRepository,
@@ -138,12 +142,13 @@ function leaveItApiPlugin(): Plugin {
             method: req.method ?? 'GET',
             url,
             headers: req.headers,
-            body: parsedBody,
+            body: sanitizePayloadForXss(parsedBody),
             session: session
               ? {
                   sessionId: session.id,
                   employeeId: session.employeeId,
                   activeRole: session.activeRole,
+                  csrfToken: session.csrfToken,
                 }
               : null,
           }
@@ -163,6 +168,9 @@ function leaveItApiPlugin(): Plugin {
             return
           }
           res.statusCode = apiRes.status
+          for (const [k, v] of Object.entries(API_SECURITY_HEADERS)) {
+            res.setHeader(k, v)
+          }
           if (apiRes.headers) {
             for (const [k, v] of Object.entries(apiRes.headers)) {
               res.setHeader(k, v)

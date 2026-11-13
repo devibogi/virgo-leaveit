@@ -5,6 +5,7 @@ import type {
   LegalEntityId,
   RequestStatus,
 } from '../domain/leaveRequest.ts'
+import { attachCsrfHeader } from './csrf.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
 /** id, legalEntityId, approverId and status are generated/derived by the server (D21). */
@@ -43,7 +44,7 @@ export function createLeaveRequestApiClient(
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
     }
-    return headers
+    return attachCsrfHeader(headers)
   }
 
   async function parseResponse<T>(response: Response): Promise<T> {

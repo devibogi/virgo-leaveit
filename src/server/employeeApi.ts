@@ -11,6 +11,7 @@ import {
   InMemoryEmployeeRepository,
   type EmployeeRepository,
 } from './employeeRepository.ts'
+import { sanitizePayloadForXss, verifyCsrfProtection } from './security.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
 
 function parseUrlPathAndQuery(rawUrl: string): {
@@ -146,6 +147,24 @@ export function createEmployeeApiHandler(
       }
     }
 
+    const csrfCheck = verifyCsrfProtection({
+      method,
+      pathname,
+      headers: req.headers,
+      session: req.session,
+    })
+    if (!csrfCheck.valid) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          details: [csrfCheck.reason],
+        },
+      }
+    }
+
+    const sanitizedBody = sanitizePayloadForXss(req.body)
+
     if (isCollection) {
       if (method === 'GET') {
         const legalEntityId =
@@ -165,7 +184,7 @@ export function createEmployeeApiHandler(
       }
 
       if (method === 'POST') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidateId = typeof payload.id === 'string' ? payload.id : ''
         const candidate = parseEmployeePayload(candidateId, payload)
 
@@ -222,7 +241,7 @@ export function createEmployeeApiHandler(
       }
 
       if (method === 'PUT') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidate = parseEmployeePayload(id, payload)
 
         const validation = validateEmployee(candidate)

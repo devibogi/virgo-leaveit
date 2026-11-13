@@ -19,6 +19,7 @@ import {
   InMemoryLeaveRequestRepository,
   type LeaveRequestRepository,
 } from './leaveRequestRepository.ts'
+import { sanitizePayloadForXss, verifyCsrfProtection } from './security.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
 
 function parseUrlPathAndQuery(rawUrl: string): {
@@ -133,6 +134,24 @@ export function createLeaveRequestApiHandler(
       }
     }
 
+    const csrfCheck = verifyCsrfProtection({
+      method,
+      pathname,
+      headers: req.headers,
+      session: req.session,
+    })
+    if (!csrfCheck.valid) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          details: [csrfCheck.reason],
+        },
+      }
+    }
+
+    const sanitizedBody = sanitizePayloadForXss(req.body)
+
     if (isCollection) {
       if (method === 'GET') {
         const employeeId = isSelfServiceList
@@ -168,7 +187,7 @@ export function createLeaveRequestApiHandler(
       }
 
       if (method === 'POST') {
-        const body = (req.body ?? {}) as Record<string, unknown>
+        const body = (sanitizedBody ?? {}) as Record<string, unknown>
         const payload = isSelfServiceCreate ? { ...body, employeeId: actorId } : body
         const built = await buildFromPayload(payload)
         if (!built.input) {
@@ -204,7 +223,7 @@ export function createLeaveRequestApiHandler(
 
     if (revokeMatch && method === 'POST') {
       const id = decodeURIComponent(revokeMatch[1])
-      const payload = (req.body ?? {}) as Record<string, unknown>
+      const payload = (sanitizedBody ?? {}) as Record<string, unknown>
       const reason = typeof payload.reason === 'string' ? payload.reason : ''
       const hrActorId =
         actorId ??

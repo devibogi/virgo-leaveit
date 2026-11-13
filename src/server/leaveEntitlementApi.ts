@@ -16,6 +16,7 @@ import {
   InMemoryEmployeeRepository,
   type EmployeeRepository,
 } from './employeeRepository.ts'
+import { sanitizePayloadForXss, verifyCsrfProtection } from './security.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
 import { withPastUsage } from '../domain/entitlementUsage.ts'
 import { defaultEntitlements } from '../domain/entitlementDefaults.ts'
@@ -191,6 +192,24 @@ export function createLeaveEntitlementApiHandler(
       return { status: 200, body: items }
     }
 
+    const csrfCheck = verifyCsrfProtection({
+      method,
+      pathname,
+      headers: req.headers,
+      session: req.session,
+    })
+    if (!csrfCheck.valid) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          details: [csrfCheck.reason],
+        },
+      }
+    }
+
+    const sanitizedBody = sanitizePayloadForXss(req.body)
+
     if (isCollection) {
       if (method === 'GET') {
         const employeeId = query.employeeId || undefined
@@ -208,7 +227,7 @@ export function createLeaveEntitlementApiHandler(
       }
 
       if (method === 'POST') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidateId = typeof payload.id === 'string' ? payload.id : ''
         const candidate = parseEntitlementPayload(candidateId, payload)
 
@@ -265,7 +284,7 @@ export function createLeaveEntitlementApiHandler(
       }
 
       if (method === 'PUT') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidate = parseEntitlementPayload(id, payload)
 
         const validation = validateLeaveEntitlement(candidate)

@@ -14,6 +14,7 @@ import {
   InMemorySessionRepository,
   type SessionRepository,
 } from './sessionRepository.ts'
+import { verifyCsrfProtection } from './security.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
 
 const VALID_ROLES: readonly Role[] = ['EMPLOYEE', 'MANAGER', 'HR_ADMIN']
@@ -75,6 +76,7 @@ export function createAuthApiHandler(
           employee: result.employee,
           defaultRole: result.defaultRole,
           activeRole: session.activeRole,
+          csrfToken: session.csrfToken,
         },
       }
     }
@@ -134,6 +136,7 @@ export function createAuthApiHandler(
           employee,
           defaultRole: activeRole,
           activeRole,
+          csrfToken: session.csrfToken,
         },
       }
     }
@@ -161,6 +164,27 @@ export function createAuthApiHandler(
           body: {
             error: 'Unauthorized',
             details: ['A munkamenet lejárt vagy érvénytelen.'],
+          },
+        }
+      }
+
+      const csrfCheck = verifyCsrfProtection({
+        method,
+        pathname,
+        headers: req.headers,
+        session: {
+          sessionId: session.id,
+          employeeId: session.employeeId,
+          activeRole: session.activeRole,
+          csrfToken: session.csrfToken,
+        },
+      })
+      if (!csrfCheck.valid) {
+        return {
+          status: 403,
+          body: {
+            error: 'Forbidden',
+            details: [csrfCheck.reason],
           },
         }
       }
@@ -212,6 +236,7 @@ export function createAuthApiHandler(
           employee,
           defaultRole: requestedRole,
           activeRole: requestedRole,
+          csrfToken: session.csrfToken,
         },
       }
     }
@@ -220,6 +245,29 @@ export function createAuthApiHandler(
       const sessionId =
         req.session?.sessionId ?? extractSessionIdFromHeaders(req.headers)
       if (sessionId) {
+        const session = await sessionRepository.findById(sessionId)
+        if (session) {
+          const csrfCheck = verifyCsrfProtection({
+            method,
+            pathname,
+            headers: req.headers,
+            session: {
+              sessionId: session.id,
+              employeeId: session.employeeId,
+              activeRole: session.activeRole,
+              csrfToken: session.csrfToken,
+            },
+          })
+          if (!csrfCheck.valid) {
+            return {
+              status: 403,
+              body: {
+                error: 'Forbidden',
+                details: [csrfCheck.reason],
+              },
+            }
+          }
+        }
         await sessionRepository.delete(sessionId)
       }
       return {

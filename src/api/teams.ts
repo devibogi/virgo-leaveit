@@ -1,4 +1,5 @@
 import type { Team } from '../domain/team.ts'
+import { attachCsrfHeader } from './csrf.ts'
 
 export interface CreateTeamRequest {
   managerId: string
@@ -46,7 +47,7 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
     }
-    return headers
+    return attachCsrfHeader(headers)
   }
 
   async function parseResponse<T>(response: Response): Promise<T> {

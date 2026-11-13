@@ -1,5 +1,6 @@
 import { openApiDocument } from '../api/openapi.ts'
 import { canManageTeams, validateTeam, type Role } from '../domain/team.ts'
+import { sanitizePayloadForXss, verifyCsrfProtection } from './security.ts'
 import type { SessionContext } from './sessionRepository.ts'
 import {
   DuplicateTeamError,
@@ -82,6 +83,24 @@ export function createTeamApiHandler(
       }
     }
 
+    const csrfCheck = verifyCsrfProtection({
+      method,
+      pathname,
+      headers: req.headers,
+      session: req.session,
+    })
+    if (!csrfCheck.valid) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          details: [csrfCheck.reason],
+        },
+      }
+    }
+
+    const sanitizedBody = sanitizePayloadForXss(req.body)
+
     if (isTeamsCollection) {
       if (method === 'GET') {
         const managerId = query.managerId || undefined
@@ -95,7 +114,7 @@ export function createTeamApiHandler(
       }
 
       if (method === 'POST') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidate = {
           managerId:
             typeof payload.managerId === 'string' ? payload.managerId : '',
@@ -155,7 +174,7 @@ export function createTeamApiHandler(
       }
 
       if (method === 'PUT') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidate = {
           managerId,
           name: typeof payload.name === 'string' ? payload.name : '',
