@@ -18,14 +18,17 @@ export interface MyEntitlementsViewProps {
   currentUserId: string
   year?: number
   apiClientOptions?: LeaveEntitlementApiClientOptions
+  /** OWN: own entitlements (every role). TEAM: manager's direct reports, numbers only. */
+  view?: 'OWN' | 'TEAM'
 }
 
-/** Read-only: own entitlements for every role (HR Admin included); team balances (numbers only) for managers. */
+/** Read-only: own entitlements (every role) or, on a separate page, team balances (numbers only) for managers. */
 export function MyEntitlementsView({
   activeRole,
   currentUserId,
   year = new Date().getFullYear(),
   apiClientOptions,
+  view = 'OWN',
 }: MyEntitlementsViewProps) {
   const apiClient = useMemo(
     () =>
@@ -37,6 +40,8 @@ export function MyEntitlementsView({
     [activeRole, currentUserId, apiClientOptions],
   )
   const isManager = activeRole === 'MANAGER'
+  const showTeam = view === 'TEAM' && isManager
+  const showOwn = view === 'OWN'
 
   const [own, setOwn] = useState<LeaveEntitlement[]>([])
   const [team, setTeam] = useState<TeamMemberBalance[]>([])
@@ -48,8 +53,8 @@ export function MyEntitlementsView({
     setLoading(true)
     setError(null)
     Promise.all([
-      apiClient.listEntitlements({ employeeId: currentUserId, year }),
-      isManager ? apiClient.listTeamSummary(year) : Promise.resolve([]),
+      showOwn ? apiClient.listEntitlements({ employeeId: currentUserId, year }) : Promise.resolve([]),
+      showTeam ? apiClient.listTeamSummary(year) : Promise.resolve([]),
     ])
       .then(([ownRows, teamRows]) => {
         if (cancelled) return
@@ -70,7 +75,7 @@ export function MyEntitlementsView({
     return () => {
       cancelled = true
     }
-  }, [apiClient, currentUserId, isManager, year])
+  }, [apiClient, currentUserId, showOwn, showTeam, year])
 
   const ownTotal = summarizeEntitlementBalance(own, currentUserId, year)
 
@@ -82,6 +87,7 @@ export function MyEntitlementsView({
         </div>
       )}
 
+      {showOwn && (
       <div className="card">
         <h2 className="card-title">{myEntitlementText.ownTitle(year)}</h2>
         <p className="card-subtitle">
@@ -125,8 +131,9 @@ export function MyEntitlementsView({
           </div>
         )}
       </div>
+      )}
 
-      {isManager && (
+      {showTeam && (
         <div className="card">
           <h2 className="card-title">{myEntitlementText.teamTitle(year)}</h2>
           <p className="card-subtitle">{myEntitlementText.teamSubtitle}</p>

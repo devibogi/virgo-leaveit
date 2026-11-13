@@ -15,6 +15,7 @@ import {
   myLeaveRequestText,
   myEntitlementText,
   teamAdminText,
+  teamEntitlementText,
   roleLabel,
   themeText,
 } from './i18n/hu'
@@ -30,7 +31,7 @@ function initialTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS'
+type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'TEAM_ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
@@ -60,9 +61,11 @@ export default function App() {
   const isHrAdmin = activeRole === 'HR_ADMIN'
   // Employees page: HR Admin manages everyone; managers see their direct reports read-only.
   const canSeeEmployees = activeRole !== 'EMPLOYEE'
+  const isManager = activeRole === 'MANAGER'
   const visibleSection: AdminSection =
     ((section === 'TEAMS' || section === 'REQUESTS' || section === 'ENTITLEMENTS_ADMIN') && !isHrAdmin) ||
-    (section === 'EMPLOYEES' && !canSeeEmployees)
+    (section === 'EMPLOYEES' && !canSeeEmployees) ||
+    (section === 'TEAM_ENTITLEMENTS' && !isManager)
       ? 'MY_REQUESTS'
       : section
 
@@ -71,6 +74,8 @@ export default function App() {
       ? teamAdminText
       : visibleSection === 'EMPLOYEES'
         ? employeeAdminText
+        : visibleSection === 'TEAM_ENTITLEMENTS'
+          ? teamEntitlementText
         : visibleSection === 'ENTITLEMENTS_ADMIN'
           ? entitlementAdminText
           : visibleSection === 'ENTITLEMENTS'
@@ -137,6 +142,17 @@ export default function App() {
           >
             {myEntitlementText.tabLabel}
           </button>
+          {isManager && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visibleSection === 'TEAM_ENTITLEMENTS'}
+            className={`section-tab ${visibleSection === 'TEAM_ENTITLEMENTS' ? 'section-tab-active' : ''}`}
+            onClick={() => setSection('TEAM_ENTITLEMENTS')}
+          >
+            {teamEntitlementText.tabLabel}
+          </button>
+          )}
           {isHrAdmin && (
           <button
             type="button"
@@ -214,8 +230,16 @@ export default function App() {
             activeRole={activeRole}
             onRequestRoleChange={setActiveRole}
           />
+        ) : visibleSection === 'TEAM_ENTITLEMENTS' ? (
+          <MyEntitlementsView
+            key="team"
+            view="TEAM"
+            activeRole={activeRole}
+            currentUserId={currentUser.id}
+          />
         ) : visibleSection === 'ENTITLEMENTS' ? (
           <MyEntitlementsView
+            key="own"
             activeRole={activeRole}
             currentUserId={currentUser.id}
           />

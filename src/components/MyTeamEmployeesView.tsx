@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createEmployeeApiClient, TeamApiError } from '../api'
 import type { Employee, Role } from '../domain'
-import { legalEntityLabel, myTeamEmployeesText, roleLabel } from '../i18n/hu'
+import { myTeamEmployeesText, roleLabel } from '../i18n/hu'
 
 export interface MyTeamEmployeesViewProps {
   activeRole: Role
   currentUserId: string
 }
 
-/** Manager: read-only list of direct reports (no birth date / tax id). */
+/** Manager: read-only list of direct reports (no birth date / tax id / legal entity). */
 export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmployeesViewProps) {
   const apiClient = useMemo(
     () =>
@@ -67,7 +67,6 @@ export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmploye
               <thead>
                 <tr>
                   <th>{myTeamEmployeesText.colName}</th>
-                  <th>{myTeamEmployeesText.colEntity}</th>
                   <th>{myTeamEmployeesText.colRoles}</th>
                   <th>{myTeamEmployeesText.colStart}</th>
                   <th>{myTeamEmployeesText.colDeputies}</th>
@@ -81,11 +80,6 @@ export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmploye
                         <strong>{emp.displayName}</strong>
                       </div>
                       <div className="sub-cell">{emp.email}</div>
-                    </td>
-                    <td>
-                      <span className="badge badge-entity">
-                        {legalEntityLabel[emp.legalEntityId]}
-                      </span>
                     </td>
                     <td>
                       <div className="badge-list">

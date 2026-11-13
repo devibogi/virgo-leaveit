@@ -226,6 +226,14 @@ export const employeeAdminText = {
   deleteError: 'Hiba történt a munkavállaló törlésekor.',
 } as const
 
+export const teamEntitlementText = {
+  tabLabel: 'Csapatom szabadságkerete',
+  eyebrow: 'VEZETŐI NÉZET · CSAPAT SZABADSÁGKERET',
+  pageTitle: 'Csapatom szabadságkerete',
+  pageIntro:
+    'A közvetlen beosztottaid éves szabadságkerete: összes / felhasznált / maradék nap (csak számok, szabadságtípus nélkül).',
+}
+
 export const myEntitlementText = {
   tabLabel: 'Saját szabadságkeretem',
   eyebrow: 'SAJÁT SZABADSÁGKERET',

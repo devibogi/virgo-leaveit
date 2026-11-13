@@ -51,11 +51,12 @@ function extractActorId(
   return typeof raw === 'string' && raw.trim() ? raw.trim() : null
 }
 
-/** Personal fields (birth date, tax id) are HR-only and stripped for managers. */
+/** Personal fields (birth date, tax id) and legal entity are HR-only and stripped for managers. */
 function toManagerView(employee: CreateEmployeeInput) {
-  const { birthDate: _b, taxId: _t, ...rest } = employee
+  const { birthDate: _b, taxId: _t, legalEntityId: _l, ...rest } = employee
   void _b
   void _t
+  void _l
   return rest
 }
 
