@@ -9,7 +9,7 @@
 - At year-end, only unused age-based additional leave may carry into the next year. Other Q4 remainder expires, subject to final HR/payroll confirmation if policy changes.
 - Age-based additional leave is generated automatically. The entitlement applies in the calendar year in which the employee reaches the relevant age threshold, even if the birthday is on 31 December.
 - Child-related additional leave is entered manually by HR based on the employee's annual declaration; do not calculate it automatically.
-- For a mid-year joiner, add the full-year base and additional entitlements first, prorate by employment time in the calendar year, then round: fraction > 0.5 rounds up; fraction < 0.5 rounds down. Exactly 0.5 is not specified; keep configurable / flag for HR confirmation. HR can apply a manual correction. Payroll-provided values may be used as a double-check.
+- For a mid-year joiner, add the full-year base and additional entitlements first, prorate by employment time in the calendar year, then round: fraction > 0.5 rounds up; fraction < 0.5 rounds down. Exactly 0.5 rounds up (resolved, OPEN_QUESTIONS). HR can apply a manual correction. Payroll-provided values may be used as a double-check.
 - Pending requests do not reserve or reduce available balance.
 - **Quarterly breakdown (confirmed 2026-11-13):** the annual entitlement is split evenly, time-proportionally across Q1–Q4.
 - **Leaver proration (confirmed 2026-11-13):** entitlement = annual entitlement / calendar days of the year (365, or 366 in a leap year) × calendar days employed in that year. Rounding of the result: see Q32.
@@ -96,10 +96,9 @@
 - Open details: see `OPEN_QUESTIONS.md` Q13–Q16.
 
 ## 8. Open questions / not yet specified
-- Exact treatment when a prorated result is exactly x.5 (the response says above/below 0.5 but does not explicitly state the tie).
-- Whether the Q4 carryover rule has any expiry/use-by date in the next year.
-- Payroll export details, unpaid-leave approval flow, leaver/sick-pool rounding: see `OPEN_QUESTIONS.md` Q25–Q33.
-- Official source / process for maintaining Hungarian working-day calendar.
-- Reminder delivery channel and exact time/time zone.
-- Whether a manager's 3-working-day SLA is measured from submission timestamp or next working day. Prototype assumption: submission day excluded if submitted after working hours; confirm with HR.
-- Company-specific closure days and approval delegation / out-of-office cover.
+All open items live in [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md) (single source). Main ones:
+- SLA start, cutoff, reminder channel/time: Q5.
+- Working-day calendar source and maintenance: Q12. Company closure days: Q34.
+- Delegation edge cases: Q18–Q20.
+- Payroll export details, unpaid-leave approval flow, leaver/sick-pool rounding: Q25–Q33, Q35.
+- Resolved since: exactly 0.5 rounds up; age-based carryover has no expiry (OPEN_QUESTIONS → Resolved).

@@ -4,7 +4,7 @@
 - Age-based additional day appears in the calendar year the threshold age is reached, including a 31 December birthday.
 - Child-related additional leave is not auto-calculated; HR manual entry is reflected.
 - Mid-year joiner prorates full-year base + additional entitlement.
-- Rounding below and above 0.5 follows the confirmed rule; exact 0.5 is flagged as unresolved.
+- Rounding: fraction < 0.5 rounds down; ≥ 0.5 (including exactly 0.5) rounds up.
 - Pending request does not reduce available balance.
 - Q1–Q3 carryover works; year-end carries only age-based additional leave.
 - Quarter allocation = even, time-proportional split of the annual entitlement.

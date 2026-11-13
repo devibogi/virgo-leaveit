@@ -9,7 +9,7 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q7 | Priority of AI conflict wording (LI-15) now that deputy suggestions exist | Project owner | Open | Scope | P1, after deterministic deputy check (LI-17) |
 | Q8 | Sample data beyond the export template? (template received: `docs/samples/payroll_template_2026.csv`) | HR | Partly answered | Seed data | Synthetic data |
 | Q10 | Can an employee withdraw a **pending** request? | HR / Project owner | Open | Status lifecycle | Not in the model yet |
-| Q12 | Source and review of the Hungarian 2026–2027 calendar file; file is missing from the repo | Project owner / Payroll | Open | All working-day validation, SLA | — (blocking for calendar service) |
+| Q12 | Source and review of the Hungarian 2026–2027 calendar file (file is missing from the repo); for production: maintained source and how updates are applied | Project owner / Payroll | Open | All working-day validation, SLA | — (blocking for calendar service) |
 | Q13 | Who assigns/maintains deputies (HR Admin, manager, or employee)? | HR / Project owner | Open | Deputy admin UI, permissions | HR Admin maintains `deputyIds`; seed data pre-filled; change logged as `DEPUTIES_UPDATED` |
 | Q14 | Half-day overlap with a deputy: does a deputy's AM leave block the requester's PM leave? | HR | Open | Deputy check | Block only when portions overlap (FULL overlaps all; AM↔AM; PM↔PM) |
 | Q15 | What does the manager see about a deputy conflict? | HR / Project owner | Open | Approval view | Same as employee: conflict dates only, approve button disabled; manager can still see their own team calendar as usual |
@@ -30,9 +30,12 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q31 | Corrections after export ("kiírásra kerül"): re-export the closed month, or show in the next month's file? | Zsuzska | Open | Export | HR re-generates the affected month; the change is listed in an export audit event |
 | Q32 | Leaver proration rounding; sick-pool proration rounding; is the switch from betegszabadság to táppénz automatic at day 16? | HR / Zsuzska | Open | Entitlement, sick pool | Same rounding as joiners; system splits automatically at day 16 and shows it to HR |
 | Q33 | Are registered employees with no leave in the month listed in the export? | Zsuzska | Open | Export | Yes, with empty periods |
+| Q34 | Company-specific closure days (e.g. year-end shutdown): do they exist, who maintains them, do they consume leave? | HR | Open | Calendar service, balance | None in the prototype; HR can add non-working days to the calendar data, not deducted |
+| Q35 | Export layout per legal entity: one sheet per Cégnév, one file per entity, or one block per entity in a single sheet? | Zsuzska | Open | Export | One .xlsx, one sheet per Cégnév |
+| Q36 | Approved stack, deployment target (Vercel allowed?) and repo visibility | Project owner / Virgo | Open | Setup, hosting | React/Vite/TS + MariaDB as in PRODUCT_BRIEF §7; private repo; local demo, no public deployment |
 
 ## Resolved (do not reopen)
-- **Mid-year proration rounding:** fraction ≥ 0.5 rounds up; < 0.5 rounds down.
+- **Mid-year proration rounding:** fraction ≥ 0.5 rounds up (exactly 0.5 included); < 0.5 rounds down.
 - **Q4 age-based carryover:** carried into the next year, used first, no expiry.
 - **Google Calendar / real email:** optional, only if time allows; not MVP.
 - **Deputy rule (2026-11-13):** planned leave only; blocked when all deputies have approved leave; one-way; multiple deputies; recheck at approval; employee sees conflict dates only (see BUSINESS_RULES §7).

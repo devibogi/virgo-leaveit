@@ -49,7 +49,7 @@ Brand palette: Midnight #24243B · Violet #8275E8 · Mint #B9E5D3 · Cloud #F6F5
 - From Q4, only unused age-based additional leave carries into the next year.
 - Age-based additional leave is automatically calculated for the calendar year in which the threshold age is reached, even on 31 December.
 - Child-related additional leave is entered manually by HR from annual employee declarations.
-- Mid-year joiner: sum full-year base and additional entitlements, prorate by employment time in the year; >0.5 rounds up, <0.5 rounds down. HR can manually correct. Exactly 0.5 remains to confirm.
+- Mid-year joiner: sum full-year base and additional entitlements, prorate by employment time in the year; >0.5 rounds up, <0.5 rounds down. HR can manually correct. Exactly 0.5 rounds up (resolved).
 - Pending requests do not reduce or reserve available balance.
 - Every request requires manager approval; no auto-approval.
 - Approved requests cannot be edited in place: cancel before start and submit a new request.
@@ -122,19 +122,20 @@ Agree on one integration coordinator. Each stream must define a small contract a
 ### HR / Payroll
 - ~~Payroll export schema~~ answered 2026-11-13 (BUSINESS_RULES §6a); details Q26–Q29, Q31, Q33.
 - ~~Quarter allocation~~ answered: even, time-proportional.
-- Exactly 0.5 rounding case for mid-year proration.
-- Q4 age-based carryover: expiry date / use-by rule.
+- ~~Exactly 0.5 rounding~~ resolved: rounds up.
+- ~~Q4 age-based carryover expiry~~ resolved: no expiry.
 - ~~Leave types and payroll mapping~~ answered 2026-11-13 (BUSINESS_RULES §6).
 - ~~Half-day edge cases~~ answered (D19); odd half-day Q26.
 ### Process
-- SLA clock: does the 3-working-day count start on submission date or next working day? What is cutoff time?
-- Reminder channel and exact send time.
-- Delegation / manager absence and company-specific closure days.
+- SLA clock, cutoff, reminder channel/time → Q5.
+- ~~Delegation~~ resolved (BUSINESS_RULES §4); edge cases Q18–Q20. Company closure days → Q34.
 ### Product / technical
-- Calendar and Google integration: live sync required for demo or just calendar view?
-- Is AI conflict insight the preferred stretch feature?
-- Who provides the synthetic sample data and source spreadsheet column definitions?
-- Which stack and deployment approach are approved by the team?
+- ~~Google integration~~ resolved: optional, not MVP.
+- AI conflict wording priority → Q7.
+- Sample data → Q8.
+- Stack, deployment, repo visibility → Q36.
+
+All open questions: [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md).
 
 ## 12. Decisions to leave the meeting with
 - Confirm MVP P0 list and explicitly defer P1/P2.
