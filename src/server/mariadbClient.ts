@@ -56,11 +56,12 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
     roles_json, birth_date, employment_start, employment_end,
     include_in_payroll_export, tax_id, deputy_ids_json
   ) VALUES
-    ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, 1, '8000000001', '[]'),
-    ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, 1, '8000000002', '["emp-piri"]'),
+    ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","MANAGER","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, 1, '8000000001', '[]'),
+    ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, 1, '8000000002', '["emp-piri","emp-gabor"]'),
     ('emp-peter', 'Kovács Péter', 'peter.kovacs@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1993-11-04', '2022-09-01', NULL, 1, '8000000003', '["emp-anna"]'),
     ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, 1, '8000000004', '["emp-peter"]'),
-    ('emp-eszter', 'Tóth Eszter', 'eszter.toth@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1989-05-08', '2021-09-01', NULL, 1, '8000000005', '["emp-peter"]')`,
+    ('emp-eszter', 'Tóth Eszter', 'eszter.toth@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1989-05-08', '2021-09-01', NULL, 1, '8000000005', '["emp-peter"]'),
+    ('emp-gabor', 'Kovács Gábor', 'gabor.kovacs@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1985-09-30', '2020-01-06', NULL, 1, '8000000006', '["emp-katalin"]')`,
 
   `CREATE TABLE IF NOT EXISTS leave_types (
     code VARCHAR(32) NOT NULL,

@@ -7,6 +7,7 @@ import {
   InMemoryTeamRepository,
   type TeamRepository,
 } from './teamRepository.ts'
+import type { EmployeeRepository } from './employeeRepository.ts'
 
 export interface ApiRequest {
   method: string
@@ -48,7 +49,13 @@ function extractActorRole(req: ApiRequest): Role | null {
 
 export function createTeamApiHandler(
   repository: TeamRepository = new InMemoryTeamRepository(),
+  employeeRepository?: EmployeeRepository,
 ) {
+  async function lookupManager(managerId: string) {
+    if (!employeeRepository || !managerId.trim()) return undefined
+    return employeeRepository.findById(managerId.trim())
+  }
+
   return async function handleTeamApiRequest(
     req: ApiRequest,
   ): Promise<ApiResponse | null> {
@@ -121,7 +128,7 @@ export function createTeamApiHandler(
           name: typeof payload.name === 'string' ? payload.name : '',
         }
 
-        const validation = validateTeam(candidate)
+        const validation = validateTeam(candidate, await lookupManager(candidate.managerId))
         if (!validation.valid) {
           return {
             status: 400,
@@ -180,7 +187,7 @@ export function createTeamApiHandler(
           name: typeof payload.name === 'string' ? payload.name : '',
         }
 
-        const validation = validateTeam(candidate)
+        const validation = validateTeam(candidate, await lookupManager(candidate.managerId))
         if (!validation.valid) {
           return {
             status: 400,

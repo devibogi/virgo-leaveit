@@ -88,7 +88,7 @@ function leaveItApiPlugin(): Plugin {
     : new InMemoryLeaveRequestRepository()
 
   const handleAuthApiRequest = createAuthApiHandler(employeeRepo, sessionRepo)
-  const handleTeamApiRequest = createTeamApiHandler(teamRepo)
+  const handleTeamApiRequest = createTeamApiHandler(teamRepo, employeeRepo)
   const handleEmployeeApiRequest = createEmployeeApiHandler(employeeRepo)
   const handleEntitlementApiRequest = createLeaveEntitlementApiHandler(
     entitlementRepo,

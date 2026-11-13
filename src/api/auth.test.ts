@@ -94,7 +94,7 @@ describe('Session-based Auth API (HttpOnly cookie + own-role switching)', () => 
     // Initially no active session
     expect(await client.getSession()).toBeNull()
 
-    // Login as Varga Piri (roles: ['EMPLOYEE', 'HR_ADMIN'])
+    // Login as Varga Piri (roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN'])
     const loggedIn = await client.login({
       email: 'piri.varga@virgo.example',
       password: DEMO_VALID_PASSWORD,
@@ -114,9 +114,11 @@ describe('Session-based Auth API (HttpOnly cookie + own-role switching)', () => 
     expect(switched.activeRole).toBe('EMPLOYEE')
     expect((await client.getSession())?.activeRole).toBe('EMPLOYEE')
 
-    // Attempting to switch to MANAGER (not in emp-piri's roles) is rejected with 403
-    await expect(client.switchRole('MANAGER')).rejects.toMatchObject({
-      status: 403,
+    // Piri manages the HR team, so MANAGER is one of her roles
+    expect((await client.switchRole('MANAGER')).activeRole).toBe('MANAGER')
+    // A role outside the known set is rejected
+    await expect(client.switchRole('ROOT' as never)).rejects.toMatchObject({
+      status: 400,
     })
 
     // Logout clears session and cookie

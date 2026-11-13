@@ -32,7 +32,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'piri.varga@virgo.example',
     legalEntityId: 'VIRGO_KFT',
     managerId: null,
-    roles: ['EMPLOYEE', 'HR_ADMIN'],
+    roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN'],
     birthDate: '1984-03-12',
     employmentStart: '2019-02-01',
     employmentEnd: null,
@@ -51,7 +51,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     employmentStart: '2020-05-15',
     employmentEnd: null,
     includeInPayrollExport: true,
-    deputyIds: ['emp-piri'],
+    deputyIds: ['emp-piri', 'emp-gabor'],
     taxId: '8000000002',
   },
   {
@@ -95,6 +95,20 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     includeInPayrollExport: true,
     deputyIds: ['emp-peter'],
     taxId: '8000000005',
+  },
+  {
+    id: 'emp-gabor',
+    displayName: 'Kovács Gábor',
+    email: 'gabor.kovacs@virgo.example',
+    legalEntityId: 'VIRGO_KFT',
+    managerId: 'emp-piri',
+    roles: ['EMPLOYEE', 'MANAGER'],
+    birthDate: '1985-09-30',
+    employmentStart: '2020-01-06',
+    employmentEnd: null,
+    includeInPayrollExport: true,
+    deputyIds: ['emp-katalin'],
+    taxId: '8000000006',
   },
 ]
 

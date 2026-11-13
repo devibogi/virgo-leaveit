@@ -67,3 +67,13 @@ describe('Team entity (shared DATA_MODEL contract)', () => {
     expect(canManageTeams(['EMPLOYEE', 'MANAGER'])).toBe(false)
   })
 })
+
+describe('validateTeam: every team has a manager', () => {
+  it('requires an existing employee with the MANAGER role when looked up', () => {
+    const input = { managerId: 'emp-x', name: 'Csapat' }
+    expect(validateTeam(input, { roles: ['EMPLOYEE', 'MANAGER'] }).valid).toBe(true)
+    expect(validateTeam(input, { roles: ['EMPLOYEE'] }).valid).toBe(false)
+    expect(validateTeam(input, null).valid).toBe(false)
+    expect(validateTeam(input).valid).toBe(true) // no lookup available
+  })
+})

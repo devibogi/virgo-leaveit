@@ -1,4 +1,4 @@
-import type { EmployeeId, Role, Team } from '../types/model.ts'
+import type { Employee, EmployeeId, Role, Team } from '../types/model.ts'
 
 export type { EmployeeId, Role, Team }
 
@@ -28,7 +28,14 @@ export function canManageTeams(roleOrRoles: Role | readonly Role[]): boolean {
   return roleOrRoles === 'HR_ADMIN'
 }
 
-export function validateTeam(input: CreateTeamInput): TeamValidationResult {
+/**
+ * Every team must have a manager: when `manager` is passed (looked up by managerId),
+ * it must exist and hold the MANAGER role. `undefined` skips the lookup check.
+ */
+export function validateTeam(
+  input: CreateTeamInput,
+  manager?: Pick<Employee, 'roles'> | null,
+): TeamValidationResult {
   const errors: string[] = []
 
   if (!input.managerId || input.managerId.trim().length === 0) {
@@ -36,6 +43,11 @@ export function validateTeam(input: CreateTeamInput): TeamValidationResult {
   }
   if (!input.name || input.name.trim().length === 0) {
     errors.push('A csapat neve kötelező.')
+  }
+  if (manager === null && input.managerId?.trim()) {
+    errors.push('A megadott vezető nem létező munkavállaló.')
+  } else if (manager && !manager.roles.includes('MANAGER')) {
+    errors.push('A csapat vezetőjének vezetői (MANAGER) szerepkörrel kell rendelkeznie.')
   }
 
   return {
