@@ -107,11 +107,15 @@ export default function App() {
   // Employees page: HR Admin manages everyone; managers see their direct reports read-only.
   const canSeeEmployees = activeRole !== 'EMPLOYEE'
   const isManager = activeRole === 'MANAGER'
+  // HR admin role works on company data only: no own requests / own entitlement pages.
   const visibleSection: AdminSection =
     ((section === 'TEAMS' || section === 'REQUESTS' || section === 'ENTITLEMENTS_ADMIN') && !isHrAdmin) ||
     (section === 'EMPLOYEES' && !canSeeEmployees) ||
-    (section === 'TEAM_ENTITLEMENTS' && !isManager)
-      ? 'MY_REQUESTS'
+    (section === 'TEAM_ENTITLEMENTS' && !isManager) ||
+    ((section === 'MY_REQUESTS' || section === 'ENTITLEMENTS') && isHrAdmin)
+      ? isHrAdmin
+        ? 'REQUESTS'
+        : 'MY_REQUESTS'
       : section
 
   const heading =
@@ -190,6 +194,8 @@ export default function App() {
 
       <main className="main-content">
         <div className="section-tabs" role="tablist">
+          {!isHrAdmin && (
+          <>
           <button
             type="button"
             role="tab"
@@ -208,6 +214,8 @@ export default function App() {
           >
             {myEntitlementText.tabLabel}
           </button>
+          </>
+          )}
           {isManager && (
           <button
             type="button"
