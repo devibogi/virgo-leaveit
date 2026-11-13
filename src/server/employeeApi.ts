@@ -52,12 +52,12 @@ function extractActorId(
 }
 
 /** Personal fields (birth date, tax id) and legal entity are HR-only and stripped for managers. */
-function toManagerView(employee: CreateEmployeeInput) {
+function toManagerView(employee: CreateEmployeeInput, nameOf: (id: string) => string) {
   const { birthDate: _b, taxId: _t, legalEntityId: _l, ...rest } = employee
   void _b
   void _t
   void _l
-  return rest
+  return { ...rest, deputyNames: (employee.deputyIds ?? []).map(nameOf) }
 }
 
 function parseEmployeePayload(
@@ -139,7 +139,9 @@ export function createEmployeeApiHandler(
         }
       }
       const team = await repository.findAll({ managerId: actorId })
-      return { status: 200, body: team.map(toManagerView) }
+      const names = new Map((await repository.findAll()).map((e) => [e.id, e.displayName]))
+      const nameOf = (id: string) => names.get(id) ?? '—'
+      return { status: 200, body: team.map((e) => toManagerView(e, nameOf)) }
     }
 
     if (!actorRole || !canManageEmployees(actorRole)) {

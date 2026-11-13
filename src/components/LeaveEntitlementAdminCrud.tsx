@@ -20,6 +20,7 @@ import {
   roleLabel,
   teamAdminText,
 } from '../i18n/hu'
+import { EmployeeSelect, useEmployeeDirectory } from './employeeDirectory'
 
 export interface LeaveEntitlementAdminCrudProps {
   activeRole: Role
@@ -40,6 +41,7 @@ export function LeaveEntitlementAdminCrud({
   apiClientOptions,
 }: LeaveEntitlementAdminCrudProps) {
   const isAuthorized = canManageEntitlements(activeRole)
+  const directory = useEmployeeDirectory(activeRole, isAuthorized)
 
   const apiClient = useMemo(
     () =>
@@ -179,7 +181,9 @@ export function LeaveEntitlementAdminCrud({
     e.preventDefault()
     setFormErrors([])
 
-    const targetId = editingId ?? entId.trim()
+    const targetId =
+      editingId ??
+      (entId.trim() || `ent-${employeeId}-${year}-${component}`.toLowerCase())
     const payload = {
       id: targetId,
       employeeId: employeeId.trim(),
@@ -247,31 +251,21 @@ export function LeaveEntitlementAdminCrud({
         <div className="card">
           <h2 className="card-title">
             {editingId
-              ? entitlementAdminText.editTitle(editingId)
+              ? entitlementAdminText.editTitle(directory.nameOf(employeeId))
               : entitlementAdminText.createTitle}
           </h2>
           <p className="card-subtitle">{entitlementAdminText.createSubtitle}</p>
 
           <form onSubmit={(e) => void handleSubmit(e)} className="crud-form">
-            <label className="form-field">
-              <span>{entitlementAdminText.idLabel}</span>
-              <input
-                type="text"
-                placeholder={entitlementAdminText.idPlaceholder}
-                value={entId}
-                onChange={(e) => setEntId(e.target.value)}
-                disabled={submitting || editingId !== null}
-              />
-            </label>
 
             <div className="form-row-2">
               <label className="form-field">
                 <span>{entitlementAdminText.employeeIdLabel}</span>
-                <input
-                  type="text"
-                  placeholder={entitlementAdminText.employeeIdPlaceholder}
+                <EmployeeSelect
+                  employees={directory.employees}
                   value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
+                  onChange={setEmployeeId}
+                  emptyLabel="—"
                   disabled={submitting}
                 />
               </label>
@@ -365,10 +359,11 @@ export function LeaveEntitlementAdminCrud({
 
             <label className="form-field">
               <span>{entitlementAdminText.updatedByLabel}</span>
-              <input
-                type="text"
+              <EmployeeSelect
+                employees={directory.employees}
                 value={updatedBy}
-                onChange={(e) => setUpdatedBy(e.target.value)}
+                onChange={setUpdatedBy}
+                emptyLabel="—"
                 disabled={submitting}
               />
             </label>
@@ -438,17 +433,17 @@ export function LeaveEntitlementAdminCrud({
                 </option>
                 {ENTITLEMENT_COMPONENTS.map((comp) => (
                   <option key={comp} value={comp}>
-                    {comp}
+                    {entitlementComponentLabel[comp]}
                   </option>
                 ))}
               </select>
 
-              <input
-                type="search"
-                placeholder={entitlementAdminText.filterEmployeePlaceholder}
+              <EmployeeSelect
+                employees={directory.employees}
                 value={employeeFilter}
-                onChange={(e) => setEmployeeFilter(e.target.value)}
-                aria-label={entitlementAdminText.filterEmployeePlaceholder}
+                onChange={setEmployeeFilter}
+                emptyLabel={entitlementAdminText.filterEmployeePlaceholder}
+                ariaLabel={entitlementAdminText.filterEmployeePlaceholder}
               />
 
               <button
@@ -497,13 +492,12 @@ export function LeaveEntitlementAdminCrud({
                       <tr key={item.id}>
                         <td>
                           <div className="mono-cell">
-                            <strong>{item.employeeId}</strong> · {item.year}
+                            <strong>{directory.nameOf(item.employeeId)}</strong> · {item.year}
                           </div>
-                          <div className="sub-cell">{item.id}</div>
                         </td>
                         <td>
                           <span className="badge badge-entity">
-                            {item.component}
+                            {entitlementComponentLabel[item.component]}
                           </span>
                         </td>
                         <td>
@@ -520,7 +514,7 @@ export function LeaveEntitlementAdminCrud({
                         </td>
                         <td className="sub-cell">
                           <div>{item.overrideReason ?? '—'}</div>
-                          <div>({item.updatedBy})</div>
+                          <div>({directory.nameOf(item.updatedBy)})</div>
                         </td>
                         <td className="actions-cell">
                           <button

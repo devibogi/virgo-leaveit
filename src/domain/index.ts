@@ -85,7 +85,9 @@ export {
 export {
   CONSUMPTION_ORDER,
   isUsageCacheConsistent,
+  pastApprovedLeaveDays,
   recomputeEntitlementUsage,
+  withPastUsage,
   type EntitlementUsage,
 } from './entitlementUsage.ts'
 

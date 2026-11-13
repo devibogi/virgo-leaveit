@@ -8,10 +8,12 @@ export interface LeaveCalendarProps {
   showEmployee?: boolean
   /** Extra header controls (e.g. "+ Új kérelem"). */
   actions?: ReactNode
+  /** Resolves an employee ID to a display name (IDs are never shown). */
+  nameOf?: (employeeId: string) => string
 }
 
 /** Month view: holidays/rest days, weekends and leave per type (exact type: own page or HR Admin only). */
-export function LeaveCalendar({ requests, showEmployee = false, actions }: LeaveCalendarProps) {
+export function LeaveCalendar({ requests, showEmployee = false, actions, nameOf = () => '—' }: LeaveCalendarProps) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
@@ -74,7 +76,7 @@ export function LeaveCalendar({ requests, showEmployee = false, actions }: Leave
                   className={`cal-entry cal-type-${e.leaveTypeCode} ${e.status === 'PENDING' ? 'cal-pending' : ''}`}
                   title={`${leaveTypeLabel[e.leaveTypeCode]} · ${dayPortionLabel[e.portion]} · ${statusLabel[e.status]}`}
                 >
-                  {showEmployee ? e.employeeId : leaveTypeLabel[e.leaveTypeCode]}
+                  {showEmployee ? nameOf(e.employeeId) : leaveTypeLabel[e.leaveTypeCode]}
                   {e.portion !== 'FULL' && ` (${e.portion === 'AM' ? 'de.' : 'du.'})`}
                 </div>
               ))}

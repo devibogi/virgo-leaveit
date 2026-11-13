@@ -17,6 +17,9 @@ import {
   type EmployeeRepository,
 } from './employeeRepository.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
+import { withPastUsage } from '../domain/entitlementUsage.ts'
+import type { LeaveEntitlement } from '../types/model.ts'
+import type { LeaveRequestRepository } from './leaveRequestRepository.ts'
 
 function parseUrlPathAndQuery(rawUrl: string): {
   pathname: string
@@ -112,7 +115,15 @@ function parseEntitlementPayload(
 export function createLeaveEntitlementApiHandler(
   repository: LeaveEntitlementRepository = new InMemoryLeaveEntitlementRepository(),
   employeeRepository: EmployeeRepository = new InMemoryEmployeeRepository(),
+  requestRepository?: LeaveRequestRepository,
+  today: () => string = () => new Date().toISOString().slice(0, 10),
 ) {
+  /** Used days = approved leave on working days up to today (past leave counts as used). */
+  async function withUsage<T extends LeaveEntitlement>(items: T[]): Promise<T[]> {
+    if (!requestRepository) return items
+    return withPastUsage(items, await requestRepository.findAll(), today())
+  }
+
   return async function handleLeaveEntitlementApiRequest(
     req: ApiRequest,
   ): Promise<ApiResponse | null> {
@@ -150,7 +161,7 @@ export function createLeaveEntitlementApiHandler(
       const team = (await employeeRepository.findAll()).filter(
         (e) => e.managerId === actorId,
       )
-      const entitlements = await repository.findAll({ year: summaryYear })
+      const entitlements = await withUsage(await repository.findAll({ year: summaryYear }))
       return {
         status: 200,
         body: team.map((member) => ({
@@ -166,7 +177,7 @@ export function createLeaveEntitlementApiHandler(
         return FORBIDDEN_HR_ONLY
       }
       if (!actorId) return FORBIDDEN_NO_ACTOR
-      const items = await repository.findAll({ employeeId: actorId, year })
+      const items = await withUsage(await repository.findAll({ employeeId: actorId, year }))
       return { status: 200, body: items }
     }
 
@@ -177,11 +188,9 @@ export function createLeaveEntitlementApiHandler(
           ? query.component
           : undefined
 
-        const items = await repository.findAll({
-          employeeId,
-          year,
-          component,
-        })
+        const items = await withUsage(
+          await repository.findAll({ employeeId, year, component }),
+        )
         return {
           status: 200,
           body: items,

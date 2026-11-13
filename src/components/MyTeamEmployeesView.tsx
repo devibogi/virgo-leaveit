@@ -91,8 +91,8 @@ export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmploye
                       </div>
                     </td>
                     <td className="sub-cell">{emp.employmentStart}</td>
-                    <td className="mono-cell">
-                      {emp.deputyIds.length > 0 ? emp.deputyIds.join(', ') : '—'}
+                    <td>
+                      {(emp as { deputyNames?: string[] }).deputyNames?.join(', ') || '—'}
                     </td>
                   </tr>
                 ))}

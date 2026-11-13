@@ -9,6 +9,12 @@ import type {
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
 /** id, legalEntityId, approverId and status are generated/derived by the server (D21). */
+/** List rows carry display-only names (read-only, not part of the domain record). */
+export type LeaveRequestListItem = LeaveRequest & {
+  employeeName?: string | null
+  approverName?: string | null
+}
+
 export type CreateLeaveRequestPayload = LeaveRequestDraft
 /** The request owner (employeeId) cannot change on edit. */
 export type UpdateLeaveRequestPayload = Omit<LeaveRequestDraft, 'employeeId'>
@@ -72,7 +78,7 @@ export function createLeaveRequestApiClient(
   }
 
   return {
-    async listRequests(query?: ListLeaveRequestsQuery): Promise<LeaveRequest[]> {
+    async listRequests(query?: ListLeaveRequestsQuery): Promise<LeaveRequestListItem[]> {
       const search = new URLSearchParams()
       if (query?.employeeId) {
         search.set('employeeId', query.employeeId)

@@ -39,4 +39,5 @@ export {
   type LeaveRequestApiClientOptions,
   type ListLeaveRequestsQuery,
   type UpdateLeaveRequestPayload,
+  type LeaveRequestListItem,
 } from './leaveRequests.ts'

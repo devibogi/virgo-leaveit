@@ -3,7 +3,9 @@ import {
   createLeaveRequestApiClient,
   TeamApiError,
   type LeaveRequestApiClientOptions,
+  type LeaveRequestListItem,
 } from '../api'
+import { EmployeeSelect, useEmployeeDirectory } from './employeeDirectory'
 import {
   canManageLeaveRequests,
   DAY_PORTIONS,
@@ -52,6 +54,7 @@ export function LeaveRequestAdminCrud({
 }: LeaveRequestAdminCrudProps) {
   const isMine = mode === 'MINE'
   const isAuthorized = isMine || canManageLeaveRequests(activeRole)
+  const directory = useEmployeeDirectory(activeRole, !isMine)
   const [showForm, setShowForm] = useState(false)
 
   const apiClient = useMemo(
@@ -64,7 +67,7 @@ export function LeaveRequestAdminCrud({
     [activeRole, apiClientOptions, currentUserId],
   )
 
-  const [requests, setRequests] = useState<LeaveRequest[]>([])
+  const [requests, setRequests] = useState<LeaveRequestListItem[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -230,7 +233,7 @@ export function LeaveRequestAdminCrud({
                 >
                   {LEAVE_TYPE_CODES.map((code) => (
                     <option key={code} value={code}>
-                      {leaveTypeLabel[code]} ({code})
+                      {leaveTypeLabel[code]}
                     </option>
                   ))}
                 </select>
@@ -322,6 +325,7 @@ export function LeaveRequestAdminCrud({
           <LeaveCalendar
             requests={requests}
             showEmployee={!isMine}
+            nameOf={(id) => requests.find((r) => r.employeeId === id)?.employeeName ?? '—'}
             actions={
               isMine && !showForm ? (
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
@@ -383,12 +387,12 @@ export function LeaveRequestAdminCrud({
                 ))}
               </select>
 
-              <input
-                type="search"
-                placeholder={leaveRequestAdminText.filterEmployeePlaceholder}
+              <EmployeeSelect
+                employees={directory.employees}
                 value={employeeFilter}
-                onChange={(e) => setEmployeeFilter(e.target.value)}
-                aria-label={leaveRequestAdminText.filterEmployeePlaceholder}
+                onChange={setEmployeeFilter}
+                emptyLabel={leaveRequestAdminText.filterEmployeePlaceholder}
+                ariaLabel={leaveRequestAdminText.filterEmployeePlaceholder}
               />
 
               <button
@@ -440,11 +444,11 @@ export function LeaveRequestAdminCrud({
                     <tr key={item.id}>
                       {!isMine && (
                       <td>
-                        <div className="mono-cell">
-                          <strong>{item.employeeId}</strong>
+                        <div>
+                          <strong>{item.employeeName ?? '—'}</strong>
                         </div>
                         <div className="sub-cell">
-                          {item.id} · {legalEntityLabel[item.legalEntityId]}
+                          {legalEntityLabel[item.legalEntityId]}
                         </div>
                       </td>
                       )}
@@ -453,17 +457,17 @@ export function LeaveRequestAdminCrud({
                           <strong>{leaveTypeLabel[item.leaveTypeCode]}</strong>
                         </div>
                         <div className="sub-cell">
-                          {dayPortionLabel[item.dayPortion]} ({item.dayPortion})
+                          {dayPortionLabel[item.dayPortion]}
                         </div>
                       </td>
                       <td className="sub-cell">
                         <div>{formatDate(item.startDate)}</div>
                         <div>– {formatDate(item.endDate)}</div>
                       </td>
-                      <td className="mono-cell">{item.approverId}</td>
+                      <td>{item.approverName ?? '—'}</td>
                       <td>
                         <span className="badge badge-entity">
-                          {statusLabel[item.status]} ({item.status})
+                          {statusLabel[item.status]}
                         </span>
                       </td>
                       <td className="sub-cell">

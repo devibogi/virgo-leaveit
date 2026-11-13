@@ -81,6 +81,7 @@ function leaveItApiPlugin(): Plugin {
   const handleEntitlementApiRequest = createLeaveEntitlementApiHandler(
     entitlementRepo,
     employeeRepo,
+    requestRepo,
   )
   const handleLeaveRequestApiRequest = createLeaveRequestApiHandler(
     requestRepo,

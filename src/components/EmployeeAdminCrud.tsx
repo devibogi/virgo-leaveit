@@ -20,6 +20,7 @@ import {
   roleLabel,
   teamAdminText,
 } from '../i18n/hu'
+import { EmployeeSelect, useEmployeeDirectory } from './employeeDirectory'
 
 export interface EmployeeAdminCrudProps {
   activeRole: Role
@@ -44,6 +45,7 @@ export function EmployeeAdminCrud({
   )
 
   const [employees, setEmployees] = useState<Employee[]>([])
+  const directory = useEmployeeDirectory(activeRole, isAuthorized)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -180,7 +182,17 @@ export function EmployeeAdminCrud({
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
 
-    const targetId = editingId ?? empId.trim()
+    const slug = displayName
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+    const known = new Set(directory.employees.map((x) => x.id))
+    let generated = `emp-${slug || 'uj'}`
+    for (let n = 2; known.has(generated); n++) generated = `emp-${slug || 'uj'}-${n}`
+    const targetId = editingId ?? (empId.trim() || generated)
     const payload = {
       id: targetId,
       displayName: displayName.trim(),
@@ -249,23 +261,12 @@ export function EmployeeAdminCrud({
         <div className="card">
           <h2 className="card-title">
             {editingId
-              ? employeeAdminText.editTitle(editingId)
+              ? employeeAdminText.editTitle(displayName || directory.nameOf(editingId))
               : employeeAdminText.createTitle}
           </h2>
           <p className="card-subtitle">{employeeAdminText.createSubtitle}</p>
 
           <form onSubmit={(e) => void handleSubmit(e)} className="crud-form">
-            <label className="form-field">
-              <span>{employeeAdminText.idLabel}</span>
-              <input
-                type="text"
-                placeholder={employeeAdminText.idPlaceholder}
-                value={empId}
-                onChange={(e) => setEmpId(e.target.value)}
-                disabled={submitting || editingId !== null}
-              />
-            </label>
-
             <label className="form-field">
               <span>{employeeAdminText.displayNameLabel}</span>
               <input
@@ -307,11 +308,12 @@ export function EmployeeAdminCrud({
 
             <label className="form-field">
               <span>{employeeAdminText.managerIdLabel}</span>
-              <input
-                type="text"
-                placeholder={employeeAdminText.managerIdPlaceholder}
+              <EmployeeSelect
+                employees={directory.employees}
                 value={managerId}
-                onChange={(e) => setManagerId(e.target.value)}
+                onChange={setManagerId}
+                emptyLabel={employeeAdminText.noManager}
+                exclude={editingId ?? undefined}
                 disabled={submitting}
               />
             </label>
@@ -388,13 +390,25 @@ export function EmployeeAdminCrud({
 
             <label className="form-field">
               <span>{employeeAdminText.deputyIdsLabel}</span>
-              <input
-                type="text"
-                placeholder={employeeAdminText.deputyIdsPlaceholder}
-                value={deputiesInput}
-                onChange={(e) => setDeputiesInput(e.target.value)}
+              <select
+                multiple
+                value={deputiesInput.split(',').map((x) => x.trim()).filter(Boolean)}
+                onChange={(e) =>
+                  setDeputiesInput(
+                    Array.from(e.target.selectedOptions, (o) => o.value).join(', '),
+                  )
+                }
                 disabled={submitting}
-              />
+              >
+                {[...directory.employees]
+                  .filter((x) => x.id !== editingId)
+                  .sort((a, b) => a.displayName.localeCompare(b.displayName, 'hu'))
+                  .map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.displayName}
+                    </option>
+                  ))}
+              </select>
             </label>
 
             {formErrors.length > 0 && (
@@ -465,12 +479,12 @@ export function EmployeeAdminCrud({
                 ))}
               </select>
 
-              <input
-                type="search"
-                placeholder={employeeAdminText.filterManagerPlaceholder}
+              <EmployeeSelect
+                employees={directory.employees.filter((x) => x.roles.includes('MANAGER'))}
                 value={managerFilter}
-                onChange={(e) => setManagerFilter(e.target.value)}
-                aria-label={employeeAdminText.filterManagerPlaceholder}
+                onChange={setManagerFilter}
+                emptyLabel={employeeAdminText.filterManagerPlaceholder}
+                ariaLabel={employeeAdminText.filterManagerPlaceholder}
               />
 
               <button
@@ -499,7 +513,6 @@ export function EmployeeAdminCrud({
               <table className="crud-table">
                 <thead>
                   <tr>
-                    <th>{employeeAdminText.colId}</th>
                     <th>{employeeAdminText.colNameAndEmail}</th>
                     <th>{employeeAdminText.colEntity}</th>
                     <th>{employeeAdminText.colManager}</th>
@@ -514,7 +527,6 @@ export function EmployeeAdminCrud({
                 <tbody>
                   {employees.map((emp) => (
                     <tr key={emp.id}>
-                      <td className="mono-cell">{emp.id}</td>
                       <td>
                         <div>
                           <strong>{emp.displayName}</strong>
@@ -526,8 +538,8 @@ export function EmployeeAdminCrud({
                           {legalEntityLabel[emp.legalEntityId]}
                         </span>
                       </td>
-                      <td className="mono-cell">
-                        {emp.managerId ?? (
+                      <td>
+                        {emp.managerId ? directory.nameOf(emp.managerId) : (
                           <span className="muted-text">
                             {employeeAdminText.noManager}
                           </span>
@@ -546,9 +558,9 @@ export function EmployeeAdminCrud({
                         <div>{formatDate(emp.employmentStart)}</div>
                         <div>Szül.: {formatDate(emp.birthDate)}</div>
                       </td>
-                      <td className="mono-cell">
+                      <td>
                         {emp.deputyIds.length > 0
-                          ? emp.deputyIds.join(', ')
+                          ? emp.deputyIds.map(directory.nameOf).join(', ')
                           : employeeAdminText.noDeputies}
                       </td>
                       <td className="actions-cell">

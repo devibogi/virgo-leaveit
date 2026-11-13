@@ -162,9 +162,18 @@ export function createLeaveRequestApiHandler(
           status,
           leaveTypeCode,
         })
+        // Display-only names so the UI never has to show employee IDs.
+        const names = new Map(
+          (await employeeRepository.findAll()).map((e) => [e.id, e.displayName]),
+        )
+        const withNames = items.map((r) => ({
+          ...r,
+          employeeName: names.get(r.employeeId) ?? null,
+          approverName: names.get(r.approverId) ?? null,
+        }))
         return {
           status: 200,
-          body: items,
+          body: withNames,
         }
       }
 

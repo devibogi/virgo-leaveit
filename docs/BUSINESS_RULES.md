@@ -16,6 +16,7 @@
 - **Overdrawn at exit (confirmed 2026-11-13):** if a leaver has used more than the prorated entitlement, nothing happens (no clawback, no financial deduction). The system shows the prorated limit and warns when it is exceeded.
 - **Only paid leave (ANNUAL) reduces the annual balance (confirmed 2026-11-13).**
 - **Consumption order (confirmed 2026-11-13):** approved leave uses entitlement components in this order: age-based carryover from the previous year → base → age-based additional → child-related additional. (Payroll mentioned base → additional → other; the project owner kept the order above, which only adds the carryover in front.)
+- **Used days (product-owner request 2026-11-13; HR confirmation pending):** approved leave counts as *used* only for working days up to and including today. Future approved leave is booked but not yet used. Pending, rejected, cancelled and revoked requests never count.
 
 ## 2. Requests and approvals
 - Every leave request requires approval; no automatic approval. The direct manager decides, except **unpaid leave (UNPAID), which HR Admin approves** (HR wish 2026-11-13; flow details Q25).
@@ -59,6 +60,7 @@
   - The decision records `onBehalfOf = A`; audit shows who acted for whom.
 - **Payroll export flag (confirmed 2026-11-13):** each employee has "include in payroll (bérszámfejtés) export", default yes. If no, the employee's leave is left out of the payroll export; everything else is unchanged.
 - **UI language (confirmed 2026-11-13):** the whole user interface is Hungarian. Code, docs and commits stay English.
+- **No technical IDs in the UI (product-owner request 2026-11-13):** people are always shown and picked by name; employee/request IDs and internal field or code names are never displayed.
 
 ## 5. Non-working days and SLA calendar
 - Leave cannot be booked on Hungarian public holidays or statutory non-working days.

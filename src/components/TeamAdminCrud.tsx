@@ -14,6 +14,7 @@ import {
   type Team,
 } from '../domain'
 import { roleLabel, teamAdminText } from '../i18n/hu'
+import { EmployeeSelect } from './employeeDirectory'
 
 export interface TeamAdminCrudProps {
   activeRole: Role
@@ -303,11 +304,11 @@ export function TeamAdminCrud({
           <form onSubmit={(e) => void handleCreate(e)} className="crud-form">
             <label className="form-field">
               <span>{teamAdminText.managerIdLabel}</span>
-              <input
-                type="text"
-                placeholder={teamAdminText.managerIdPlaceholder}
+              <EmployeeSelect
+                employees={employees}
                 value={newManagerId}
-                onChange={(e) => setNewManagerId(e.target.value)}
+                onChange={setNewManagerId}
+                emptyLabel={teamAdminText.managerIdPlaceholder}
                 disabled={submitting}
               />
             </label>
@@ -370,12 +371,12 @@ export function TeamAdminCrud({
                   {teamAdminText.newButton}
                 </button>
               )}
-              <input
-                type="search"
-                placeholder={teamAdminText.filterPlaceholder}
+              <EmployeeSelect
+                employees={employees.filter((e) => e.roles.includes('MANAGER'))}
                 value={managerFilter}
-                onChange={(e) => setManagerFilter(e.target.value)}
-                aria-label={teamAdminText.filterPlaceholder}
+                onChange={setManagerFilter}
+                emptyLabel={teamAdminText.filterPlaceholder}
+                ariaLabel={teamAdminText.filterPlaceholder}
               />
               <button
                 type="button"
@@ -422,9 +423,7 @@ export function TeamAdminCrud({
                     const isEditing = editingManagerId === team.managerId
                     return (
                       <tr key={team.managerId}>
-                        <td className="mono-cell">
-                          <span className="badge">{team.managerId}</span>
-                        </td>
+                        <td>{employeeName.get(team.managerId) ?? '—'}</td>
                         <td>
                           {isEditing ? (
                             <input
@@ -443,7 +442,7 @@ export function TeamAdminCrud({
                             ? '—'
                             : employeesById
                                 .get(team.managerId)!
-                                .deputyIds.map((d) => employeeName.get(d) ?? d)
+                                .deputyIds.map((d) => employeeName.get(d) ?? '—')
                                 .join(', ')}
                         </td>
                         <td className="actions-cell">
@@ -543,8 +542,7 @@ export function TeamAdminCrud({
                   return (
                     <tr key={emp.id}>
                       <td>
-                        <strong>{emp.displayName}</strong>{' '}
-                        <span className="badge">{emp.id}</span>
+                        <strong>{emp.displayName}</strong>
                       </td>
                       <td>
                         <select
@@ -556,13 +554,13 @@ export function TeamAdminCrud({
                           <option value="">{teamAdminText.membershipNoTeam}</option>
                           {!hasCurrent && (
                             <option value={current}>
-                              {employeeName.get(current) ?? current} ({current})
+                              {employeeName.get(current) ?? '—'}
                             </option>
                           )}
                           {options.map((t) => (
                             <option key={t.managerId} value={t.managerId}>
                               {teamNameByManager.get(t.managerId)} —{' '}
-                              {employeeName.get(t.managerId) ?? t.managerId}
+                              {employeeName.get(t.managerId) ?? '—'}
                             </option>
                           ))}
                         </select>

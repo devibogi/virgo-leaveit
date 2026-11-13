@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { EntitlementComponent, LeaveDay, LeaveEntitlement } from '../types/model'
-import { isUsageCacheConsistent, recomputeEntitlementUsage } from './entitlementUsage'
+import type { EntitlementComponent, LeaveDay, LeaveEntitlement, LeaveRequest } from '../types/model'
+import { isUsageCacheConsistent, pastApprovedLeaveDays, recomputeEntitlementUsage, withPastUsage } from './entitlementUsage'
 
 const ent = (component: EntitlementComponent, days: number | null, override: number | null = null, year = 2026): LeaveEntitlement => ({
   id: `ent-${component}-${year}`, employeeId: 'emp-a', year, component,
@@ -69,5 +69,42 @@ describe('isUsageCacheConsistent', () => {
     const rows = [ent('BASE', 20)]
     expect(isUsageCacheConsistent(rows, [], 2026)).toBe(true)
     expect(isUsageCacheConsistent(rows, [day('2026-02-02')], 2026)).toBe(false)
+  })
+})
+
+const req = (over: Partial<LeaveRequest>): LeaveRequest => ({
+  id: 'req-x', employeeId: 'emp-a', legalEntityId: 'VIRGO_KFT', approverId: 'emp-m', leaveTypeCode: 'ANNUAL',
+  startDate: '2026-11-02', endDate: '2026-11-06', dayPortion: 'FULL', status: 'APPROVED', employeeComment: null,
+  submittedAt: '2026-10-01T00:00:00Z', approval: null, cancellation: null, ...over,
+})
+
+describe('pastApprovedLeaveDays / withPastUsage (past leave counts as used)', () => {
+  it('counts approved working days up to and including today only', () => {
+    const days = pastApprovedLeaveDays([req({})], '2026-11-04')
+    expect(days.map((d) => d.date)).toEqual(['2026-11-02', '2026-11-03', '2026-11-04'])
+  })
+
+  it('ignores future, pending, rejected and cancelled requests', () => {
+    const reqs = [
+      req({ id: 'f', startDate: '2026-12-01', endDate: '2026-12-02' }),
+      req({ id: 'p', status: 'PENDING' }),
+      req({ id: 'r', status: 'REJECTED' }),
+      req({ id: 'c', status: 'CANCELLED' }),
+    ]
+    expect(pastApprovedLeaveDays(reqs, '2026-11-13')).toEqual([])
+  })
+
+  it('skips weekends and public holidays; half-days deduct 0.5; non-annual types deduct 0', () => {
+    const days = pastApprovedLeaveDays([
+      req({ id: 'a', startDate: '2026-10-23', endDate: '2026-10-26' }), // Fri 23 Oct = public holiday, Sat–Sun skipped
+      req({ id: 'b', startDate: '2026-11-09', endDate: '2026-11-09', dayPortion: 'AM' }),
+      req({ id: 's', leaveTypeCode: 'SICK_LEAVE', startDate: '2026-11-10', endDate: '2026-11-10' }),
+    ], '2026-11-13')
+    expect(days.map((d) => [d.date, d.balanceDeduction])).toEqual([['2026-10-26', 1], ['2026-11-09', 0.5], ['2026-11-10', 0]])
+  })
+
+  it('overlays used* on entitlements from past approved leave', () => {
+    const [base] = withPastUsage([ent('BASE', 20)], [req({}), req({ id: 'f', startDate: '2026-12-01', endDate: '2026-12-01' })], '2026-11-13')
+    expect(base).toMatchObject({ usedQ4: 5, usedYear: 5 })
   })
 })
