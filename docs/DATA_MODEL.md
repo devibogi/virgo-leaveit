@@ -35,7 +35,7 @@ PENDING ──approve──▶ APPROVED ──employee cancels before start─�
 Only `APPROVED` consumes balance. `PENDING` reserves nothing. Approved requests are never edited: cancel + submit a new request.
 
 ## Calendar dataset
-File: `data/calendar/hu-working-days-2026-2027.v1.json` (**not yet in the repo**), shape `CalendarDataset`:
+File: `src/data/huCalendar.ts` (typed TS module, `reviewedByHr: false` — not HR-verified, Q12), shape `CalendarDataset`:
 `version`, `country`, `years`, `source`, `reviewedByHr`, `overrides[]` with `{ date, kind: PUBLIC_HOLIDAY | REST_DAY | WORKING_DAY, label }`.
 Default: Mon–Fri working, Sat–Sun non-working; overrides win. The calendar service resolves it to `CalendarDay { date, isWorkingDay, override }`.
 
@@ -69,7 +69,7 @@ Schema: [`db/schema.sql`](../db/schema.sql). One table per persisted entity; der
 
 - Charset `utf8mb4`, collation `utf8mb4_hungarian_ci` (Hungarian sorting).
 - Day values `DECIMAL(5,1)` (half-days). Timestamps stored as UTC `DATETIME(3)`; API returns ISO 8601.
-- The calendar dataset stays a versioned JSON file, not a table.
+- The calendar dataset stays a versioned data file (`src/data/huCalendar.ts`), not a table.
 - `AppState` = seed/fixture shape; bump `schemaVersion` together with schema changes.
 
 ## Design notes

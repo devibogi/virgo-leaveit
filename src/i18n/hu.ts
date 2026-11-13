@@ -27,7 +27,8 @@ export const leaveTypeLabel: Record<LeaveTypeCode, string> = {
   ANNUAL: 'Fizetett szabadság',
   SICK_LEAVE: 'Betegszabadság',
   UNPAID: 'Fizetés nélküli szabadság',
-  OTHER: 'Egyéb (pl. temetési szabadság)',
+  FUNERAL: 'Temetési szabadság',
+  OTHER: 'Egyéb',
   CHILD_SICK_LEAVE: 'Gyermekápolási szabadság',
 }
 
@@ -364,3 +365,15 @@ export const formatDate = (iso: string): string => {
   const [y, m, d] = iso.split('-')
   return `${y}. ${m}. ${d}.`
 }
+
+export const calendarText = {
+  title: 'Naptár',
+  subtitle: 'Ünnepnapok, áthelyezett napok és a jóváhagyott / jóváhagyásra váró távollétek.',
+  prev: 'Előző hónap',
+  next: 'Következő hónap',
+  holiday: 'Munkaszüneti nap',
+  restDay: 'Áthelyezett pihenőnap',
+  workingSaturday: 'Áthelyezett munkanap',
+  weekdays: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
+  months: ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'],
+} as const

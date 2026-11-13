@@ -568,3 +568,32 @@ select:focus {
   border-radius: 12px;
   border: 1px dashed #DAD7E8;
 }
+
+/* ---------- Leave calendar ---------- */
+.leave-calendar { margin-top: 24px; }
+.cal-month { min-width: 150px; text-align: center; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 16px; }
+.cal-chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid #E4E2F0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-head { font-size: 12px; font-weight: 600; color: #6B6A85; text-align: center; padding: 4px 0; }
+.cal-cell { min-height: 84px; border: 1px solid #E4E2F0; border-radius: 8px; padding: 4px; background: white; overflow: hidden; }
+.cal-out { opacity: 0.4; }
+.cal-weekend { background: #F1F0F6; }
+.cal-today { outline: 2px solid #5B4FE9; outline-offset: -2px; }
+.cal-day { font-size: 12px; font-weight: 600; }
+.cal-note { font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
+.cal-entry { font-size: 11px; line-height: 1.3; border-radius: 4px; padding: 1px 4px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-holiday { background: #FDE2E4; color: #9B1C2C; }
+.cal-restday { background: #FFF1D6; color: #8A5A00; }
+.cal-workday { background: #E3F4FF; color: #0B5A8A; }
+.cal-type-ANNUAL { background: #DCF5E3; color: #146C2E; }
+.cal-type-UNPAID { background: #E8E3FF; color: #4B3BB5; }
+.cal-type-OTHER { background: #ECECEC; color: #3F3F4A; }
+.cal-type-FUNERAL { background: #DCDCE6; color: #24243B; }
+.cal-type-SICK_LEAVE { background: #FFE0CC; color: #A3420B; }
+.cal-type-CHILD_SICK_LEAVE { background: #FFF3B8; color: #7A5D00; }
+.cal-pending { border: 1px dashed currentColor; opacity: 0.75; }
+@media (max-width: 640px) {
+  .cal-cell { min-height: 56px; }
+  .cal-entry, .cal-note { font-size: 9px; }
+}

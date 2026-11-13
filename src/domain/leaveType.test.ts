@@ -12,11 +12,12 @@ import {
 } from './leaveType.ts'
 
 describe('LeaveType configuration (D21)', () => {
-  it('provides exactly the 5 leave types', () => {
+  it('provides exactly the 6 leave types', () => {
     expect(DEFAULT_LEAVE_TYPES.map((lt) => lt.code)).toEqual([
       'ANNUAL',
       'SICK_LEAVE',
       'UNPAID',
+      'FUNERAL',
       'OTHER',
       'CHILD_SICK_LEAVE',
     ])
@@ -26,7 +27,8 @@ describe('LeaveType configuration (D21)', () => {
 
   it('has the expected labels', () => {
     expect(getLeaveType('ANNUAL').label).toBe('Fizetett szabadság')
-    expect(getLeaveType('OTHER').label).toBe('Egyéb (pl. temetési szabadság)')
+    expect(getLeaveType('OTHER').label).toBe('Egyéb')
+    expect(getLeaveType('FUNERAL').label).toBe('Temetési szabadság')
     expect(getLeaveType('CHILD_SICK_LEAVE').label).toBe(
       'Gyermekápolási szabadság',
     )
@@ -42,6 +44,8 @@ describe('LeaveType configuration (D21)', () => {
     expect(getLeaveType('ANNUAL').category).toBe('LEAVE')
     expect(getLeaveType('UNPAID').category).toBe('LEAVE')
     expect(getLeaveType('OTHER').category).toBe('LEAVE')
+    expect(getLeaveType('FUNERAL').category).toBe('LEAVE')
+    expect(getLeaveType('FUNERAL').deductsFromAnnualBalance).toBe(false)
     expect(getLeaveType('SICK_LEAVE').category).toBe('SICK')
     expect(getLeaveType('CHILD_SICK_LEAVE').category).toBe('SICK')
   })

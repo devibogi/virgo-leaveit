@@ -88,7 +88,8 @@ export type LeaveTypeCode =
   | 'ANNUAL' // fizetett szabadság; the only type that consumes the annual entitlement
   | 'SICK_LEAVE' // betegszabadság (no separate táppénz type, D21)
   | 'UNPAID' // fizetés nélküli szabadság; approved by HR Admin
-  | 'OTHER' // egyéb, e.g. temetési szabadság (replaces EXTRAORDINARY/FUNERAL)
+  | 'FUNERAL' // temetési szabadság
+  | 'OTHER' // egyéb
   | 'CHILD_SICK_LEAVE' // gyermekápolási szabadság
 
 /**

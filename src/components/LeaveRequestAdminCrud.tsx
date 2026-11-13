@@ -29,6 +29,7 @@ import {
   roleLabel,
   statusLabel,
 } from '../i18n/hu'
+import { LeaveCalendar } from './LeaveCalendar'
 
 export interface LeaveRequestAdminCrudProps {
   activeRole: Role
@@ -493,6 +494,9 @@ export function LeaveRequestAdminCrud({
           </div>
         )}
       </div>
+      {isAuthorized && !error && (
+        <LeaveCalendar requests={requests} showEmployee={!isMine} />
+      )}
     </section>
   )
 }

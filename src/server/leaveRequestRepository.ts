@@ -1,3 +1,4 @@
+import { DEMO_LEAVE_REQUESTS } from '../data/demoLeaveRequests.ts'
 import {
   createLeaveRequest,
   mapLeaveRequestToRow,
@@ -97,6 +98,7 @@ export const SYNTHETIC_SEED_REQUESTS: readonly LeaveRequest[] = [
       reason: 'Időpont módosulás miatt HR által visszavonva',
     },
   },
+  ...DEMO_LEAVE_REQUESTS,
 ]
 
 export class InMemoryLeaveRequestRepository implements LeaveRequestRepository {
