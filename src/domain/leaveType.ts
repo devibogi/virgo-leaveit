@@ -13,7 +13,6 @@ export const LeaveTypeCodeEnum = {
   SICK_LEAVE: 'SICK_LEAVE',
   UNPAID: 'UNPAID',
   FUNERAL: 'FUNERAL',
-  OTHER: 'OTHER',
   CHILD_SICK_LEAVE: 'CHILD_SICK_LEAVE',
 } as const satisfies Record<LeaveTypeCode, LeaveTypeCode>
 
@@ -22,7 +21,6 @@ export const LEAVE_TYPE_CODES: readonly LeaveTypeCode[] = [
   LeaveTypeCodeEnum.SICK_LEAVE,
   LeaveTypeCodeEnum.UNPAID,
   LeaveTypeCodeEnum.FUNERAL,
-  LeaveTypeCodeEnum.OTHER,
   LeaveTypeCodeEnum.CHILD_SICK_LEAVE,
 ] as const
 
@@ -64,9 +62,9 @@ export function isLeaveTypeCode(value: unknown): value is LeaveTypeCode {
  * Leave types (D21, 2026-11-13; replaces the D19 list):
  * fizetett szabadság, betegszabadság, fizetés nélküli szabadság,
  * temetési szabadság, egyéb, gyermekápolási szabadság.
- * FUNERAL attributes copy OTHER (assumption, not HR-confirmed).
+ * FUNERAL attributes are an assumption, not HR-confirmed.
  * Only ANNUAL deducts from the annual balance. UNPAID is decided by HR Admin.
- * deputyCheckApplies: planned leave only (ANNUAL, UNPAID); OTHER false (assumption, Q30).
+ * deputyCheckApplies: planned leave only (ANNUAL, UNPAID); FUNERAL false (assumption, Q30).
  */
 export const DEFAULT_LEAVE_TYPES: readonly LeaveType[] = [
   {
@@ -102,16 +100,6 @@ export const DEFAULT_LEAVE_TYPES: readonly LeaveType[] = [
   {
     code: LeaveTypeCodeEnum.FUNERAL,
     label: 'Temetési szabadság',
-    category: 'LEAVE',
-    deductsFromAnnualBalance: false,
-    halfDayAllowed: true,
-    approverRole: 'MANAGER',
-    payrollCode: null,
-    deputyCheckApplies: false,
-  },
-  {
-    code: LeaveTypeCodeEnum.OTHER,
-    label: 'Egyéb',
     category: 'LEAVE',
     deductsFromAnnualBalance: false,
     halfDayAllowed: true,

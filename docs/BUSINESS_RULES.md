@@ -72,12 +72,11 @@
 |---|---|---|---|---|---|---|
 | `ANNUAL` | Fizetett szabadság | LEAVE (Szabadság) | yes | yes | Manager | yes |
 | `UNPAID` | Fizetés nélküli szabadság | LEAVE (Szabadság) | no | yes | **HR Admin** | yes |
-| `FUNERAL` | Temetési szabadság | LEAVE (Szabadság) | no | yes | Manager | no (assumption, copies OTHER) |
-| `OTHER` | Egyéb | LEAVE (Szabadság) | no | yes | Manager | no (assumption, Q30) |
+| `FUNERAL` | Temetési szabadság | LEAVE (Szabadság) | no | yes | Manager | no (assumption, Q30) |
 | `SICK_LEAVE` | Betegszabadság | SICK (Beteg) | no | no | Manager | no |
 | `CHILD_SICK_LEAVE` | Gyermekápolási szabadság | SICK (Beteg) | no | no | Manager | no |
 
-- Paternity leave is **not** a LeaveIt type. FUNERAL is a separate type again (product-owner request 2026-11-13; attributes copied from OTHER, not HR-confirmed — Mt. 146 may limit it to 2 days, Q37); there is no separate táppénz (`SICK_PAY`) type (D21; conflicts with the sick pool below, Q37).
+- Paternity leave is **not** a LeaveIt type. There is no OTHER (Egyéb) type; FUNERAL is its own type (product-owner request 2026-11-13; attributes not HR-confirmed — Mt. 146 may limit it to 2 days, Q37); there is no separate táppénz (`SICK_PAY`) type (D21; conflicts with the sick pool below, Q37).
 - **Sick-leave pool:** 15 days of betegszabadság per calendar year, prorated for joiners/leavers; after that, absence is táppénz (proration rounding and the day-16 switch: Q32).
 - **Payroll categories:** only two groups, "Szabadság" and "Betegszabadság/táppénz". Medical-certificate subtypes are not LeaveIt's concern.
 
@@ -91,7 +90,7 @@
 
 ## 7. Deputy (substitute) availability — confirmed 2026-11-13
 - An employee can have **multiple deputies**. Employees without deputies are not checked.
-- **Planned leave only** (ANNUAL, UNPAID) is blocked. SICK_LEAVE, CHILD_SICK_LEAVE, FUNERAL and OTHER are never blocked (FUNERAL/OTHER: assumption, Q30).
+- **Planned leave only** (ANNUAL, UNPAID) is blocked. SICK_LEAVE, CHILD_SICK_LEAVE, and FUNERAL are never blocked (FUNERAL: assumption, Q30).
 - A requested working day is **blocked if ALL of the requester's deputies are away** that day.
 - "Away" = the deputy has an **APPROVED**, active leave on that day (any leave type). Pending deputy requests do not block.
 - **One-way:** only the requester's own deputies matter. Being someone else's deputy does not restrict your leave.

@@ -28,7 +28,6 @@ export const leaveTypeLabel: Record<LeaveTypeCode, string> = {
   SICK_LEAVE: 'Betegszabadság',
   UNPAID: 'Fizetés nélküli szabadság',
   FUNERAL: 'Temetési szabadság',
-  OTHER: 'Egyéb',
   CHILD_SICK_LEAVE: 'Gyermekápolási szabadság',
 }
 

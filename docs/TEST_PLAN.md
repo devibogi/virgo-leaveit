@@ -10,7 +10,7 @@
 - Quarter allocation = even, time-proportional split of the annual entitlement.
 - Leaver proration: annual / 365 × days employed; leap year uses 366 (e.g. 2028).
 - Leaver who used more than the prorated limit: warning shown, no deduction/clawback.
-- Only ANNUAL reduces the balance; UNPAID, OTHER and sick types do not.
+- Only ANNUAL reduces the balance; UNPAID, FUNERAL and sick types do not.
 
 ## Sick-leave pool
 - 15 days betegszabadság per year; prorated for joiners/leavers.
@@ -46,7 +46,7 @@
 - One deputy with approved leave on a requested day → that day blocked; conflict date listed.
 - Two deputies, only one away → not blocked; both away → blocked.
 - Deputy's PENDING, REJECTED, CANCELLED or REVOKED leave → not blocked.
-- SICK_LEAVE, CHILD_SICK_LEAVE, OTHER → never blocked; ANNUAL, UNPAID → checked.
+- SICK_LEAVE, CHILD_SICK_LEAVE, FUNERAL → never blocked; ANNUAL, UNPAID → checked.
 - One-way: requester is someone else's deputy and that person is away → not blocked.
 - Conflict on a weekend/holiday only → not blocked (working days only).
 - Recheck: deputy's leave approved after submission → manager approval is blocked.

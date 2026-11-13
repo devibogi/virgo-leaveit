@@ -12,13 +12,12 @@ import {
 } from './leaveType.ts'
 
 describe('LeaveType configuration (D21)', () => {
-  it('provides exactly the 6 leave types', () => {
+  it('provides exactly the 5 leave types', () => {
     expect(DEFAULT_LEAVE_TYPES.map((lt) => lt.code)).toEqual([
       'ANNUAL',
       'SICK_LEAVE',
       'UNPAID',
       'FUNERAL',
-      'OTHER',
       'CHILD_SICK_LEAVE',
     ])
     expect(isLeaveTypeCode('SICK_PAY')).toBe(false)
@@ -27,7 +26,6 @@ describe('LeaveType configuration (D21)', () => {
 
   it('has the expected labels', () => {
     expect(getLeaveType('ANNUAL').label).toBe('Fizetett szabadság')
-    expect(getLeaveType('OTHER').label).toBe('Egyéb')
     expect(getLeaveType('FUNERAL').label).toBe('Temetési szabadság')
     expect(getLeaveType('CHILD_SICK_LEAVE').label).toBe(
       'Gyermekápolási szabadság',
@@ -43,7 +41,6 @@ describe('LeaveType configuration (D21)', () => {
   it('groups types into LEAVE and SICK categories', () => {
     expect(getLeaveType('ANNUAL').category).toBe('LEAVE')
     expect(getLeaveType('UNPAID').category).toBe('LEAVE')
-    expect(getLeaveType('OTHER').category).toBe('LEAVE')
     expect(getLeaveType('FUNERAL').category).toBe('LEAVE')
     expect(getLeaveType('FUNERAL').deductsFromAnnualBalance).toBe(false)
     expect(getLeaveType('SICK_LEAVE').category).toBe('SICK')
@@ -56,7 +53,7 @@ describe('LeaveType configuration (D21)', () => {
     }
     expect(getLeaveType('ANNUAL').halfDayAllowed).toBe(true)
     expect(getLeaveType('UNPAID').halfDayAllowed).toBe(true)
-    expect(getLeaveType('OTHER').halfDayAllowed).toBe(true)
+    expect(getLeaveType('FUNERAL').halfDayAllowed).toBe(true)
   })
 
   it('UNPAID is approved by HR Admin, everything else by the manager', () => {
@@ -68,7 +65,7 @@ describe('LeaveType configuration (D21)', () => {
   it('applies the deputy check to planned leave only', () => {
     expect(getLeaveType(LeaveTypeCodeEnum.ANNUAL).deputyCheckApplies).toBe(true)
     expect(getLeaveType(LeaveTypeCodeEnum.UNPAID).deputyCheckApplies).toBe(true)
-    expect(getLeaveType(LeaveTypeCodeEnum.OTHER).deputyCheckApplies).toBe(false)
+    expect(getLeaveType(LeaveTypeCodeEnum.FUNERAL).deputyCheckApplies).toBe(false)
     expect(getLeaveType(LeaveTypeCodeEnum.SICK_LEAVE).deputyCheckApplies).toBe(false)
     expect(
       getLeaveType(LeaveTypeCodeEnum.CHILD_SICK_LEAVE).deputyCheckApplies,

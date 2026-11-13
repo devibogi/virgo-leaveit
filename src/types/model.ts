@@ -89,7 +89,6 @@ export type LeaveTypeCode =
   | 'SICK_LEAVE' // betegszabadság (no separate táppénz type, D21)
   | 'UNPAID' // fizetés nélküli szabadság; approved by HR Admin
   | 'FUNERAL' // temetési szabadság
-  | 'OTHER' // egyéb
   | 'CHILD_SICK_LEAVE' // gyermekápolási szabadság
 
 /**
@@ -103,7 +102,7 @@ export type LeaveCategory = 'LEAVE' | 'SICK'
 export interface LeaveType {
   code: LeaveTypeCode
   label: string
-  /** LEAVE: ANNUAL, UNPAID, OTHER. SICK: SICK_LEAVE, CHILD_SICK_LEAVE. */
+  /** LEAVE: ANNUAL, UNPAID, FUNERAL. SICK: SICK_LEAVE, CHILD_SICK_LEAVE. */
   category: LeaveCategory
   /** Whether approved days reduce the annual leave balance. Confirmed: only ANNUAL. */
   deductsFromAnnualBalance: boolean
@@ -115,7 +114,7 @@ export interface LeaveType {
   payrollCode: string | null
   /**
    * Whether the deputy-availability block applies (planned leave only).
-   * true: ANNUAL, UNPAID. false: SICK_LEAVE, CHILD_SICK_LEAVE, OTHER (assumption, Q30).
+   * true: ANNUAL, UNPAID. false: SICK_LEAVE, CHILD_SICK_LEAVE, FUNERAL (assumption, Q30).
    */
   deputyCheckApplies: boolean
 }

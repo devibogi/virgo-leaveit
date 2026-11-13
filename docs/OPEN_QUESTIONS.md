@@ -23,10 +23,10 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q24 | Approved usage beyond total entitlement (e.g. after HR lowers an override): where is it booked? | HR | Open | Usage cache | On BASE; balance shown negative; HR resolves |
 | Q25 | Unpaid leave approved by HR: any HR Admin or a named one? Is the manager informed / asked first? Same SLA? Deputy check? | HR | Open | Approval routing, `LeaveType.approverRole` | Any HR Admin decides instead of the manager; manager sees it as "Szabadság" in the team calendar; same 3-day SLA; deputy check applies |
 | Q26 | Unpaired (odd) last half-day in a month: exported on its own date? With what value? | Zsuzska | Open | Half-day pairing, export | Exported on its own date as a half-day (`payrollValue` 0.5), not carried to next month |
-| Q27 | UNPAID and OTHER (incl. funeral) in the export: which group, or left out? | Zsuzska | Open | Export | Under "Szabadság" (category LEAVE) |
+| Q27 | UNPAID and FUNERAL in the export: which group, or left out? | Zsuzska | Open | Export | Under "Szabadság" (category LEAVE) |
 | Q28 | More than 5 periods per group in a month for one employee? | Zsuzska | Open | Export | Export shows a warning listing the employee; extra periods go into an extra row with the same name/tax id |
 | Q29 | Period building: are consecutive same-group days merged into one Tól–Ig, bridging weekends/holidays? | Zsuzska | Open | Export | Yes: merged across non-working days between them; different groups never merged |
-| Q30 | Is OTHER (incl. funeral) subject to the deputy check? | HR | Open | `deputyCheckApplies` | No (not plannable) |
+| Q30 | Is FUNERAL subject to the deputy check? | HR | Open | `deputyCheckApplies` | No (not plannable) |
 | Q31 | Corrections after export ("kiírásra kerül"): re-export the closed month, or show in the next month's file? | Zsuzska | Open | Export | HR re-generates the affected month; the change is listed in an export audit event |
 | Q32 | Leaver proration rounding; sick-pool proration rounding; is the switch from betegszabadság to táppénz automatic at day 16? | HR / Zsuzska | Open | Entitlement, sick pool | Same rounding as joiners; system splits automatically at day 16 and shows it to HR |
 | Q33 | Are registered employees with no leave in the month listed in the export? | Zsuzska | Open | Export | Yes, with empty periods |

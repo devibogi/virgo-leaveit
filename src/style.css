@@ -588,7 +588,6 @@ select:focus {
 .cal-workday { background: #E3F4FF; color: #0B5A8A; }
 .cal-type-ANNUAL { background: #DCF5E3; color: #146C2E; }
 .cal-type-UNPAID { background: #E8E3FF; color: #4B3BB5; }
-.cal-type-OTHER { background: #ECECEC; color: #3F3F4A; }
 .cal-type-FUNERAL { background: #DCDCE6; color: #24243B; }
 .cal-type-SICK_LEAVE { background: #FFE0CC; color: #A3420B; }
 .cal-type-CHILD_SICK_LEAVE { background: #FFF3B8; color: #7A5D00; }
