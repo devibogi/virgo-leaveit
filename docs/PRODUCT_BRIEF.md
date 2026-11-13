@@ -40,7 +40,7 @@ Demonstrate the full end-to-end flow:
 - Conflict insights / smart leave planning as an AI-assisted enhancement.
 
 ### Not in six-hour MVP unless specifically confirmed
-- Production LDAP/OIDC SSO and 2FA.
+- 2FA. (LDAP sign-in is now in scope: see BUSINESS_RULES §4, LI-23.)
 - Live Google Calendar synchronization.
 - Real email delivery and scheduled background jobs.
 - Production payroll integration.

@@ -106,7 +106,7 @@ Agree on one integration coordinator. Each stream must define a small contract a
 
 ### P2 — stretch
 - AI conflict explanation / smart date suggestions.
-- Google Calendar live sync, real email, LDAP/OIDC, 2FA.
+- Google Calendar live sync, real email, 2FA. (LDAP sign-in moved into scope 2026-11-13, LI-23.)
 - Production-grade persistence and permissions.
 
 ## 10. Demo story

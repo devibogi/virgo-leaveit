@@ -25,12 +25,13 @@ Priority definitions: **P0** demo must-have · **P1** valuable if time · **P2**
 | LI-20 | P0 | Hungarian UI | All user-facing text from `src/i18n/hu.ts`; Hungarian date format. |
 | LI-21 | P0 | MariaDB + backend API | `db/schema.sql` applied to local MariaDB; Node API serves the data; seed script with synthetic data; credentials only in `.env`. |
 | LI-22 | P1 | Payroll export flag | HR can toggle "Bérszámfejtésbe exportálandó" per employee (default igen); audited; export respects it. |
-| LI-16 | P2 | Google Calendar/email/SSO | Integration feasibility and permissions confirmed before implementation. |
+| LI-23 | P1 | LDAP sign-in | Backend binds to LDAP with the user's credentials over LDAPS; matches the employee by email; roles from DB; server-side session (httpOnly cookie); unknown/inactive user denied; Hungarian login page; `AUTH_MODE=demo` keeps the role switcher; LDAP credentials only in `.env`. |
+| LI-16 | P2 | Google Calendar/email | Integration feasibility and permissions confirmed before implementation. |
 
 ## Definition of Done
 - Acceptance criteria met.
 - Build succeeds.
 - Relevant tests pass.
 - No secrets or real employee data committed.
-- PR reviewed by one teammate.
+- Pushed to `main` with tests and build passing (no PR required).
 - UI states include empty/loading/error where relevant.

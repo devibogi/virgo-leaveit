@@ -9,7 +9,7 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q3 | Half-day edge cases: AM+PM same day, >2 half-days in a month, cancellation after payroll export, which leave types allow half-days | Zsuzska / HR | Open | Half-day pairing, `LeaveType.halfDayAllowed` | Only `ANNUAL` allows half-days |
 | Q4 | Payroll mapping: sick leave vs sick pay, paternity, extraordinary, other types | Zsuzska | Open | `LeaveType.payrollCode`, export | `payrollCode = null` |
 | Q5 | Manager SLA: start point, cutoff time, reminder time/channel | HR | Open | SLA due date & reminder | Count 3 working days starting the working day after submission; in-app reminder 08:00 on due date |
-| Q6 | Is SSO/LDAP/OIDC needed for the demo? | Project owner | Open | Auth | No — demo role switcher |
+| Q6 | LDAP connection details: server URL, base DN, login attribute (`uid`/`sAMAccountName`/`mail`), LDAPS, test directory for the demo | Project owner / IT | Open | LI-23 | Configured via `.env`; local test directory (OpenLDAP container, synthetic users); demo role switcher stays when `AUTH_MODE=demo` |
 | Q7 | Priority of AI conflict wording (LI-15) now that deputy suggestions exist | Project owner | Open | Scope | P1, after deterministic deputy check (LI-17) |
 | Q8 | Are current Excel column definitions or sample data available? | HR | Open | Seed data, export | Synthetic data |
 | Q9 | Which leave types deduct from the annual balance? (e.g. extraordinary, unpaid) | HR | Open | `LeaveType.deductsFromAnnualBalance` | Only `ANNUAL` deducts |
@@ -34,3 +34,4 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 - **Deputy rule (2026-11-13):** planned leave only; blocked when all deputies have approved leave; one-way; multiple deputies; recheck at approval; employee sees conflict dates only (see BUSINESS_RULES §7).
 - **Manager delegation (2026-11-13):** a manager's deputies get MANAGER rights over the direct team only while the manager is on approved leave; separate UI view (BUSINESS_RULES §4).
 - **UI language (2026-11-13):** Hungarian.
+- **Sign-in (2026-11-13):** company LDAP; roles from LeaveIt DB, matched by email (BUSINESS_RULES §4).

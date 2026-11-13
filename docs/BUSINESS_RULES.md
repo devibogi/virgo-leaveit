@@ -36,6 +36,7 @@
 - HR Admin can manage employees in both Virgo Kft. and Virgo Zrt.
 - The two legal entities follow the same leave rules but remain separate employee attributes for filtering and reporting.
 - Enforce authorization in the backend in production; a client-side role switch is demo-only.
+- **Sign-in (confirmed 2026-11-13):** users sign in with their company LDAP account. LDAP only proves identity; the user is matched to an `employee` row by email. Roles (`employee_role`) and team/manager rights (`managerId`, delegation) come from the LeaveIt database, not from LDAP groups. LDAP user with no matching active employee → access denied.
 - **Manager delegation (confirmed 2026-11-13):** if A manages B and C is A's deputy, C gets A's **manager rights** over A's direct team (approve/reject, team calendar, leave type) **only on days A has approved leave**.
   - All of A's deputies get the rights; no chaining (C's deputies get nothing from A).
   - MANAGER rights only, never HR Admin rights.

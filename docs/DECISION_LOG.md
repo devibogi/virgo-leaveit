@@ -20,3 +20,4 @@ Architectural and technical decisions. Business rules live in `BUSINESS_RULES.md
 | D14 | 2026-11-13 | Hungarian UI strings in `src/i18n/hu.ts`; no i18n library | Single language; one place for wording; dates as `YYYY. MM. DD.` |
 | D15 | 2026-11-13 | Persistence: MariaDB 11.4 (`db/schema.sql`) behind a Node backend API (`server/`, `mariadb` driver); replaces localStorage | Team decision; real DB, server-side access checks possible |
 | D16 | 2026-11-13 | `Employee.includeInPayrollExport` (DB default TRUE) controls payroll export inclusion only | Team decision; HR can exclude people from bérszámfejtés export |
+| D17 | 2026-11-13 | Sign-in via LDAP bind in the backend (`ldapts`), email match to `employee`, roles from DB; server-side session; `AUTH_MODE=demo\|ldap` | Team decision; one source of truth for permissions; demo still works without a directory |

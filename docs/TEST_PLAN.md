@@ -66,7 +66,15 @@
 - Employee sees only own detailed requests and balances.
 - Manager sees only direct team and leave type.
 - HR sees both legal entities.
-- Demo role switcher is clearly marked prototype-only.
+- Demo role switcher is clearly marked prototype-only and only available with `AUTH_MODE=demo`.
+
+## LDAP sign-in
+- Valid LDAP credentials + matching active employee → signed in with DB roles.
+- Wrong password → generic Hungarian error, no detail on which part was wrong.
+- Valid LDAP user with no employee row, or `employmentEnd` passed → access denied.
+- LDAP group membership never grants LeaveIt roles.
+- Every API call without a valid session → 401; role checks enforced server-side.
+- Password never logged or stored.
 - All visible UI text is Hungarian.
 
 ## Demo data

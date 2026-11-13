@@ -56,6 +56,16 @@ export const employeeText = {
   no: 'Nem',
 } as const
 
+export const authText = {
+  title: 'Bejelentkezés',
+  username: 'Felhasználónév',
+  password: 'Jelszó',
+  submit: 'Belépés',
+  invalidCredentials: 'Hibás felhasználónév vagy jelszó.',
+  noAccess: 'Ehhez a fiókhoz nincs LeaveIt hozzáférés. Kérjük, fordulj a HR-hez.',
+  signOut: 'Kijelentkezés',
+} as const
+
 /** Hungarian date format, e.g. "2026. 11. 13.". */
 export const formatDate = (iso: string): string => {
   const [y, m, d] = iso.split('-')

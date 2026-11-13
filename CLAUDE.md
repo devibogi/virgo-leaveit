@@ -27,9 +27,8 @@ Act as a senior software engineer implementing the approved LeaveIt specificatio
 - Do not add real credentials or secrets to the repository.
 
 ## Collaboration
-- Do not push directly to `main`.
-- Work on the assigned feature branch.
-- Keep pull requests small and explain changed behavior and tests.
+- Push directly to `main` (team decision 2026-11-13, hackathon speed). Run `npm test` and `npm run build` first; never force-push.
+- Keep commits small and explain changed behavior and tests in the commit message.
 - Before changing shared types/contracts, coordinate with the team.
 - Update docs when a confirmed business rule changes.
 

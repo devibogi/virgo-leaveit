@@ -7,4 +7,4 @@
 5. **HR — Piri:** open HR overview; filter Virgo Kft./Zrt.; show manual correction/audit trail or provisional CSV export.
 6. **Differentiator:** show team overlap insight or AI explanation, explicitly noting that the underlying conflict detection is deterministic.
 
-Keep one reliable happy path rehearsed. Do not demo live SSO, live Google Calendar, email delivery or real payroll export unless they are actually implemented and verified.
+Keep one reliable happy path rehearsed. Do not demo live LDAP sign-in (unless verified against the test directory), live Google Calendar, email delivery or real payroll export unless they are actually implemented and verified.
