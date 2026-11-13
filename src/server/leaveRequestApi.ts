@@ -1,6 +1,7 @@
 import {
   buildLeaveRequestFromDraft,
   canManageLeaveRequests,
+  cancelLeaveRequestByEmployee,
   decideLeaveRequest,
   DUPLICATE_REQUEST_MESSAGE,
   LeaveDecisionError,
@@ -8,6 +9,7 @@ import {
   isLeaveTypeCode,
   isLegalEntityId,
   isRequestStatus,
+  localIsoDate,
   validateLeaveRequest,
   type DayPortion,
   type LeaveRequestDraft,
@@ -83,6 +85,7 @@ function parseLeaveRequestDraft(
 export function createLeaveRequestApiHandler(
   repository: LeaveRequestRepository = new InMemoryLeaveRequestRepository(),
   employeeRepository: EmployeeRepository = new InMemoryEmployeeRepository(),
+  today: () => string = () => localIsoDate(),
 ) {
   async function buildFromPayload(payload: Record<string, unknown>, id?: string) {
     const draft = parseLeaveRequestDraft(payload)
@@ -103,8 +106,9 @@ export function createLeaveRequestApiHandler(
     const revokeMatch = /^\/api\/requests\/([^/]+)\/revoke$/.exec(pathname)
     const itemMatch = /^\/api\/requests\/([^/]+)$/.exec(pathname)
     const decisionMatch = /^\/api\/requests\/([^/]+)\/decision$/.exec(pathname)
+    const cancelMatch = /^\/api\/requests\/([^/]+)\/cancel$/.exec(pathname)
 
-    if (!isCollection && !revokeMatch && !itemMatch && !decisionMatch) {
+    if (!isCollection && !revokeMatch && !itemMatch && !decisionMatch && !cancelMatch) {
       return null
     }
 
@@ -119,9 +123,11 @@ export function createLeaveRequestApiHandler(
     // Approver inbox (?scope=incoming) and decisions: any role, restricted to approverId === actor.
     const isIncomingList = isList && query.scope === 'incoming'
     const isDecision = !!decisionMatch && method === 'POST'
+    // Employee self-cancel: any role, own requests only (checked in the domain).
+    const isCancel = !!cancelMatch && method === 'POST'
     const isSelfServiceList =
       isList && !isIncomingList && !!actorRole && !canManageLeaveRequests(actorRole)
-    if ((isSelfServiceCreate || isSelfServiceList || isIncomingList || isDecision) && !actorId) {
+    if ((isSelfServiceCreate || isSelfServiceList || isIncomingList || isDecision || isCancel) && !actorId) {
       return {
         status: 403,
         body: {
@@ -130,7 +136,7 @@ export function createLeaveRequestApiHandler(
         },
       }
     }
-    if (!actorRole || (!isCreate && !isList && !isDecision && !canManageLeaveRequests(actorRole))) {
+    if (!actorRole || (!isCreate && !isList && !isDecision && !isCancel && !canManageLeaveRequests(actorRole))) {
       return {
         status: 403,
         body: {
@@ -263,6 +269,30 @@ export function createLeaveRequestApiHandler(
           typeof payload.comment === 'string' ? payload.comment : null,
         )
         const saved = await repository.saveDecision(decided)
+        return { status: 200, body: saved }
+      } catch (err) {
+        if (err instanceof LeaveDecisionError) {
+          return {
+            status: err.status,
+            body: { error: err.status === 409 ? 'Conflict' : 'Forbidden', details: [err.message] },
+          }
+        }
+        throw err
+      }
+    }
+
+    if (cancelMatch && isCancel) {
+      const id = decodeURIComponent(cancelMatch[1])
+      const existing = await repository.findById(id)
+      if (!existing) {
+        return {
+          status: 404,
+          body: { error: 'Not found', details: [`A(z) '${id}' szabadságkérelem nem található.`] },
+        }
+      }
+      try {
+        const cancelled = cancelLeaveRequestByEmployee(existing, actorId!, today())
+        const saved = await repository.saveDecision(cancelled)
         return { status: 200, body: saved }
       } catch (err) {
         if (err instanceof LeaveDecisionError) {

@@ -107,6 +107,8 @@ export {
   RequestStatusEnum,
   revokeLeaveRequestByHr,
   decideLeaveRequest,
+  cancelLeaveRequestByEmployee,
+  isCancellableByEmployee,
   LeaveDecisionError,
   DUPLICATE_REQUEST_MESSAGE,
   findOverlappingRequest,

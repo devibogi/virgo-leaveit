@@ -319,6 +319,36 @@ export function decideLeaveRequest(
   }
 }
 
+/**
+ * Employee self-cancel (BUSINESS_RULES §2/§3): only the requester, only PENDING or APPROVED,
+ * only before the start date (start date today = already started → blocked). Kept in history.
+ */
+export function cancelLeaveRequestByEmployee(
+  request: LeaveRequest,
+  actorId: EmployeeId,
+  today: IsoDate,
+  at: IsoDateTime = new Date().toISOString(),
+): LeaveRequest {
+  if (actorId.trim() !== request.employeeId) {
+    throw new LeaveDecisionError(403, 'Csak a saját kérelmedet mondhatod le.')
+  }
+  if (request.status !== 'PENDING' && request.status !== 'APPROVED') {
+    throw new LeaveDecisionError(409, 'Csak jóváhagyásra váró vagy jóváhagyott kérelem mondható le.')
+  }
+  if (request.startDate <= today) {
+    throw new LeaveDecisionError(409, 'A kérelem csak a szabadság kezdete előtt mondható le.')
+  }
+  return {
+    ...request,
+    status: 'CANCELLED',
+    cancellation: { kind: 'CANCELLED', cancelledBy: request.employeeId, cancelledAt: at, reason: null },
+  }
+}
+
+export function isCancellableByEmployee(request: Pick<LeaveRequest, 'status' | 'startDate'>, today: IsoDate): boolean {
+  return (request.status === 'PENDING' || request.status === 'APPROVED') && request.startDate > today
+}
+
 export class LeaveDecisionError extends Error {
   readonly status: 403 | 409
   constructor(status: 403 | 409, message: string) {

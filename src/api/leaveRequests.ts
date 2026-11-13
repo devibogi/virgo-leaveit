@@ -152,6 +152,19 @@ export function createLeaveRequestApiClient(
       return parseResponse<LeaveRequest>(response)
     },
 
+    async cancelRequest(id: string): Promise<LeaveRequest> {
+      const response = await fetchImpl(
+        `${baseUrl}/requests/${encodeURIComponent(id)}/cancel`,
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: buildHeaders(true),
+          body: JSON.stringify({}),
+        },
+      )
+      return parseResponse<LeaveRequest>(response)
+    },
+
     async revokeRequest(
       id: string,
       input: { reason: string; actorId?: string },

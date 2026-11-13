@@ -30,6 +30,7 @@
 - Manager sees only direct-team requests.
 - Rejected/cancelled/revoked requests do not consume balance.
 - Employee can cancel own approved request only before start.
+- `POST /api/requests/:id/cancel`: own PENDING/APPROVED with start date after today → CANCELLED (kept in history); start today/past or other status 409; not owner (HR too) 403; unknown 404 (`leaveRequestApi.cancel.test.ts`).
 - HR Admin can revoke and reason is recorded.
 - Approved request cannot be edited; cancel + resubmit.
 - SLA reminder is shown on final due-date morning; expiry does not auto-decide.

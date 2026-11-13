@@ -9,6 +9,7 @@ import { EmployeeSelect, useEmployeeDirectory } from './employeeDirectory'
 import {
   canManageLeaveRequests,
   DAY_PORTIONS,
+  isCancellableByEmployee,
   localIsoDate,
   requestedWorkingDays,
   DayPortionEnum,
@@ -174,6 +175,24 @@ export function LeaveRequestAdminCrud({
         setFormErrors(err.details.length > 0 ? err.details : [err.message])
       } else {
         setFormErrors([leaveRequestAdminText.saveError])
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleCancel(id: string) {
+    if (!window.confirm(myLeaveRequestText.cancelConfirm)) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      await apiClient.cancelRequest(id)
+      await loadRequests(employeeFilter, entityFilter, statusFilter)
+    } catch (err) {
+      if (err instanceof TeamApiError) {
+        setError(`${err.message}: ${err.details.join(' ')}`)
+      } else {
+        setError(myLeaveRequestText.cancelError)
       }
     } finally {
       setSubmitting(false)
@@ -461,11 +480,9 @@ export function LeaveRequestAdminCrud({
                     <th>{leaveRequestAdminText.colApprover}</th>
                     <th>{leaveRequestAdminText.colStatus}</th>
                     <th>{leaveRequestAdminText.colDetails}</th>
-                    {!isMine && (
                     <th className="actions-col">
                       {leaveRequestAdminText.colActions}
                     </th>
-                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -515,6 +532,20 @@ export function LeaveRequestAdminCrud({
                           </div>
                         )}
                       </td>
+                      {isMine && (
+                      <td className="actions-cell">
+                        {isCancellableByEmployee(item, localIsoDate()) && (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => void handleCancel(item.id)}
+                            disabled={submitting}
+                          >
+                            {myLeaveRequestText.cancelButton}
+                          </button>
+                        )}
+                      </td>
+                      )}
                       {!isMine && (
                       <td className="actions-cell">
                         {item.status !== 'REVOKED' && (

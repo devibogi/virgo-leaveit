@@ -324,6 +324,9 @@ export const myLeaveRequestText = {
   newButton: '+ Új kérelem',
   pendingTitle: 'Jóváhagyásra váró kérelmeid',
   pendingHint: 'Ezekre az időszakokra már adtál le kérelmet – ne add le újra.',
+  cancelButton: 'Lemondás',
+  cancelConfirm: 'Biztosan lemondod ezt a kérelmet? A lemondás nem vonható vissza.',
+  cancelError: 'A kérelem lemondása nem sikerült.',
 }
 
 export const leaveRequestAdminText = {
