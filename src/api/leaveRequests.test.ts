@@ -189,16 +189,15 @@ describe('LeaveRequest API endpoints, HR_ADMIN authorization & history preservat
     expect(spoofed.legalEntityId).toBe('VIRGO_KFT')
     expect(spoofed.approverId).toBe('emp-piri') // UNPAID → HR Admin
 
-    // Edit keeps owner, status and history
-    const edited = await client.updateRequest('req-0001', {
-      leaveTypeCode: 'ANNUAL',
-      startDate: '2026-06-15',
-      endDate: '2026-06-18',
-      dayPortion: 'FULL',
-    })
-    expect(edited.employeeId).toBe('emp-peter')
-    expect(edited.status).toBe('APPROVED')
-    expect(edited.endDate).toBe('2026-06-18')
+    // Requests cannot be modified, not even by HR Admin
+    await expect(
+      client.updateRequest('req-0001', {
+        leaveTypeCode: 'ANNUAL',
+        startDate: '2026-06-15',
+        endDate: '2026-06-18',
+        dayPortion: 'FULL',
+      }),
+    ).rejects.toMatchObject({ status: 405 })
 
     await expect(
       client.createRequest({

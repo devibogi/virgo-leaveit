@@ -260,67 +260,14 @@ export function createLeaveRequestApiHandler(
         }
       }
 
+      // Leave requests are never modified in place (HR Admin included): cancel/revoke and resubmit.
       if (method === 'PUT') {
-        const existing = await repository.findById(id)
-        if (!existing) {
-          return {
-            status: 404,
-            body: {
-              error: 'Not found',
-              details: [`A(z) '${id}' szabadságkérelem nem található.`],
-            },
-          }
-        }
-        const payload = (req.body ?? {}) as Record<string, unknown>
-        // The owner of a request never changes on edit.
-        const built = await buildFromPayload(
-          { ...payload, employeeId: existing.employeeId },
-          id,
-        )
-        if (!built.input) {
-          return {
-            status: 400,
-            body: {
-              error: 'Validation failed',
-              details: built.errors,
-            },
-          }
-        }
-
-        // Status and decision/cancellation history are kept as they are.
-        const { id: _ignored, ...derived } = built.input
-        void _ignored
-        const candidate = {
-          ...derived,
-          status: existing.status,
-          submittedAt: existing.submittedAt,
-          approval: existing.approval,
-          cancellation: existing.cancellation,
-        }
-        const validation = validateLeaveRequest({ id, ...candidate })
-        if (!validation.valid) {
-          return {
-            status: 400,
-            body: {
-              error: 'Validation failed',
-              details: validation.errors,
-            },
-          }
-        }
-
-        const updated = await repository.update(id, candidate)
-        if (!updated) {
-          return {
-            status: 404,
-            body: {
-              error: 'Not found',
-              details: [`A(z) '${id}' szabadságkérelem nem található.`],
-            },
-          }
-        }
         return {
-          status: 200,
-          body: updated,
+          status: 405,
+          body: {
+            error: 'Method not allowed',
+            details: ['A szabadságkérelem nem módosítható; vonja vissza, és nyújtson be újat.'],
+          },
         }
       }
     }

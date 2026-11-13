@@ -74,7 +74,6 @@ export function LeaveRequestAdminCrud({
   const [statusFilter, setStatusFilter] = useState<'' | RequestStatus>('')
 
   // Form state
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [leaveTypeCode, setLeaveTypeCode] = useState<LeaveTypeCode>(
     LeaveTypeCodeEnum.ANNUAL,
   )
@@ -121,7 +120,7 @@ export function LeaveRequestAdminCrud({
     void loadRequests(employeeFilter, entityFilter, statusFilter)
   }, [loadRequests, employeeFilter, entityFilter, statusFilter])
 
-  const formOpen = (isMine && showForm) || editingId !== null
+  const formOpen = isMine && showForm
   useEffect(() => {
     if (!formOpen) return
     const onKey = (e: KeyboardEvent) => {
@@ -132,7 +131,6 @@ export function LeaveRequestAdminCrud({
   }, [formOpen])
 
   function resetForm() {
-    setEditingId(null)
     setShowForm(false)
     setLeaveTypeCode(LeaveTypeCodeEnum.ANNUAL)
     setStartDate('2026-08-03')
@@ -142,15 +140,6 @@ export function LeaveRequestAdminCrud({
     setFormErrors([])
   }
 
-  function startEditing(item: LeaveRequest) {
-    setEditingId(item.id)
-    setLeaveTypeCode(item.leaveTypeCode)
-    setStartDate(item.startDate)
-    setEndDate(item.endDate)
-    setDayPortion(item.dayPortion)
-    setEmployeeComment(item.employeeComment ?? '')
-    setFormErrors([])
-  }
 
 
 
@@ -173,11 +162,7 @@ export function LeaveRequestAdminCrud({
 
     setSubmitting(true)
     try {
-      if (editingId) {
-        await apiClient.updateRequest(editingId, draft)
-      } else {
-        await apiClient.createRequest({ ...draft, employeeId: currentUserId })
-      }
+      await apiClient.createRequest({ ...draft, employeeId: currentUserId })
       resetForm()
       await loadRequests(employeeFilter, entityFilter, statusFilter)
     } catch (err) {
@@ -227,9 +212,7 @@ export function LeaveRequestAdminCrud({
           onClick={(e) => e.stopPropagation()}
         >
           <h2 className="card-title">
-            {editingId
-              ? leaveRequestAdminText.editTitle()
-              : leaveRequestAdminText.createTitle}
+            {leaveRequestAdminText.createTitle}
           </h2>
           <p className="card-subtitle">
             {leaveRequestAdminText.createSubtitle}
@@ -317,11 +300,9 @@ export function LeaveRequestAdminCrud({
                 className="btn btn-primary"
                 disabled={submitting}
               >
-                {editingId
-                  ? leaveRequestAdminText.saveButton
-                  : leaveRequestAdminText.createButton}
+                {leaveRequestAdminText.createButton}
               </button>
-              {(editingId || showForm) && (
+              {showForm && (
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -342,7 +323,7 @@ export function LeaveRequestAdminCrud({
             requests={requests}
             showEmployee={!isMine}
             actions={
-              isMine && !showForm && !editingId ? (
+              isMine && !showForm ? (
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
                   {myLeaveRequestText.newButton}
                 </button>
@@ -496,14 +477,6 @@ export function LeaveRequestAdminCrud({
                       </td>
                       {!isMine && (
                       <td className="actions-cell">
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => startEditing(item)}
-                          disabled={submitting}
-                        >
-                          {leaveRequestAdminText.editButton}
-                        </button>
                         {item.status !== 'REVOKED' && (
                           <button
                             type="button"
