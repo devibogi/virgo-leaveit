@@ -69,9 +69,18 @@ CREATE TABLE leave_entitlement (
   override_days          DECIMAL(5,1) NULL,
   override_reason        VARCHAR(500) NULL,
   payroll_reference_days DECIMAL(5,1) NULL,
+  -- CACHED, REDUNDANT usage (performance, D18). Never write by hand or increment:
+  -- the backend overwrites all rows of an (employee, year) with recomputeEntitlementUsage()
+  -- in the same transaction as the triggering change (see DATA_MODEL "Usage cache").
+  used_q1                DECIMAL(5,1) NOT NULL DEFAULT 0,
+  used_q2                DECIMAL(5,1) NOT NULL DEFAULT 0,
+  used_q3                DECIMAL(5,1) NOT NULL DEFAULT 0,
+  used_q4                DECIMAL(5,1) NOT NULL DEFAULT 0,
+  used_year              DECIMAL(5,1) NOT NULL DEFAULT 0,
   updated_at             DATETIME(3) NOT NULL,
   updated_by             VARCHAR(64) NOT NULL,
   UNIQUE KEY uq_entitlement (employee_id, year, component),
+  CONSTRAINT ck_ent_used_year CHECK (used_year = used_q1 + used_q2 + used_q3 + used_q4),
   CONSTRAINT fk_ent_employee   FOREIGN KEY (employee_id) REFERENCES employee(id),
   CONSTRAINT fk_ent_updated_by FOREIGN KEY (updated_by)  REFERENCES employee(id)
 );

@@ -5,7 +5,8 @@
  * - Persisted entities are stored in MariaDB (db/schema.sql) behind a backend API;
  *   AppState is the seed/in-memory snapshot shape.
  * - Derived views (balances, leave days, payroll values, due dates) are computed
- *   by domain functions and never persisted as the source of truth.
+ *   by domain functions and never persisted as the source of truth. Exception (D18):
+ *   LeaveEntitlement.used* is a redundant cache, written only by recomputeEntitlementUsage().
  * - Dates are ISO strings: IsoDate = "YYYY-MM-DD", IsoDateTime = full ISO 8601 with offset.
  * - Balance deduction and payroll accounting are always separate values.
  *
@@ -131,6 +132,17 @@ export interface LeaveEntitlement {
   overrideReason: string | null
   /** Value supplied by payroll, for double-checking only. Never used in calculations. */
   payrollReferenceDays: number | null
+  /**
+   * CACHED, REDUNDANT values (performance). Days of this component consumed by APPROVED,
+   * balance-deducting leave, by the quarter in which the leave day falls. usedYear = Q1+Q2+Q3+Q4.
+   * Never edit by hand or increment: always overwrite via recomputeEntitlementUsage() for the whole
+   * employee+year, in the same transaction as the triggering change (see DATA_MODEL "Usage cache").
+   */
+  usedQ1: number
+  usedQ2: number
+  usedQ3: number
+  usedQ4: number
+  usedYear: number
   updatedAt: IsoDateTime
   updatedBy: EmployeeId
 }

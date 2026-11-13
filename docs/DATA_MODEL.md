@@ -17,7 +17,7 @@
 | `Employee` | `id`, `displayName`, `email`, `legalEntityId`, `managerId`, `roles[]`, `birthDate`, `employmentStart`, `employmentEnd`, `includeInPayrollExport`, `deputyIds[]` | `includeInPayrollExport` (default `true`): `false` excludes the employee from the payroll (bérszámfejtés) export only; leave, balance and approvals work as usual. `deputyIds`: people who cover for this employee (one-way; empty = no deputy check). Also used for manager delegation: while a manager is on approved leave, their deputies get MANAGER rights over the manager's team (see `ActiveDelegation`). `managerId` is the **only** source for manager permissions (direct team = employees whose `managerId` = me). `roles` always includes `EMPLOYEE`; Katalin is `EMPLOYEE`+`MANAGER`, Piri is `EMPLOYEE`+`HR_ADMIN`. Synthetic data only. |
 | `Team` | `managerId` (key), `name` | Display name only. **Membership is derived:** team of M = employees whose `managerId` = M (= who approves their leave). Everyone is in exactly one team; a manager is in their own manager's team. No `teamId` on `Employee`. |
 | `LeaveType` | `code`, `label`, `deductsFromAnnualBalance`, `halfDayAllowed`, `payrollCode`, `deputyCheckApplies` | `deputyCheckApplies` true for planned leave (ANNUAL, EXTRAORDINARY, UNPAID), false for SICK_LEAVE, SICK_PAY, PATERNITY. Config data, not hard-coded logic. Values are provisional (see Open Questions). |
-| `LeaveEntitlement` | `employeeId`, `year`, `component`, `fullYearDays`, `calculatedDays`, `overrideDays`, `overrideReason`, `payrollReferenceDays` | One row per employee/year/component. Effective = `overrideDays ?? calculatedDays`. `payrollReferenceDays` is for double-checking only. |
+| `LeaveEntitlement` | `employeeId`, `year`, `component`, `fullYearDays`, `calculatedDays`, `overrideDays`, `overrideReason`, `payrollReferenceDays`, `usedQ1`–`usedQ4`, `usedYear` | One row per employee/year/component. Effective = `overrideDays ?? calculatedDays`. `payrollReferenceDays` is for double-checking only. `used*` = **redundant cache**, see "Usage cache" below. |
 | `LeaveRequest` | `employeeId`, `legalEntityId`, `approverId`, `leaveTypeCode`, `startDate`, `endDate`, `dayPortion`, `status`, `employeeComment`, `submittedAt`, `approval`, `cancellation` | `legalEntityId` and `approverId` are snapshots at submission. AM/PM ⇒ `startDate === endDate`. |
 | `Approval` (embedded) | `decision`, `decidedBy`, `onBehalfOf`, `decidedAt`, `comment` | One manager decision per request; no auto-decisions. `onBehalfOf` = approver when a deputy decided. |
 | `Cancellation` (embedded) | `kind` (`CANCELLED` employee / `REVOKED` HR), `cancelledBy`, `cancelledAt`, `reason` | |
@@ -43,7 +43,7 @@ Default: Mon–Fri working, Sat–Sun non-working; overrides win. The calendar s
 | View | Computed from | Notes |
 |---|---|---|
 | `LeaveDay` | Active requests × working-day calendar | One row per working day: `balanceDeduction` (1 / 0.5 / 0) and `payrollValue` (half-day pairing: 1st active in month = 1, 2nd = 0). Never persist a "first/second" flag. |
-| `LeaveBalance` | Entitlements + approved `LeaveDay`s | `totalEntitlement`, `used`, `pending` (info only), `available`, `quarters[]`. |
+| `LeaveBalance` | Entitlements (reads the `used*` cache) + approved `LeaveDay`s | `totalEntitlement`, `used`, `pending` (info only), `available`, `quarters[]`. |
 | `QuarterBalance` | `LeaveBalance` | `allocated`, `carriedIn`, `used`, `remaining`. Allocation formula is open — provisional. |
 | SLA due date | `submittedAt` + 3 working days | Computed via calendar service; not stored. |
 | `CalendarDay` | Calendar dataset | See above. |
@@ -63,7 +63,7 @@ Schema: [`db/schema.sql`](../db/schema.sql). One table per persisted entity; der
 | `employee_deputy` | `Employee.deputyIds[]` | PK (employee, deputy); CHECK no self-deputy |
 | `team` | `Team` | PK `manager_id` |
 | `leave_type` | `LeaveType` | config rows |
-| `leave_entitlement` | `LeaveEntitlement` | UNIQUE (employee, year, component) |
+| `leave_entitlement` | `LeaveEntitlement` | UNIQUE (employee, year, component); `used_q1..q4`, `used_year` cache with CHECK `used_year = sum` |
 | `leave_request` | `LeaveRequest` + embedded `Approval`, `Cancellation` | nullable approval/cancellation columns |
 | `audit_event` | `AuditEvent` | append-only (no UPDATE/DELETE from the app) |
 
@@ -78,3 +78,17 @@ Schema: [`db/schema.sql`](../db/schema.sql). One table per persisted entity; der
 - Do not infer entitlement in the UI; domain functions calculate it and are unit-tested.
 - Minimize personal data even though it's synthetic (birth date is only for age-based leave).
 - Production needs a backend, database, server-side authorization and a real audit trail; this model maps 1:1 to tables.
+
+## Usage cache (`usedQ1`–`usedQ4`, `usedYear`) — redundant, handle with care
+Stored on every `LeaveEntitlement` row for performance (D18, amends D3). Source of truth stays the approved requests × calendar.
+
+- **Meaning:** days of *this component* consumed by APPROVED, balance-deducting `LeaveDay`s, by the quarter the day falls in. `usedYear = Q1+Q2+Q3+Q4` (DB CHECK).
+- **Allocation:** days in date order fill components in `CONSUMPTION_ORDER` = carryover → base → age → child, each up to `overrideDays ?? calculatedDays`. A half-day may split. Excess goes on BASE (negative balance). Only "carryover first" is confirmed (Q23, Q24).
+- **Only writer:** `recomputeEntitlementUsage()` in `src/domain/entitlementUsage.ts`. Always a **full recompute of all rows of one (employee, year)**, written in the **same DB transaction** as the change. Never increment/decrement, never edit by hand.
+- **Must recompute when:**
+  - request becomes APPROVED, or leaves APPROVED (CANCELLED / REVOKED) → that employee, every year the request touches;
+  - entitlement `calculatedDays` / `overrideDays` changes, or a component row is added → that employee + year;
+  - `LeaveType.deductsFromAnnualBalance` changes → everyone, affected years;
+  - working-day calendar dataset changes → everyone, affected years (DB triggers can't do this: the calendar is a JSON file);
+  - `employmentStart` / `employmentEnd` changes → that employee, affected years.
+- **Safety net:** `isUsageCacheConsistent()` in tests and an HR/admin "recompute all" job; a mismatch is a bug, fix by recompute.
