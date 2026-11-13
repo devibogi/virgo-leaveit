@@ -140,6 +140,7 @@ export function LeaveRequestAdminCrud({
     setDayPortion(item.dayPortion)
     setEmployeeComment(item.employeeComment ?? '')
     setFormErrors([])
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
 
@@ -206,19 +207,6 @@ export function LeaveRequestAdminCrud({
 
   return (
     <section className="admin-container">
-      {isAuthorized && !error && (
-        <LeaveCalendar
-          requests={requests}
-          showEmployee={!isMine}
-          actions={
-            isMine && !showForm && !editingId ? (
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
-                {myLeaveRequestText.newButton}
-              </button>
-            ) : null
-          }
-        />
-      )}
       <div className="admin-grid admin-grid-single">
         {/* Form Card: own page after "+ Új kérelem"; HR all-requests page only while editing */}
         {((isMine && showForm) || editingId) && (
@@ -331,6 +319,20 @@ export function LeaveRequestAdminCrud({
             </div>
           </form>
         </div>
+        )}
+
+        {isAuthorized && !error && (
+          <LeaveCalendar
+            requests={requests}
+            showEmployee={!isMine}
+            actions={
+              isMine && !showForm && !editingId ? (
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+                  {myLeaveRequestText.newButton}
+                </button>
+              ) : null
+            }
+          />
         )}
 
         {/* Table Card: HR admin only (list / edit / revoke) */}
