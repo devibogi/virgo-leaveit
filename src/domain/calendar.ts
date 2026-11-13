@@ -49,6 +49,48 @@ export function requestedWorkingDays(
   return dayPortion === 'FULL' ? days : days * 0.5
 }
 
+/** Prototype SLA: manager decision due within this many working days after submission (BUSINESS_RULES, Q5 open). */
+export const APPROVAL_SLA_WORKING_DAYS = 3
+
+const nextIso = (date: IsoDate): IsoDate => {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+/** SLA due date = submission date + N working days (submission day itself not counted). */
+export function approvalDueDate(
+  submittedDate: IsoDate,
+  calendar: CalendarService = createCalendarService(),
+  slaDays: number = APPROVAL_SLA_WORKING_DAYS,
+): IsoDate {
+  let date = submittedDate
+  for (let left = slaDays; left > 0; ) {
+    date = nextIso(date)
+    if (calendar.getDay(date).isWorkingDay) left -= 1
+  }
+  return date
+}
+
+/**
+ * Working days left until the SLA due date, counted after `today` up to and including the due date.
+ * 0 = due today; negative = overdue by that many working days. Display only; never auto-decides.
+ */
+export function approvalWorkingDaysLeft(
+  submittedDate: IsoDate,
+  today: IsoDate,
+  calendar: CalendarService = createCalendarService(),
+): { dueDate: IsoDate; daysLeft: number } {
+  const dueDate = approvalDueDate(submittedDate, calendar)
+  const [from, to, sign] = today <= dueDate ? [today, dueDate, 1] : [dueDate, today, -1]
+  let count = 0
+  for (let d = from; d < to; ) {
+    d = nextIso(d)
+    if (calendar.getDay(d).isWorkingDay) count += 1
+  }
+  return { dueDate, daysLeft: sign * count }
+}
+
 /** Local calendar date as ISO (YYYY-MM-DD). */
 export function localIsoDate(d: Date = new Date()): IsoDate {
   const pad = (n: number) => String(n).padStart(2, '0')

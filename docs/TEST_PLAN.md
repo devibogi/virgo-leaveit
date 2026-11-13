@@ -34,6 +34,7 @@
 - HR Admin can revoke and reason is recorded.
 - Approved request cannot be edited; cancel + resubmit.
 - SLA reminder is shown on final due-date morning; expiry does not auto-decide.
+- Approver inbox shows working days left until the SLA due date (submission + 3 working days, calendar-aware; 0 = due today, negative = overdue) (`approvalSla.test.ts`). Display only; Q5 still open.
 
 ## Calendar and validation
 - Weekend and Hungarian statutory rest day cannot be booked.

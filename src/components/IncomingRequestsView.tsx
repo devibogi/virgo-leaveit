@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createLeaveRequestApiClient, TeamApiError, type LeaveRequestListItem } from '../api'
-import { getLeaveType, type Role } from '../domain'
+import { approvalWorkingDaysLeft, getLeaveType, localIsoDate, type Role } from '../domain'
 import {
   dayPortionLabel,
   formatDate,
@@ -15,6 +15,20 @@ export interface IncomingRequestsViewProps {
   currentUserId: string
 }
 
+function deadlineCell(r: LeaveRequestListItem, today: string) {
+  const { dueDate, daysLeft } = approvalWorkingDaysLeft(r.submittedAt.slice(0, 10), today)
+  const label =
+    daysLeft > 0 ? t.deadlineLeft(daysLeft) : daysLeft === 0 ? t.deadlineToday : t.deadlineOverdue(-daysLeft)
+  return (
+    <td className="sub-cell">
+      <div>
+        <strong className={daysLeft <= 0 ? 'text-danger' : undefined}>{label}</strong>
+      </div>
+      <div>{formatDate(dueDate)}</div>
+    </td>
+  )
+}
+
 const period = (r: LeaveRequestListItem) =>
   r.startDate === r.endDate
     ? formatDate(r.startDate)
@@ -27,6 +41,7 @@ export function IncomingRequestsView({ activeRole, currentUserId }: IncomingRequ
   const [loading, setLoading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const today = localIsoDate()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -107,6 +122,7 @@ export function IncomingRequestsView({ activeRole, currentUserId }: IncomingRequ
                   <th>{t.colDates}</th>
                   <th>{t.colComment}</th>
                   <th>{t.colSubmitted}</th>
+                  <th>{t.colDeadline}</th>
                   <th>{t.colActions}</th>
                 </tr>
               </thead>
@@ -120,6 +136,7 @@ export function IncomingRequestsView({ activeRole, currentUserId }: IncomingRequ
                     <td>{period(r)}</td>
                     <td>{r.employeeComment || '—'}</td>
                     <td>{formatDate(r.submittedAt.slice(0, 10))}</td>
+                    {deadlineCell(r, today)}
                     <td>
                       <div className="actions-cell">
                         <button
