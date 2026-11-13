@@ -1,6 +1,7 @@
 import {
   canManageEntitlements,
   isEntitlementComponent,
+  summarizeEntitlementBalance,
   validateLeaveEntitlement,
   type CreateLeaveEntitlementInput,
   type EntitlementComponent,
@@ -11,6 +12,10 @@ import {
   InMemoryLeaveEntitlementRepository,
   type LeaveEntitlementRepository,
 } from './leaveEntitlementRepository.ts'
+import {
+  InMemoryEmployeeRepository,
+  type EmployeeRepository,
+} from './employeeRepository.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
 
 function parseUrlPathAndQuery(rawUrl: string): {
@@ -42,6 +47,31 @@ function extractActorRole(
     return raw
   }
   return null
+}
+
+function extractActorId(
+  headers?: Record<string, string | undefined>,
+): string | null {
+  const raw = headers?.['x-actor-id'] ?? headers?.['X-Actor-Id']
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+}
+
+const FORBIDDEN_HR_ONLY: ApiResponse = {
+  status: 403,
+  body: {
+    error: 'Forbidden',
+    details: [
+      'Csak HR adminisztrátor (HR_ADMIN) jogosultsággal érhető el ez a művelet.',
+    ],
+  },
+}
+
+const FORBIDDEN_NO_ACTOR: ApiResponse = {
+  status: 403,
+  body: {
+    error: 'Forbidden',
+    details: ['A bejelentkezett felhasználó azonosítója szükséges.'],
+  },
 }
 
 function toOptionalNullableNumber(val: unknown): number | null {
@@ -81,6 +111,7 @@ function parseEntitlementPayload(
 
 export function createLeaveEntitlementApiHandler(
   repository: LeaveEntitlementRepository = new InMemoryLeaveEntitlementRepository(),
+  employeeRepository: EmployeeRepository = new InMemoryEmployeeRepository(),
 ) {
   return async function handleLeaveEntitlementApiRequest(
     req: ApiRequest,
@@ -89,32 +120,59 @@ export function createLeaveEntitlementApiHandler(
     const method = req.method.toUpperCase()
 
     const isCollection = pathname === '/api/entitlements'
-    const itemMatch = /^\/api\/entitlements\/([^/]+)$/.exec(pathname)
+    const isTeamSummary = pathname === '/api/entitlements/team-summary'
+    const itemMatch = isTeamSummary
+      ? null
+      : /^\/api\/entitlements\/([^/]+)$/.exec(pathname)
 
-    if (!isCollection && !itemMatch) {
+    if (!isCollection && !isTeamSummary && !itemMatch) {
       return null
     }
 
+    // Demo-only: role and id come from client headers, not a verified session.
     const actorRole = extractActorRole(req.headers)
-    if (!actorRole || !canManageEntitlements(actorRole)) {
-      return {
-        status: 403,
-        body: {
-          error: 'Forbidden',
-          details: [
-            'Csak HR adminisztrátor (HR_ADMIN) jogosultsággal érhető el ez a művelet.',
-          ],
-        },
+    const actorId = extractActorId(req.headers)
+    if (!actorRole) {
+      return FORBIDDEN_HR_ONLY
+    }
+    const year =
+      query.year && !Number.isNaN(Number(query.year))
+        ? Number(query.year)
+        : undefined
+
+    // Manager: direct reports' balances as numbers only (no component, no leave type).
+    if (isTeamSummary && method === 'GET') {
+      if (actorRole !== 'MANAGER' && actorRole !== 'HR_ADMIN') {
+        return FORBIDDEN_HR_ONLY
       }
+      if (!actorId) return FORBIDDEN_NO_ACTOR
+      const summaryYear = year ?? new Date().getFullYear()
+      const team = (await employeeRepository.findAll()).filter(
+        (e) => e.managerId === actorId,
+      )
+      const entitlements = await repository.findAll({ year: summaryYear })
+      return {
+        status: 200,
+        body: team.map((member) => ({
+          ...summarizeEntitlementBalance(entitlements, member.id, summaryYear),
+          displayName: member.displayName,
+        })),
+      }
+    }
+
+    // Every role may read their own entitlements; everything else is HR only.
+    if (!canManageEntitlements(actorRole)) {
+      if (!(isCollection && method === 'GET')) {
+        return FORBIDDEN_HR_ONLY
+      }
+      if (!actorId) return FORBIDDEN_NO_ACTOR
+      const items = await repository.findAll({ employeeId: actorId, year })
+      return { status: 200, body: items }
     }
 
     if (isCollection) {
       if (method === 'GET') {
         const employeeId = query.employeeId || undefined
-        const year =
-          query.year && !Number.isNaN(Number(query.year))
-            ? Number(query.year)
-            : undefined
         const component = isEntitlementComponent(query.component)
           ? query.component
           : undefined

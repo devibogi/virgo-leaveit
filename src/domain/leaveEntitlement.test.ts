@@ -6,6 +6,7 @@ import {
   getEffectiveEntitlementDays,
   mapLeaveEntitlementToRow,
   mapRowToLeaveEntitlement,
+  summarizeEntitlementBalance,
   validateLeaveEntitlement,
 } from './leaveEntitlement.ts'
 
@@ -96,5 +97,35 @@ describe('LeaveEntitlement entity & validation (shared DATA_MODEL contract)', ()
     expect(canManageEntitlements(['EMPLOYEE', 'HR_ADMIN'])).toBe(true)
     expect(canManageEntitlements('MANAGER')).toBe(false)
     expect(canManageEntitlements('EMPLOYEE')).toBe(false)
+  })
+
+  it('summarizes an employee balance across components as plain numbers', () => {
+    const base = {
+      employeeId: 'emp-peter',
+      year: 2026,
+      fullYearDays: 0,
+      overrideReason: null,
+      payrollReferenceDays: 0,
+      usedQ1: 0,
+      usedQ2: 0,
+      usedQ3: 0,
+      usedQ4: 0,
+      updatedAt: '2026-01-02T08:00:00Z',
+      updatedBy: 'emp-piri',
+    }
+    const rows = [
+      { ...base, id: 'a', component: 'BASE' as const, calculatedDays: 20, overrideDays: null, usedYear: 5 },
+      { ...base, id: 'b', component: 'AGE_ADDITIONAL' as const, calculatedDays: 5, overrideDays: 6, overrideReason: 'x', usedYear: 1.5 },
+      { ...base, id: 'c', component: 'BASE' as const, year: 2025, calculatedDays: 20, overrideDays: null, usedYear: 0 },
+      { ...base, id: 'd', component: 'BASE' as const, employeeId: 'emp-anna', calculatedDays: 20, overrideDays: null, usedYear: 0 },
+    ]
+    expect(summarizeEntitlementBalance(rows, 'emp-peter', 2026)).toEqual({
+      employeeId: 'emp-peter',
+      year: 2026,
+      totalDays: 26,
+      usedDays: 6.5,
+      remainingDays: 19.5,
+    })
+    expect(summarizeEntitlementBalance([], 'emp-x', 2026).totalDays).toBe(0)
   })
 })

@@ -43,6 +43,8 @@
 - **Teams (confirmed 2026-11-13):** everyone belongs to exactly one team, defined by who approves their leave (their direct manager). A manager is a member of their own manager's team.
 - Managers can see only their direct team's leave data.
 - **Leave type visibility (confirmed 2026-11-13, D19, replaces "managers see the leave type"):** everyone except HR Admin — colleagues, team calendar, managers and acting deputies — sees only the **category**: "Szabadság" or "Beteg". Only HR Admin (and the employee for their own requests) sees the exact leave type.
+- **Entitlement visibility (product-owner request 2026-11-13):** every role sees their own entitlements read-only (per component, total/used/remaining days). A manager also sees each direct report's total / used / remaining days as **numbers only** — no component and no leave type. Editing entitlements stays HR Admin only.
+- **Teams view (product-owner request 2026-11-13):** only HR Admin sees and manages the Teams page.
 - HR Admin can manage employees in both Virgo Kft. and Virgo Zrt.
 - The two legal entities follow the same leave rules but remain separate employee attributes for filtering and reporting.
 - Enforce authorization in the backend in production; a client-side role switch is demo-only.

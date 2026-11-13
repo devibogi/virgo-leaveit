@@ -200,6 +200,24 @@ export const employeeAdminText = {
   deleteError: 'Hiba történt a munkavállaló törlésekor.',
 } as const
 
+export const myEntitlementText = {
+  ownTitle: (year: number) => `Saját szabadságkeretem (${year})`,
+  summaryLine: (total: number, used: number, remaining: number) =>
+    `Összesen: ${total} nap · Felhasznált: ${used} nap · Fennmaradó: ${remaining} nap`,
+  teamTitle: (year: number) => `Csapatom szabadságkerete (${year})`,
+  teamSubtitle:
+    'Közvetlen beosztottak: csak a napok száma látható, a szabadság típusa nem.',
+  componentCol: 'Komponens',
+  memberCol: 'Munkatárs',
+  totalCol: 'Keret (nap)',
+  usedCol: 'Felhasznált (nap)',
+  remainingCol: 'Fennmaradó (nap)',
+  loading: 'Szabadságkeretek betöltése...',
+  empty: 'Erre az évre nincs rögzített szabadságkereted.',
+  teamEmpty: 'Nincs közvetlen beosztottad.',
+  loadError: 'A szabadságkeretek betöltése nem sikerült.',
+} as const
+
 export const entitlementAdminText = {
   tabLabel: 'Szabadságkeretek (Entitlements)',
   eyebrow: 'HR ADMINISZTRÁCIÓ · SZABADSÁGKERETEK',

@@ -26,7 +26,10 @@ function leaveItApiPlugin(): Plugin {
   const handleAuthApiRequest = createAuthApiHandler(sharedEmployeeRepo)
   const handleTeamApiRequest = createTeamApiHandler()
   const handleEmployeeApiRequest = createEmployeeApiHandler(sharedEmployeeRepo)
-  const handleEntitlementApiRequest = createLeaveEntitlementApiHandler()
+  const handleEntitlementApiRequest = createLeaveEntitlementApiHandler(
+    undefined,
+    sharedEmployeeRepo,
+  )
   const handleLeaveRequestApiRequest = createLeaveRequestApiHandler(
     undefined,
     sharedEmployeeRepo,

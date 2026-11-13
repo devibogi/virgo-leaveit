@@ -1,3 +1,4 @@
+import type { EntitlementBalanceSummary } from '../domain/leaveEntitlement.ts'
 import type {
   CreateLeaveEntitlementInput,
   EntitlementComponent,
@@ -22,6 +23,12 @@ export interface LeaveEntitlementApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
   getActorRole?: () => Role
+  /** Demo-only: id of the signed-in user, sent as X-Actor-Id. */
+  getActorId?: () => string
+}
+
+export interface TeamMemberBalance extends EntitlementBalanceSummary {
+  displayName: string
 }
 
 export function createLeaveEntitlementApiClient(
@@ -35,6 +42,10 @@ export function createLeaveEntitlementApiClient(
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'X-Actor-Role': getRole(),
+    }
+    const actorId = options.getActorId?.()
+    if (actorId) {
+      headers['X-Actor-Id'] = actorId
     }
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
@@ -84,6 +95,15 @@ export function createLeaveEntitlementApiClient(
         headers: buildHeaders(false),
       })
       return parseResponse<LeaveEntitlement[]>(response)
+    },
+
+    /** Manager: direct reports' yearly balance, numbers only. */
+    async listTeamSummary(year: number): Promise<TeamMemberBalance[]> {
+      const response = await fetchImpl(
+        `${baseUrl}/entitlements/team-summary?year=${year}`,
+        { method: 'GET', headers: buildHeaders(false) },
+      )
+      return parseResponse<TeamMemberBalance[]>(response)
     },
 
     async getEntitlementById(id: string): Promise<LeaveEntitlement> {

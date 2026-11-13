@@ -274,3 +274,36 @@ export function mapLeaveEntitlementToRow(
     updated_by: ent.updatedBy,
   }
 }
+
+/** Aggregated balance of one employee for one year: numbers only, no component / leave type. */
+export interface EntitlementBalanceSummary {
+  employeeId: string
+  year: number
+  totalDays: number
+  usedDays: number
+  remainingDays: number
+}
+
+/**
+ * Sums effective days and usedYear over all components of one employee+year.
+ * Used for the manager's team view, which must not reveal components or leave types.
+ */
+export function summarizeEntitlementBalance(
+  entitlements: readonly LeaveEntitlement[],
+  employeeId: string,
+  year: number,
+): EntitlementBalanceSummary {
+  const rows = entitlements.filter(
+    (e) => e.employeeId === employeeId && e.year === year,
+  )
+  const half = (n: number) => Math.round(n * 2) / 2
+  const totalDays = half(rows.reduce((s, e) => s + getEffectiveEntitlementDays(e), 0))
+  const usedDays = half(rows.reduce((s, e) => s + e.usedYear, 0))
+  return {
+    employeeId,
+    year,
+    totalDays,
+    usedDays,
+    remainingDays: half(totalDays - usedDays),
+  }
+}

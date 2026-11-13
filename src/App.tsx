@@ -4,6 +4,7 @@ import { EmployeeAdminCrud } from './components/EmployeeAdminCrud'
 import { LeaveEntitlementAdminCrud } from './components/LeaveEntitlementAdminCrud'
 import { LeaveRequestAdminCrud } from './components/LeaveRequestAdminCrud'
 import { LoginView } from './components/LoginView'
+import { MyEntitlementsView } from './components/MyEntitlementsView'
 import { TeamAdminCrud } from './components/TeamAdminCrud'
 import {
   authText,
@@ -37,12 +38,17 @@ export default function App() {
     return <LoginView onLoginSuccess={handleLoginSuccess} />
   }
 
+  // Teams (and their tab) are visible to HR admin only.
+  const isHrAdmin = activeRole === 'HR_ADMIN'
+  const visibleSection: AdminSection =
+    section === 'TEAMS' && !isHrAdmin ? 'REQUESTS' : section
+
   const heading =
-    section === 'TEAMS'
+    visibleSection === 'TEAMS'
       ? teamAdminText
-      : section === 'EMPLOYEES'
+      : visibleSection === 'EMPLOYEES'
         ? employeeAdminText
-        : section === 'ENTITLEMENTS'
+        : visibleSection === 'ENTITLEMENTS'
           ? entitlementAdminText
           : leaveRequestAdminText
 
@@ -103,8 +109,8 @@ export default function App() {
           <button
             type="button"
             role="tab"
-            aria-selected={section === 'REQUESTS'}
-            className={`section-tab ${section === 'REQUESTS' ? 'section-tab-active' : ''}`}
+            aria-selected={visibleSection === 'REQUESTS'}
+            className={`section-tab ${visibleSection === 'REQUESTS' ? 'section-tab-active' : ''}`}
             onClick={() => setSection('REQUESTS')}
           >
             {leaveRequestAdminText.tabLabel}
@@ -112,8 +118,8 @@ export default function App() {
           <button
             type="button"
             role="tab"
-            aria-selected={section === 'ENTITLEMENTS'}
-            className={`section-tab ${section === 'ENTITLEMENTS' ? 'section-tab-active' : ''}`}
+            aria-selected={visibleSection === 'ENTITLEMENTS'}
+            className={`section-tab ${visibleSection === 'ENTITLEMENTS' ? 'section-tab-active' : ''}`}
             onClick={() => setSection('ENTITLEMENTS')}
           >
             {entitlementAdminText.tabLabel}
@@ -121,21 +127,23 @@ export default function App() {
           <button
             type="button"
             role="tab"
-            aria-selected={section === 'EMPLOYEES'}
-            className={`section-tab ${section === 'EMPLOYEES' ? 'section-tab-active' : ''}`}
+            aria-selected={visibleSection === 'EMPLOYEES'}
+            className={`section-tab ${visibleSection === 'EMPLOYEES' ? 'section-tab-active' : ''}`}
             onClick={() => setSection('EMPLOYEES')}
           >
             {employeeAdminText.tabLabel}
           </button>
+          {isHrAdmin && (
           <button
             type="button"
             role="tab"
-            aria-selected={section === 'TEAMS'}
-            className={`section-tab ${section === 'TEAMS' ? 'section-tab-active' : ''}`}
+            aria-selected={visibleSection === 'TEAMS'}
+            className={`section-tab ${visibleSection === 'TEAMS' ? 'section-tab-active' : ''}`}
             onClick={() => setSection('TEAMS')}
           >
             {teamAdminText.tabLabel}
           </button>
+          )}
         </div>
 
         <div className="page-heading">
@@ -147,21 +155,28 @@ export default function App() {
           <p className="intro">{heading.pageIntro}</p>
         </div>
 
-        {section === 'TEAMS' ? (
+        {visibleSection === 'TEAMS' ? (
           <TeamAdminCrud
             activeRole={activeRole}
             onRequestRoleChange={setActiveRole}
           />
-        ) : section === 'EMPLOYEES' ? (
+        ) : visibleSection === 'EMPLOYEES' ? (
           <EmployeeAdminCrud
             activeRole={activeRole}
             onRequestRoleChange={setActiveRole}
           />
-        ) : section === 'ENTITLEMENTS' ? (
-          <LeaveEntitlementAdminCrud
-            activeRole={activeRole}
-            onRequestRoleChange={setActiveRole}
-          />
+        ) : visibleSection === 'ENTITLEMENTS' ? (
+          isHrAdmin ? (
+            <LeaveEntitlementAdminCrud
+              activeRole={activeRole}
+              onRequestRoleChange={setActiveRole}
+            />
+          ) : (
+            <MyEntitlementsView
+              activeRole={activeRole}
+              currentUserId={currentUser.id}
+            />
+          )
         ) : (
           <LeaveRequestAdminCrud
             activeRole={activeRole}

@@ -66,6 +66,8 @@ export {
   ENTITLEMENT_COMPONENTS,
   EntitlementComponentEnum,
   getEffectiveEntitlementDays,
+  summarizeEntitlementBalance,
+  type EntitlementBalanceSummary,
   isEntitlementComponent,
   mapLeaveEntitlementToRow,
   mapRowToLeaveEntitlement,

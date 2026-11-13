@@ -143,4 +143,49 @@ describe('LeaveEntitlement API endpoints, HR_ADMIN authorization & usage cache r
       client.getEntitlementById('ent-peter-2026-carryover'),
     ).rejects.toThrowError(TeamApiError)
   })
+
+  it('lets every role read only their own entitlements, read-only', async () => {
+    const { fakeFetch } = createInMemoryEntitlementFetch()
+    const peter = createLeaveEntitlementApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'EMPLOYEE',
+      getActorId: () => 'emp-peter',
+    })
+    const own = await peter.listEntitlements({ employeeId: 'emp-anna', year: 2026 })
+    expect(own.map((e) => e.employeeId)).toEqual(['emp-peter'])
+
+    const anna = createLeaveEntitlementApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'EMPLOYEE',
+      getActorId: () => 'emp-anna',
+    })
+    expect(await anna.listEntitlements({ year: 2026 })).toEqual([])
+    await expect(anna.getEntitlementById('ent-peter-2026-base')).rejects.toMatchObject({ status: 403 })
+  })
+
+  it('gives managers team balances as numbers only, never to employees', async () => {
+    const { fakeFetch } = createInMemoryEntitlementFetch()
+    const manager = createLeaveEntitlementApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'MANAGER',
+      getActorId: () => 'emp-katalin',
+    })
+    const team = await manager.listTeamSummary(2026)
+    const peter = team.find((m) => m.employeeId === 'emp-peter')
+    expect(peter).toMatchObject({ totalDays: 20, usedDays: 0, remainingDays: 20 })
+    expect(team.map((m) => m.employeeId).sort()).toEqual(['emp-anna', 'emp-peter'])
+    for (const m of team) {
+      expect(Object.keys(m).sort()).toEqual(
+        ['displayName', 'employeeId', 'remainingDays', 'totalDays', 'usedDays', 'year'],
+      )
+    }
+
+    const employee = createLeaveEntitlementApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'EMPLOYEE',
+      getActorId: () => 'emp-peter',
+    })
+    await expect(employee.listTeamSummary(2026)).rejects.toMatchObject({ status: 403 })
+  })
 })
+
