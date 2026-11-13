@@ -80,6 +80,61 @@ describe('LeaveRequest API endpoints, HR_ADMIN authorization & history preservat
     })
   })
 
+  it('lets every role create a request; non-HR only for themselves', async () => {
+    const { fakeFetch } = createInMemoryRequestFetch()
+    for (const role of ['EMPLOYEE', 'MANAGER', 'HR_ADMIN'] as Role[]) {
+      const client = createLeaveRequestApiClient({
+        fetchFn: fakeFetch,
+        getActorRole: () => role,
+        getActorId: () => 'emp-anna',
+      })
+      const start = role === 'EMPLOYEE' ? '2026-09-01' : role === 'MANAGER' ? '2026-09-02' : '2026-09-03'
+      const created = await client.createRequest({
+        employeeId: 'emp-anna',
+        leaveTypeCode: 'ANNUAL',
+        startDate: start,
+        endDate: start,
+        dayPortion: 'FULL',
+        employeeComment: null,
+      })
+      expect(created.status).toBe('PENDING')
+      expect(created.employeeId).toBe('emp-anna')
+    }
+
+    // A non-HR actor cannot file for someone else: employeeId is forced to the actor.
+    const employee = createLeaveRequestApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'EMPLOYEE',
+      getActorId: () => 'emp-anna',
+    })
+    const forced = await employee.createRequest({
+      employeeId: 'emp-katalin',
+      leaveTypeCode: 'ANNUAL',
+      startDate: '2026-09-10',
+      endDate: '2026-09-10',
+      dayPortion: 'FULL',
+      employeeComment: null,
+    })
+    expect(forced.employeeId).toBe('emp-anna')
+
+    // Without an actor id a non-HR create is rejected; listing stays HR-only.
+    const anonymous = createLeaveRequestApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'EMPLOYEE',
+    })
+    await expect(
+      anonymous.createRequest({
+        employeeId: 'emp-anna',
+        leaveTypeCode: 'ANNUAL',
+        startDate: '2026-09-11',
+        endDate: '2026-09-11',
+        dayPortion: 'FULL',
+        employeeComment: null,
+      }),
+    ).rejects.toMatchObject({ status: 403 })
+    await expect(employee.listRequests()).rejects.toMatchObject({ status: 403 })
+  })
+
   it('creates, updates, filters and revokes LeaveRequest without hard-deleting', async () => {
     const { fakeFetch } = createInMemoryRequestFetch()
     const client = createLeaveRequestApiClient({

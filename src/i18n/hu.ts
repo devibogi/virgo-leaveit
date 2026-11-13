@@ -272,6 +272,8 @@ export const leaveRequestAdminText = {
   employeeCommentLabel: 'Munkavállalói megjegyzés (employeeComment)',
   employeeCommentPlaceholder: 'Opcionális megjegyzés...',
   revokeReasonPrompt: 'Visszavonás indoklása (kötelező):',
+  selfServiceNote:
+    'A kérelmek listázása, szerkesztése és visszavonása csak HR adminisztrátor számára érhető el. Új kérelmet bármely szerepkörben beadhatsz a saját nevedre.',
   createButton: '+ Kérelem rögzítése',
   saveButton: 'Módosítások mentése',
   cancelButton: 'Mégse',

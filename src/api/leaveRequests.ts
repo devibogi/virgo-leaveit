@@ -24,6 +24,8 @@ export interface LeaveRequestApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
   getActorRole?: () => Role
+  /** Demo-only: id of the signed-in user, sent as X-Actor-Id. */
+  getActorId?: () => string
 }
 
 export function createLeaveRequestApiClient(
@@ -37,6 +39,10 @@ export function createLeaveRequestApiClient(
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'X-Actor-Role': getRole(),
+    }
+    const actorId = options.getActorId?.()
+    if (actorId) {
+      headers['X-Actor-Id'] = actorId
     }
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'

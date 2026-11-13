@@ -27,7 +27,6 @@ import {
   legalEntityLabel,
   roleLabel,
   statusLabel,
-  teamAdminText,
 } from '../i18n/hu'
 
 export interface LeaveRequestAdminCrudProps {
@@ -40,7 +39,6 @@ export interface LeaveRequestAdminCrudProps {
 
 export function LeaveRequestAdminCrud({
   activeRole,
-  onRequestRoleChange,
   apiClientOptions,
   currentUserId,
 }: LeaveRequestAdminCrudProps) {
@@ -51,8 +49,9 @@ export function LeaveRequestAdminCrud({
       createLeaveRequestApiClient({
         ...apiClientOptions,
         getActorRole: () => activeRole,
+        getActorId: () => currentUserId,
       }),
-    [activeRole, apiClientOptions],
+    [activeRole, apiClientOptions, currentUserId],
   )
 
   const [requests, setRequests] = useState<LeaveRequest[]>([])
@@ -132,32 +131,7 @@ export function LeaveRequestAdminCrud({
     setFormErrors([])
   }
 
-  if (!isAuthorized) {
-    return (
-      <section className="admin-container">
-        <div className="card access-denied-card" role="alert">
-          <div className="access-denied-badge">403 · HR_ADMIN</div>
-          <h2 className="card-title">{teamAdminText.accessDeniedTitle}</h2>
-          <p className="card-subtitle">
-            {teamAdminText.accessDeniedBody} (Jelenlegi szerepkör:{' '}
-            <strong>
-              {roleLabel[activeRole]} [{activeRole}]
-            </strong>
-            )
-          </p>
-          {onRequestRoleChange && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => onRequestRoleChange('HR_ADMIN')}
-            >
-              {teamAdminText.switchToHrAdmin}
-            </button>
-          )}
-        </div>
-      </section>
-    )
-  }
+
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -333,7 +307,8 @@ export function LeaveRequestAdminCrud({
           </form>
         </div>
 
-        {/* Table Card */}
+        {/* Table Card: HR admin only (list / edit / revoke) */}
+        {isAuthorized ? (
         <div className="card">
           <div className="card-header-row">
             <div>
@@ -492,6 +467,11 @@ export function LeaveRequestAdminCrud({
             </div>
           )}
         </div>
+        ) : (
+          <div className="card">
+            <p className="card-subtitle">{leaveRequestAdminText.selfServiceNote}</p>
+          </div>
+        )}
       </div>
     </section>
   )

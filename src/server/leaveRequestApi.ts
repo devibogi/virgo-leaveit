@@ -52,6 +52,13 @@ function extractActorRole(
   return null
 }
 
+function extractActorId(
+  headers?: Record<string, string | undefined>,
+): string | null {
+  const raw = headers?.['x-actor-id'] ?? headers?.['X-Actor-Id']
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+}
+
 /**
  * Reads only the user-editable fields. id, legalEntityId, approverId and status
  * sent by a client are ignored (D21): they are generated / derived server-side.
@@ -105,7 +112,22 @@ export function createLeaveRequestApiHandler(
     }
 
     const actorRole = extractActorRole(req.headers)
-    if (!actorRole || !canManageLeaveRequests(actorRole)) {
+    const actorId = extractActorId(req.headers)
+    // Every role may submit a new request; non-HR actors only for themselves.
+    // Demo-only: role/id come from client headers, not a verified session.
+    const isCreate = isCollection && method === 'POST'
+    const isSelfServiceCreate =
+      isCreate && !!actorRole && !canManageLeaveRequests(actorRole)
+    if (isSelfServiceCreate && !actorId) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          details: ['Kérelem beadásához a bejelentkezett felhasználó azonosítója szükséges.'],
+        },
+      }
+    }
+    if (!actorRole || (!isCreate && !canManageLeaveRequests(actorRole))) {
       return {
         status: 403,
         body: {
@@ -141,7 +163,8 @@ export function createLeaveRequestApiHandler(
       }
 
       if (method === 'POST') {
-        const payload = (req.body ?? {}) as Record<string, unknown>
+        const body = (req.body ?? {}) as Record<string, unknown>
+        const payload = isSelfServiceCreate ? { ...body, employeeId: actorId } : body
         const built = await buildFromPayload(payload)
         if (!built.input) {
           return {
