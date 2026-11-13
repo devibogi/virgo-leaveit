@@ -92,6 +92,7 @@ function parseEmployeePayload(
     managerId,
     roles,
     birthDate: typeof payload.birthDate === 'string' ? payload.birthDate : '',
+    taxId: typeof payload.taxId === 'string' ? payload.taxId.trim() : '',
     employmentStart:
       typeof payload.employmentStart === 'string'
         ? payload.employmentStart

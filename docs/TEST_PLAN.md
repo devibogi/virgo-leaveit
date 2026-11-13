@@ -93,6 +93,10 @@
 - Employee with `false` is missing from the payroll export but balance, requests and approvals work normally.
 - Changing the flag creates an audit event.
 
+## Employee tax id
+- HR Admin create/update requires a 10-digit synthetic `taxId` (Adóazonosító jel); missing/invalid → 400 (`employeeApi.taxId.test.ts`).
+- HR Admin sees and edits it in the employee list/form; manager views never contain it.
+
 ## Authorization
 - Approver inbox lists only requests where approverId = actor; decision allowed only on PENDING (409), only by the approver, never by the requester (403); unknown id 404, invalid decision 400 (`leaveDecision.test.ts`, `leaveRequestApi.decision.test.ts`).
 - Employee sees only own detailed requests and balances.

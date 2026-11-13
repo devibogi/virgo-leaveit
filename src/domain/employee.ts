@@ -99,6 +99,9 @@ export function validateEmployee(
       'A szerepköröknek (roles) tartalmazniuk kell az EMPLOYEE szerepkört.',
     )
   }
+  if (!/^\d{10}$/.test(input.taxId?.trim() ?? '')) {
+    errors.push('Az adóazonosító jel kötelező, 10 számjegyből áll.')
+  }
   if (!input.birthDate || !ISO_DATE_REGEX.test(input.birthDate)) {
     errors.push('A születési dátum (YYYY-MM-DD) kötelező.')
   }

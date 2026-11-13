@@ -191,6 +191,7 @@ describe('Employee API endpoints, session authorization & frontend client', () =
       legalEntityId: 'VIRGO_KFT' as const,
       roles: ['EMPLOYEE' as Role],
       birthDate: '1990-01-01',
+      taxId: '8400000099',
       employmentStart: '2024-01-01',
     }
     await client.createEmployee({ ...base, id: 'emp-m', displayName: 'M', managerId: 'emp-piri' })

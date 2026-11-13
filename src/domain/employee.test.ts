@@ -19,6 +19,7 @@ describe('Employee entity (shared DATA_MODEL contract)', () => {
       managerId: ' emp-katalin ',
       roles: ['EMPLOYEE'],
       birthDate: '1992-04-15',
+      taxId: '8400000099',
       employmentStart: '2023-01-10',
       employmentEnd: null,
       deputyIds: [' emp-anna ', 'emp-anna'],
@@ -32,12 +33,12 @@ describe('Employee entity (shared DATA_MODEL contract)', () => {
       managerId: 'emp-katalin',
       roles: ['EMPLOYEE'],
       birthDate: '1992-04-15',
+      taxId: '8400000099',
       employmentStart: '2023-01-10',
       employmentEnd: null,
       includeInPayrollExport: true,
       deputyIds: ['emp-anna'],
       teamId: null,
-      taxId: '',
     })
   })
 
@@ -50,6 +51,7 @@ describe('Employee entity (shared DATA_MODEL contract)', () => {
       managerId: 'emp-peter',
       roles: ['MANAGER'],
       birthDate: '1992/04/15',
+      taxId: '8400000099',
       employmentStart: '2025-05-01',
       employmentEnd: '2025-01-01',
       deputyIds: ['emp-peter'],
@@ -83,6 +85,7 @@ describe('Employee entity (shared DATA_MODEL contract)', () => {
       managerId: null,
       roles: ['EMPLOYEE', 'MANAGER'],
       birthDate: '1985-08-20',
+      taxId: '8400000099',
       employmentStart: '2020-03-01',
       employmentEnd: null,
       includeInPayrollExport: false,

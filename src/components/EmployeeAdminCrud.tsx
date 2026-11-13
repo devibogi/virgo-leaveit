@@ -67,6 +67,7 @@ export function EmployeeAdminCrud({
   const [hasManagerRole, setHasManagerRole] = useState<boolean>(false)
   const [hasHrAdminRole, setHasHrAdminRole] = useState<boolean>(false)
   const [birthDate, setBirthDate] = useState<string>('1990-01-15')
+  const [taxId, setTaxId] = useState<string>('')
   const [employmentStart, setEmploymentStart] = useState<string>('2024-01-01')
   const [employmentEnd, setEmploymentEnd] = useState<string>('')
   const [includeInPayrollExport, setIncludeInPayrollExport] =
@@ -117,6 +118,7 @@ export function EmployeeAdminCrud({
     setHasManagerRole(false)
     setHasHrAdminRole(false)
     setBirthDate('1990-01-15')
+    setTaxId('')
     setEmploymentStart('2024-01-01')
     setEmploymentEnd('')
     setIncludeInPayrollExport(true)
@@ -134,6 +136,7 @@ export function EmployeeAdminCrud({
     setHasManagerRole(emp.roles.includes('MANAGER'))
     setHasHrAdminRole(emp.roles.includes('HR_ADMIN'))
     setBirthDate(emp.birthDate)
+    setTaxId(emp.taxId ?? '')
     setEmploymentStart(emp.employmentStart)
     setEmploymentEnd(emp.employmentEnd ?? '')
     setIncludeInPayrollExport(emp.includeInPayrollExport)
@@ -200,6 +203,7 @@ export function EmployeeAdminCrud({
       managerId: managerId.trim() ? managerId.trim() : null,
       roles,
       birthDate: birthDate.trim(),
+      taxId: taxId.trim(),
       employmentStart: employmentStart.trim(),
       employmentEnd: employmentEnd.trim() ? employmentEnd.trim() : null,
       includeInPayrollExport,
@@ -343,6 +347,23 @@ export function EmployeeAdminCrud({
                   <span>{roleLabel.HR_ADMIN} (HR_ADMIN)</span>
                 </label>
               </div>
+            </div>
+
+            <div className="form-row-2">
+              <label className="form-field">
+                <span>{employeeAdminText.taxIdLabel}</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{10}"
+                  maxLength={10}
+                  required
+                  value={taxId}
+                  placeholder={employeeAdminText.taxIdPlaceholder}
+                  onChange={(e) => setTaxId(e.target.value.replace(/\D/g, ''))}
+                  disabled={submitting}
+                />
+              </label>
             </div>
 
             <div className="form-row-2">
@@ -556,6 +577,7 @@ export function EmployeeAdminCrud({
                       <td className="sub-cell">
                         <div>{formatDate(emp.employmentStart)}</div>
                         <div>Szül.: {formatDate(emp.birthDate)}</div>
+                        <div>Adóaz.: {emp.taxId || '—'}</div>
                       </td>
                       <td>
                         {emp.deputyIds.length > 0

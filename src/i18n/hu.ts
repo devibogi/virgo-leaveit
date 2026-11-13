@@ -198,6 +198,8 @@ export const employeeAdminText = {
   managerIdPlaceholder: '— válassz vezetőt —',
   rolesLabel: 'Szerepkörök',
   birthDateLabel: 'Születési dátum (YYYY-MM-DD)',
+  taxIdLabel: 'Adóazonosító jel (10 számjegy)',
+  taxIdPlaceholder: 'pl. 8400000099',
   employmentStartLabel: 'Belépés dátuma (YYYY-MM-DD)',
   employmentEndLabel: 'Kilépés dátuma (opcionális, YYYY-MM-DD)',
   deputyIdsLabel: 'Helyettesek',
