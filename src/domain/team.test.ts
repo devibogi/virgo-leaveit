@@ -12,11 +12,13 @@ import {
 describe('Team entity (shared DATA_MODEL contract)', () => {
   it('creates a valid Team entity keyed by managerId and trims fields', () => {
     const team = createTeam({
+      id: ' team-dev ',
       managerId: ' emp-katalin ',
       name: ' Fejlesztési csapat ',
     })
 
     expect(team).toEqual<Team>({
+      id: 'team-dev',
       managerId: 'emp-katalin',
       name: 'Fejlesztési csapat',
     })
@@ -46,12 +48,14 @@ describe('Team entity (shared DATA_MODEL contract)', () => {
 
   it('maps between MariaDB row (snake_case) and Team entity (camelCase)', () => {
     const row: TeamRow = {
+      id: 'team-dev',
       manager_id: 'emp-katalin',
       name: 'Fejlesztési csapat',
     }
 
     const entity = mapRowToTeam(row)
     expect(entity).toEqual<Team>({
+      id: 'team-dev',
       managerId: 'emp-katalin',
       name: 'Fejlesztési csapat',
     })
@@ -65,6 +69,15 @@ describe('Team entity (shared DATA_MODEL contract)', () => {
     expect(canManageTeams('MANAGER')).toBe(false)
     expect(canManageTeams('EMPLOYEE')).toBe(false)
     expect(canManageTeams(['EMPLOYEE', 'MANAGER'])).toBe(false)
+  })
+})
+
+describe('createTeam id', () => {
+  it('generates an id when none is given, so one manager can lead several teams', () => {
+    const a = createTeam({ managerId: 'emp-katalin', name: 'A' })
+    const b = createTeam({ managerId: 'emp-katalin', name: 'B' })
+    expect(a.id).toMatch(/^team-/)
+    expect(a.id).not.toBe(b.id)
   })
 })
 

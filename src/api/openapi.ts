@@ -104,15 +104,15 @@ export const openApiDocument = {
         },
       },
     },
-    '/teams/{managerId}': {
+    '/teams/{teamId}': {
       parameters: [
         { $ref: '#/components/parameters/ActorRoleHeader' },
-        { $ref: '#/components/parameters/ManagerIdParam' },
+        { $ref: '#/components/parameters/TeamIdParam' },
       ],
       get: {
         tags: ['Teams'],
-        summary: 'Get a team by managerId',
-        operationId: 'getTeamByManagerId',
+        summary: 'Get a team by id',
+        operationId: 'getTeamById',
         responses: {
           '200': {
             description: 'Team details',
@@ -224,11 +224,11 @@ export const openApiDocument = {
         description: 'Active role of the caller (must be HR_ADMIN)',
         schema: { $ref: '#/components/schemas/Role' },
       },
-      ManagerIdParam: {
-        name: 'managerId',
+      TeamIdParam: {
+        name: 'teamId',
         in: 'path',
         required: true,
-        description: 'Manager employee identifier (primary key of Team)',
+        description: 'Team identifier (primary key of Team); one manager may lead several teams',
         schema: { type: 'string', minLength: 1, maxLength: 64 },
       },
     },
@@ -239,8 +239,9 @@ export const openApiDocument = {
       },
       Team: {
         type: 'object',
-        required: ['managerId', 'name'],
+        required: ['id', 'managerId', 'name'],
         properties: {
+          id: { type: 'string', maxLength: 64, example: 'team-dev' },
           managerId: { type: 'string', maxLength: 64, example: 'emp-katalin' },
           name: {
             type: 'string',

@@ -47,6 +47,8 @@ export interface Employee {
    * null for top-level people.
    */
   managerId: EmployeeId | null
+  /** The one team this employee belongs to (null = none). Its managerId equals this.managerId. */
+  teamId?: string | null
   /** Every person has EMPLOYEE; managers and HR admins have additional roles. */
   roles: Role[]
   birthDate: IsoDate // synthetic; used only for age-based additional leave
@@ -70,13 +72,13 @@ export interface Employee {
 }
 
 /**
- * Team = the people one manager approves. Membership is derived, never stored:
- * team of M = employees whose managerId === M. So everyone is in exactly one team
- * (or none, if managerId is null). A manager belongs to their own manager's team.
- * This record only holds the display name; one per manager.
+ * Team: a named group led by one manager (product owner, 2026-11-13).
+ * An employee is in at most one team (Employee.teamId); a manager may lead several teams.
+ * Invariant: employee.managerId === team.managerId, so managerId stays the approver.
  */
 export interface Team {
-  /** Key: the manager who approves this team's leave. Unique. */
+  id: string
+  /** The manager who approves this team's leave. Not unique: one manager may lead several teams. */
   managerId: EmployeeId
   name: string
 }

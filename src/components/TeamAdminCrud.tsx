@@ -65,8 +65,8 @@ export function TeamAdminCrud({
   const [formErrors, setFormErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState<boolean>(false)
 
-  // Edit state (keyed by managerId; only name is editable since managerId is PK)
-  const [editingManagerId, setEditingManagerId] = useState<string | null>(null)
+  // Edit state (keyed by team id; only the name is editable here)
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
   const [editName, setEditName] = useState<string>('')
   const [editErrors, setEditErrors] = useState<string[]>([])
 
@@ -187,21 +187,21 @@ export function TeamAdminCrud({
   }
 
   function startEditing(team: Team) {
-    setEditingManagerId(team.managerId)
+    setEditingTeamId(team.id)
     setEditName(team.name)
     setEditErrors([])
   }
 
   function cancelEditing() {
-    setEditingManagerId(null)
+    setEditingTeamId(null)
     setEditName('')
     setEditErrors([])
   }
 
-  async function handleUpdate(managerId: string) {
+  async function handleUpdate(team: Team) {
     setEditErrors([])
     const validation = validateTeam({
-      managerId,
+      managerId: team.managerId,
       name: editName,
     })
 
@@ -212,7 +212,7 @@ export function TeamAdminCrud({
 
     setSubmitting(true)
     try {
-      await apiClient.updateTeam(managerId, {
+      await apiClient.updateTeam(team.id, {
         name: editName.trim(),
       })
       cancelEditing()
@@ -228,12 +228,12 @@ export function TeamAdminCrud({
     }
   }
 
-  async function handleDelete(managerId: string) {
+  async function handleDelete(teamId: string) {
     setSubmitting(true)
     setError(null)
     try {
-      await apiClient.deleteTeam(managerId)
-      if (editingManagerId === managerId) {
+      await apiClient.deleteTeam(teamId)
+      if (editingTeamId === teamId) {
         cancelEditing()
       }
       await loadTeams(managerFilter)
@@ -248,10 +248,12 @@ export function TeamAdminCrud({
     }
   }
 
-  async function handleTeamChange(emp: Employee, newManagerId: string) {
+  // One team per employee; joining a team also makes its manager the approver.
+  async function handleTeamChange(emp: Employee, newTeamId: string) {
     setMembershipMessage(null)
     setMembershipError(null)
-    const managerId = newManagerId || null
+    const teamId = newTeamId || null
+    const managerId = teamId ? (teams.find((t) => t.id === teamId)?.managerId ?? null) : null
     if (wouldCreateManagementCycle(employees, emp.id, managerId)) {
       setMembershipError(
         'A vezető-hozzárendelés körkörös vezetési láncot hozna létre.',
@@ -264,6 +266,7 @@ export function TeamAdminCrud({
       void _id
       const updated = await employeeClient.updateEmployee(emp.id, {
         ...rest,
+        teamId,
         managerId,
       })
       setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
@@ -286,7 +289,6 @@ export function TeamAdminCrud({
     setFormErrors([])
   }
 
-  const teamNameByManager = new Map(teams.map((t) => [t.managerId, t.name]))
   const employeeName = new Map(employees.map((e) => [e.id, e.displayName]))
   const employeesById = new Map(employees.map((e) => [e.id, e]))
 
@@ -418,9 +420,9 @@ export function TeamAdminCrud({
                 </thead>
                 <tbody>
                   {teams.map((team) => {
-                    const isEditing = editingManagerId === team.managerId
+                    const isEditing = editingTeamId === team.id
                     return (
-                      <tr key={team.managerId}>
+                      <tr key={team.id}>
                         <td>{employeeName.get(team.managerId) ?? '—'}</td>
                         <td>
                           {isEditing ? (
@@ -450,7 +452,7 @@ export function TeamAdminCrud({
                                 type="button"
                                 className="btn btn-primary btn-sm"
                                 onClick={() =>
-                                  void handleUpdate(team.managerId)
+                                  void handleUpdate(team)
                                 }
                                 disabled={submitting}
                               >
@@ -479,7 +481,7 @@ export function TeamAdminCrud({
                                 type="button"
                                 className="btn btn-danger btn-sm"
                                 onClick={() =>
-                                  void handleDelete(team.managerId)
+                                  void handleDelete(team.id)
                                 }
                                 disabled={submitting}
                               >
@@ -531,12 +533,9 @@ export function TeamAdminCrud({
               </thead>
               <tbody>
                 {employees.map((emp) => {
-                  const current = emp.managerId ?? ''
-                  // Options: every team except the employee's own; keep the current
-                  // manager selectable even if no Team record exists for them.
+                  const current = emp.teamId ?? ''
+                  // Options: every team not led by the employee themself.
                   const options = teams.filter((t) => t.managerId !== emp.id)
-                  const hasCurrent =
-                    current === '' || options.some((t) => t.managerId === current)
                   return (
                     <tr key={emp.id}>
                       <td>
@@ -550,14 +549,9 @@ export function TeamAdminCrud({
                           aria-label={`${teamAdminText.membershipColTeam}: ${emp.displayName}`}
                         >
                           <option value="">{teamAdminText.membershipNoTeam}</option>
-                          {!hasCurrent && (
-                            <option value={current}>
-                              {employeeName.get(current) ?? '—'}
-                            </option>
-                          )}
                           {options.map((t) => (
-                            <option key={t.managerId} value={t.managerId}>
-                              {teamNameByManager.get(t.managerId)} —{' '}
+                            <option key={t.id} value={t.id}>
+                              {t.name} —{' '}
                               {employeeName.get(t.managerId) ?? '—'}
                             </option>
                           ))}

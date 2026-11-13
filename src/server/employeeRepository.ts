@@ -32,6 +32,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'piri.varga@virgo.example',
     legalEntityId: 'VIRGO_KFT',
     managerId: null,
+    teamId: null,
     roles: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN'],
     birthDate: '1984-03-12',
     employmentStart: '2019-02-01',
@@ -46,6 +47,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'katalin.nagy@virgo.example',
     legalEntityId: 'VIRGO_KFT',
     managerId: 'emp-piri',
+    teamId: 'team-hr',
     roles: ['EMPLOYEE', 'MANAGER'],
     birthDate: '1986-07-22',
     employmentStart: '2020-05-15',
@@ -60,6 +62,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'peter.kovacs@virgo.example',
     legalEntityId: 'VIRGO_KFT',
     managerId: 'emp-katalin',
+    teamId: 'team-dev',
     roles: ['EMPLOYEE'],
     birthDate: '1993-11-04',
     employmentStart: '2022-09-01',
@@ -74,6 +77,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'anna.szabo@virgo.example',
     legalEntityId: 'VIRGO_ZRT',
     managerId: 'emp-katalin',
+    teamId: 'team-dev',
     roles: ['EMPLOYEE'],
     birthDate: '1995-01-19',
     employmentStart: '2024-03-01',
@@ -88,6 +92,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'eszter.toth@virgo.example',
     legalEntityId: 'VIRGO_KFT',
     managerId: 'emp-katalin',
+    teamId: 'team-qa',
     roles: ['EMPLOYEE'],
     birthDate: '1989-05-08',
     employmentStart: '2021-09-01',
@@ -102,6 +107,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     email: 'gabor.kovacs@virgo.example',
     legalEntityId: 'VIRGO_KFT',
     managerId: 'emp-piri',
+    teamId: 'team-hr',
     roles: ['EMPLOYEE', 'MANAGER'],
     birthDate: '1985-09-30',
     employmentStart: '2020-01-06',
@@ -196,7 +202,7 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
     const whereClause =
       clauses.length > 0 ? ` WHERE ${clauses.join(' AND ')}` : ''
     const rows = await this.db.query<EmployeeRow>(
-      `SELECT id, display_name, email, legal_entity_id, manager_id, roles_json, birth_date, employment_start, employment_end, include_in_payroll_export, deputy_ids_json, tax_id FROM employees${whereClause} ORDER BY display_name ASC`,
+      `SELECT id, display_name, email, legal_entity_id, manager_id, team_id, roles_json, birth_date, employment_start, employment_end, include_in_payroll_export, deputy_ids_json, tax_id FROM employees${whereClause} ORDER BY display_name ASC`,
       params,
     )
     return rows.map(mapRowToEmployee)
@@ -204,7 +210,7 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
 
   async findById(id: string): Promise<Employee | null> {
     const rows = await this.db.query<EmployeeRow>(
-      'SELECT id, display_name, email, legal_entity_id, manager_id, roles_json, birth_date, employment_start, employment_end, include_in_payroll_export, deputy_ids_json, tax_id FROM employees WHERE id = ? LIMIT 1',
+      'SELECT id, display_name, email, legal_entity_id, manager_id, team_id, roles_json, birth_date, employment_start, employment_end, include_in_payroll_export, deputy_ids_json, tax_id FROM employees WHERE id = ? LIMIT 1',
       [id],
     )
     return rows[0] ? mapRowToEmployee(rows[0]) : null
@@ -220,16 +226,17 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
     const row = mapEmployeeToRow(validated)
     await this.db.execute(
       `INSERT INTO employees (
-        id, display_name, email, legal_entity_id, manager_id,
+        id, display_name, email, legal_entity_id, manager_id, team_id,
         roles_json, birth_date, employment_start, employment_end,
         include_in_payroll_export, deputy_ids_json, tax_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         row.id,
         row.display_name,
         row.email,
         row.legal_entity_id,
         row.manager_id,
+        row.team_id ?? null,
         row.roles_json,
         row.birth_date,
         row.employment_start,
@@ -257,6 +264,7 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
         email = ?,
         legal_entity_id = ?,
         manager_id = ?,
+        team_id = ?,
         roles_json = ?,
         birth_date = ?,
         employment_start = ?,
@@ -270,6 +278,7 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
         row.email,
         row.legal_entity_id,
         row.manager_id,
+        row.team_id ?? null,
         row.roles_json,
         row.birth_date,
         row.employment_start,

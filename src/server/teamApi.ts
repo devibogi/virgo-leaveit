@@ -70,9 +70,9 @@ export function createTeamApiHandler(
     }
 
     const isTeamsCollection = pathname === '/api/teams'
-    const teamManagerMatch = /^\/api\/teams\/([^/]+)$/.exec(pathname)
+    const teamItemMatch = /^\/api\/teams\/([^/]+)$/.exec(pathname)
 
-    if (!isTeamsCollection && !teamManagerMatch) {
+    if (!isTeamsCollection && !teamItemMatch) {
       return null
     }
 
@@ -123,6 +123,7 @@ export function createTeamApiHandler(
       if (method === 'POST') {
         const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidate = {
+          id: typeof payload.id === 'string' && payload.id.trim() ? payload.id : undefined,
           managerId:
             typeof payload.managerId === 'string' ? payload.managerId : '',
           name: typeof payload.name === 'string' ? payload.name : '',
@@ -160,30 +161,31 @@ export function createTeamApiHandler(
       }
     }
 
-    if (teamManagerMatch) {
-      const managerId = decodeURIComponent(teamManagerMatch[1])
+    if (teamItemMatch) {
+      const id = decodeURIComponent(teamItemMatch[1])
+      const notFound = {
+        status: 404,
+        body: {
+          error: 'Not found',
+          details: [`A(z) '${id}' csapat nem található.`],
+        },
+      }
 
       if (method === 'GET') {
-        const team = await repository.findByManagerId(managerId)
-        if (!team) {
-          return {
-            status: 404,
-            body: {
-              error: 'Not found',
-              details: [`A(z) '${managerId}' vezetőhöz nem található csapat.`],
-            },
-          }
-        }
-        return {
-          status: 200,
-          body: team,
-        }
+        const team = await repository.findById(id)
+        return team ? { status: 200, body: team } : notFound
       }
 
       if (method === 'PUT') {
+        const existing = await repository.findById(id)
+        if (!existing) return notFound
         const payload = (sanitizedBody ?? {}) as Record<string, unknown>
         const candidate = {
-          managerId,
+          id,
+          managerId:
+            typeof payload.managerId === 'string' && payload.managerId.trim()
+              ? payload.managerId
+              : existing.managerId,
           name: typeof payload.name === 'string' ? payload.name : '',
         }
 
@@ -198,40 +200,16 @@ export function createTeamApiHandler(
           }
         }
 
-        const updated = await repository.update(managerId, {
+        const updated = await repository.update(id, {
           name: candidate.name,
+          managerId: candidate.managerId,
         })
-
-        if (!updated) {
-          return {
-            status: 404,
-            body: {
-              error: 'Not found',
-              details: [`A(z) '${managerId}' vezetőhöz nem található csapat.`],
-            },
-          }
-        }
-
-        return {
-          status: 200,
-          body: updated,
-        }
+        return updated ? { status: 200, body: updated } : notFound
       }
 
       if (method === 'DELETE') {
-        const deleted = await repository.delete(managerId)
-        if (!deleted) {
-          return {
-            status: 404,
-            body: {
-              error: 'Not found',
-              details: [`A(z) '${managerId}' vezetőhöz nem található csapat.`],
-            },
-          }
-        }
-        return {
-          status: 204,
-        }
+        const deleted = await repository.delete(id)
+        return deleted ? { status: 204 } : notFound
       }
     }
 

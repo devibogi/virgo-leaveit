@@ -2,12 +2,15 @@ import type { Team } from '../domain/team.ts'
 import { attachCsrfHeader } from './csrf.ts'
 
 export interface CreateTeamRequest {
+  id?: string
   managerId: string
   name: string
 }
 
 export interface UpdateTeamRequest {
   name: string
+  /** Optional: reassign the team to another manager. */
+  managerId?: string
 }
 
 export interface ErrorResponse {
@@ -87,9 +90,9 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
       return parseResponse<Team[]>(response)
     },
 
-    async getTeamByManagerId(managerId: string): Promise<Team> {
+    async getTeamById(id: string): Promise<Team> {
       const response = await fetchImpl(
-        `${baseUrl}/teams/${encodeURIComponent(managerId)}`,
+        `${baseUrl}/teams/${encodeURIComponent(id)}`,
         {
           method: 'GET',
           credentials: 'same-origin',
@@ -110,11 +113,11 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
     },
 
     async updateTeam(
-      managerId: string,
+      id: string,
       body: UpdateTeamRequest,
     ): Promise<Team> {
       const response = await fetchImpl(
-        `${baseUrl}/teams/${encodeURIComponent(managerId)}`,
+        `${baseUrl}/teams/${encodeURIComponent(id)}`,
         {
           method: 'PUT',
           credentials: 'same-origin',
@@ -125,9 +128,9 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
       return parseResponse<Team>(response)
     },
 
-    async deleteTeam(managerId: string): Promise<void> {
+    async deleteTeam(id: string): Promise<void> {
       const response = await fetchImpl(
-        `${baseUrl}/teams/${encodeURIComponent(managerId)}`,
+        `${baseUrl}/teams/${encodeURIComponent(id)}`,
         {
           method: 'DELETE',
           credentials: 'same-origin',

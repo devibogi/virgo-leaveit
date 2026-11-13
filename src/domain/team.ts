@@ -3,13 +3,20 @@ import type { Employee, EmployeeId, Role, Team } from '../types/model.ts'
 export type { EmployeeId, Role, Team }
 
 export interface CreateTeamInput {
+  /** Generated when missing. */
+  id?: string
   managerId: EmployeeId
   name: string
 }
 
 export interface TeamRow {
+  id: string
   manager_id: string
   name: string
+}
+
+export function generateTeamId(): string {
+  return `team-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 }
 
 export interface TeamValidationResult {
@@ -63,6 +70,7 @@ export function createTeam(input: CreateTeamInput): Team {
   }
 
   return {
+    id: input.id?.trim() || generateTeamId(),
     managerId: input.managerId.trim(),
     name: input.name.trim(),
   }
@@ -70,6 +78,7 @@ export function createTeam(input: CreateTeamInput): Team {
 
 export function mapRowToTeam(row: TeamRow): Team {
   return {
+    id: row.id,
     managerId: row.manager_id,
     name: row.name,
   }
@@ -77,6 +86,7 @@ export function mapRowToTeam(row: TeamRow): Team {
 
 export function mapTeamToRow(team: Team): TeamRow {
   return {
+    id: team.id,
     manager_id: team.managerId,
     name: team.name,
   }

@@ -21,6 +21,7 @@ CREATE TABLE employee (
   employment_end            DATE         NULL,
   include_in_payroll_export BOOLEAN      NOT NULL DEFAULT TRUE,
   tax_id                    CHAR(10)     NOT NULL UNIQUE,  -- adóazonosító jel, synthetic only
+  team_id                   VARCHAR(64)  NULL,             -- at most one team per employee (FK added after team)
   CONSTRAINT ck_employee_tax_id CHECK (tax_id REGEXP '^[0-9]{10}$'),
   CONSTRAINT fk_employee_le      FOREIGN KEY (legal_entity_id) REFERENCES legal_entity(id),
   CONSTRAINT fk_employee_manager FOREIGN KEY (manager_id) REFERENCES employee(id),
@@ -45,12 +46,17 @@ CREATE TABLE employee_deputy (
   INDEX ix_deputy_deputy (deputy_id)
 );
 
--- Display name only; membership = employees whose manager_id = team.manager_id.
+-- A manager may lead several teams; membership = employee.team_id (one team per employee).
+-- Invariant (app-enforced): employee.manager_id = team.manager_id of the employee's team.
 CREATE TABLE team (
-  manager_id VARCHAR(64)  PRIMARY KEY,
+  id         VARCHAR(64)  PRIMARY KEY,
+  manager_id VARCHAR(64)  NOT NULL,
   name       VARCHAR(200) NOT NULL,
-  CONSTRAINT fk_team_manager FOREIGN KEY (manager_id) REFERENCES employee(id)
+  CONSTRAINT fk_team_manager FOREIGN KEY (manager_id) REFERENCES employee(id),
+  INDEX ix_team_manager (manager_id)
 );
+
+ALTER TABLE employee ADD CONSTRAINT fk_employee_team FOREIGN KEY (team_id) REFERENCES team(id);
 
 CREATE TABLE leave_type (
   code                        ENUM('ANNUAL','SICK_LEAVE','UNPAID','FUNERAL','CHILD_SICK_LEAVE') PRIMARY KEY,

@@ -15,6 +15,7 @@ export interface CreateEmployeeInput {
   email: string
   legalEntityId: LegalEntityId
   managerId: EmployeeId | null
+  teamId?: string | null
   roles: Role[]
   birthDate: IsoDate
   employmentStart: IsoDate
@@ -31,6 +32,7 @@ export interface EmployeeRow {
   email: string
   legal_entity_id: LegalEntityId
   manager_id: string | null
+  team_id?: string | null
   roles_json: string | Role[]
   birth_date: string
   employment_start: string
@@ -156,6 +158,7 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
     email: input.email.trim(),
     legalEntityId: input.legalEntityId,
     managerId: trimmedManagerId,
+    teamId: input.teamId?.trim() || null,
     roles: uniqueRoles,
     birthDate: input.birthDate.trim(),
     employmentStart: input.employmentStart.trim(),
@@ -199,6 +202,7 @@ export function mapRowToEmployee(row: EmployeeRow): Employee {
     email: row.email,
     legalEntityId: row.legal_entity_id,
     managerId: row.manager_id,
+    teamId: row.team_id ?? null,
     roles,
     birthDate: row.birth_date,
     employmentStart: row.employment_start,
@@ -219,6 +223,7 @@ export function mapEmployeeToRow(employee: Employee): EmployeeRow {
     email: employee.email,
     legal_entity_id: employee.legalEntityId,
     manager_id: employee.managerId,
+    team_id: employee.teamId ?? null,
     roles_json: JSON.stringify(employee.roles),
     birth_date: employee.birthDate,
     employment_start: employee.employmentStart,

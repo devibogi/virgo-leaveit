@@ -21,4 +21,16 @@ describe('Team API: every team has a manager', () => {
     expect((await post('emp-nobody'))?.status).toBe(400)
     expect((await post('emp-gabor'))?.status).toBe(201)
   })
+
+  it('seeds Nagy Katalin with two teams; every member shares the team manager', () => {
+    expect(SYNTHETIC_SEED_TEAMS.filter((t) => t.managerId === 'emp-katalin').map((t) => t.id)).toEqual([
+      'team-dev',
+      'team-qa',
+    ])
+    for (const emp of SYNTHETIC_SEED_EMPLOYEES) {
+      if (!emp.teamId) continue
+      const team = SYNTHETIC_SEED_TEAMS.find((t) => t.id === emp.teamId)
+      expect(team?.managerId, emp.id).toBe(emp.managerId)
+    }
+  })
 })

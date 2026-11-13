@@ -20,15 +20,18 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
     ('VIRGO_ZRT', 'Virgo Zrt.')`,
 
   `CREATE TABLE IF NOT EXISTS teams (
+    id VARCHAR(64) NOT NULL,
     manager_id VARCHAR(64) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    PRIMARY KEY (manager_id)
+    PRIMARY KEY (id),
+    INDEX idx_teams_manager_id (manager_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-  `INSERT IGNORE INTO teams (manager_id, name) VALUES
-    ('emp-katalin', 'Fejlesztési csapat'),
-    ('emp-piri', 'HR és Operáció'),
-    ('emp-gabor', 'Termékfejlesztés')`,
+  `INSERT IGNORE INTO teams (id, manager_id, name) VALUES
+    ('team-dev', 'emp-katalin', 'Fejlesztési csapat'),
+    ('team-qa', 'emp-katalin', 'Minőségbiztosítás'),
+    ('team-hr', 'emp-piri', 'HR és Operáció'),
+    ('team-product', 'emp-gabor', 'Termékfejlesztés')`,
 
   `CREATE TABLE IF NOT EXISTS employees (
     id VARCHAR(64) NOT NULL,
@@ -50,18 +53,24 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
 
   `ALTER TABLE employees ADD COLUMN IF NOT EXISTS include_in_payroll_export TINYINT(1) NOT NULL DEFAULT 1`,
   `ALTER TABLE employees ADD COLUMN IF NOT EXISTS tax_id CHAR(10) NOT NULL DEFAULT '8400000000'`,
+  `ALTER TABLE employees ADD COLUMN IF NOT EXISTS team_id VARCHAR(64) NULL`,
+  `UPDATE employees SET team_id = CASE id
+    WHEN 'emp-katalin' THEN 'team-hr' WHEN 'emp-gabor' THEN 'team-hr'
+    WHEN 'emp-peter' THEN 'team-dev' WHEN 'emp-anna' THEN 'team-dev'
+    WHEN 'emp-eszter' THEN 'team-qa' END
+   WHERE team_id IS NULL AND id IN ('emp-katalin','emp-gabor','emp-peter','emp-anna','emp-eszter')`,
 
   `INSERT IGNORE INTO employees (
     id, display_name, email, legal_entity_id, manager_id,
     roles_json, birth_date, employment_start, employment_end,
-    include_in_payroll_export, tax_id, deputy_ids_json
+    include_in_payroll_export, tax_id, deputy_ids_json, team_id
   ) VALUES
-    ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","MANAGER","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, 1, '8000000001', '[]'),
-    ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, 1, '8000000002', '["emp-piri","emp-gabor"]'),
-    ('emp-peter', 'Kovács Péter', 'peter.kovacs@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1993-11-04', '2022-09-01', NULL, 1, '8000000003', '["emp-anna"]'),
-    ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, 1, '8000000004', '["emp-peter"]'),
-    ('emp-eszter', 'Tóth Eszter', 'eszter.toth@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1989-05-08', '2021-09-01', NULL, 1, '8000000005', '["emp-peter"]'),
-    ('emp-gabor', 'Kovács Gábor', 'gabor.kovacs@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1985-09-30', '2020-01-06', NULL, 1, '8000000006', '["emp-katalin"]')`,
+    ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","MANAGER","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, 1, '8000000001', '[]', NULL),
+    ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, 1, '8000000002', '["emp-piri","emp-gabor"]', 'team-hr'),
+    ('emp-peter', 'Kovács Péter', 'peter.kovacs@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1993-11-04', '2022-09-01', NULL, 1, '8000000003', '["emp-anna"]', 'team-dev'),
+    ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, 1, '8000000004', '["emp-peter"]', 'team-dev'),
+    ('emp-eszter', 'Tóth Eszter', 'eszter.toth@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1989-05-08', '2021-09-01', NULL, 1, '8000000005', '["emp-peter"]', 'team-qa'),
+    ('emp-gabor', 'Kovács Gábor', 'gabor.kovacs@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1985-09-30', '2020-01-06', NULL, 1, '8000000006', '["emp-katalin"]', 'team-hr')`,
 
   `CREATE TABLE IF NOT EXISTS leave_types (
     code VARCHAR(32) NOT NULL,
@@ -197,6 +206,19 @@ export function createMariaDbSqlExecutor(config: MariaDbConfig): SqlExecutor {
   async function ensureInitialized(): Promise<void> {
     if (!initializedPromise) {
       initializedPromise = (async () => {
+        // Migration: the old teams table was keyed by manager_id (one team per manager).
+        // It holds display names only, so recreate it with the id key (demo data).
+        const [cols] = await pool.execute(
+          `SELECT COUNT(*) AS n FROM information_schema.columns
+           WHERE table_schema = DATABASE() AND table_name = 'teams' AND column_name = 'id'`,
+        )
+        const [tables] = await pool.execute(
+          `SELECT COUNT(*) AS n FROM information_schema.tables
+           WHERE table_schema = DATABASE() AND table_name = 'teams'`,
+        )
+        if (Number((tables as { n: number }[])[0]?.n) > 0 && Number((cols as { n: number }[])[0]?.n) === 0) {
+          await pool.execute('DROP TABLE teams')
+        }
         for (const stmt of SCHEMA_AND_SEED_STATEMENTS) {
           await pool.execute(stmt)
         }
