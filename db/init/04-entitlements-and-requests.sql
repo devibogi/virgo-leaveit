@@ -27,7 +27,8 @@ INSERT IGNORE INTO leave_entitlement (
   ('ent-peter-2026-base', 'emp-peter', 2026, 'BASE', 20.0, 20.0, NULL, NULL, 20.0, 0.0, 5.0, 0.0, 0.0, 5.0, '2026-01-02T08:00:00Z', 'emp-piri'),
   ('ent-peter-2026-age', 'emp-peter', 2026, 'AGE_ADDITIONAL', 4.0, 4.0, NULL, NULL, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-02T08:00:00Z', 'emp-piri'),
   ('ent-katalin-2026-base', 'emp-katalin', 2026, 'BASE', 20.0, 20.0, NULL, NULL, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-02T08:00:00Z', 'emp-piri'),
-  ('ent-katalin-2026-child', 'emp-katalin', 2026, 'CHILD_ADDITIONAL', NULL, NULL, 4.0, 'Éves nyilatkozat alapján (2 gyermek)', 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-05T09:30:00Z', 'emp-piri');
+  ('ent-katalin-2026-child', 'emp-katalin', 2026, 'CHILD_ADDITIONAL', NULL, NULL, 4.0, 'Éves nyilatkozat alapján (2 gyermek)', 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-05T09:30:00Z', 'emp-piri'),
+  ('ent-eszter-2026-child', 'emp-eszter', 2026, 'CHILD_ADDITIONAL', NULL, NULL, 9.0, 'Éves nyilatkozat alapján (3 gyermek 16 év alatt, ebből 1 fogyatékos: 7 + 2 nap)', 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-05T09:45:00Z', 'emp-piri');
 
 CREATE TABLE IF NOT EXISTS leave_request (
   id VARCHAR(64) PRIMARY KEY,

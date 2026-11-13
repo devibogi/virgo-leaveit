@@ -101,6 +101,24 @@ export const SYNTHETIC_SEED_ENTITLEMENTS: readonly LeaveEntitlement[] = [
     updatedAt: '2026-01-05T09:30:00Z',
     updatedBy: 'emp-piri',
   },
+  {
+    id: 'ent-eszter-2026-child',
+    employeeId: 'emp-eszter',
+    year: 2026,
+    component: 'CHILD_ADDITIONAL',
+    fullYearDays: null,
+    calculatedDays: null,
+    overrideDays: 9,
+    overrideReason: 'Éves nyilatkozat alapján (3 gyermek 16 év alatt, ebből 1 fogyatékos: 7 + 2 nap)',
+    payrollReferenceDays: 9,
+    usedQ1: 0,
+    usedQ2: 0,
+    usedQ3: 0,
+    usedQ4: 0,
+    usedYear: 0,
+    updatedAt: '2026-01-05T09:45:00Z',
+    updatedBy: 'emp-piri',
+  },
 ]
 
 export class InMemoryLeaveEntitlementRepository

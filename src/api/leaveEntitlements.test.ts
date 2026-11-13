@@ -195,7 +195,8 @@ describe('LeaveEntitlement API endpoints, session authorization & usage cache re
     const team = await manager.listTeamSummary(2026)
     const peter = team.find((m) => m.employeeId === 'emp-peter')
     expect(peter).toMatchObject({ totalDays: 24, usedDays: 0, remainingDays: 24 })
-    expect(team.map((m) => m.employeeId).sort()).toEqual(['emp-anna', 'emp-peter'])
+    expect(team.map((m) => m.employeeId).sort()).toEqual(['emp-anna', 'emp-eszter', 'emp-peter'])
+    expect(team.find((m) => m.employeeId === 'emp-eszter')).toMatchObject({ totalDays: 26 }) // 20 base + 6 age (fixture has no child row)
     for (const m of team) {
       expect(Object.keys(m).sort()).toEqual(
         ['displayName', 'employeeId', 'remainingDays', 'totalDays', 'usedDays', 'year'],

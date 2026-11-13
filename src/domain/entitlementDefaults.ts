@@ -12,10 +12,29 @@ const AGE_TABLE: readonly [number, number][] = [
   [45, 10], [43, 9], [41, 8], [39, 7], [37, 6], [35, 5], [33, 4], [31, 3], [28, 2], [25, 1],
 ]
 
-/** Age additional days for a year: applies in the calendar year the threshold age is reached. */
+/** Young worker (fiatal munkavállaló, Mt. §118(4)): 5 days, last in the year they turn 18. */
+export const YOUNG_WORKER_DAYS = 5
+
+/**
+ * Age additional days for a year: applies in the calendar year the threshold age is reached
+ * (Mt. §117(2)), so only the birth year matters, not the birthday.
+ * Current law caps at 10 days from 45 (the T/4740 extension to 63 was never enacted).
+ */
 export function ageAdditionalDays(birthDate: string, year: number): number {
   const ageInYear = year - Number(birthDate.slice(0, 4))
+  if (ageInYear <= 18) return YOUNG_WORKER_DAYS
   return AGE_TABLE.find(([age]) => ageInYear >= age)?.[1] ?? 0
+}
+
+/**
+ * Child additional days (Mt. §118(1)-(2)) for HR to enter manually from the annual declaration:
+ * children under 16: 1 → 2, 2 → 4, 3+ → 7 days; +2 per disabled child. Each parent separately.
+ * Never applied automatically.
+ */
+export function childAdditionalDays(childrenUnder16: number, disabledChildren = 0): number {
+  const n = Math.max(0, Math.floor(childrenUnder16))
+  const base = n === 0 ? 0 : n === 1 ? 2 : n === 2 ? 4 : 7
+  return base + 2 * Math.max(0, Math.floor(disabledChildren))
 }
 
 function dayIndex(iso: string): number {

@@ -82,6 +82,20 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     deputyIds: ['emp-peter'],
     taxId: '8000000004',
   },
+  {
+    id: 'emp-eszter',
+    displayName: 'Tóth Eszter',
+    email: 'eszter.toth@virgo.example',
+    legalEntityId: 'VIRGO_KFT',
+    managerId: 'emp-katalin',
+    roles: ['EMPLOYEE'],
+    birthDate: '1989-05-08',
+    employmentStart: '2021-09-01',
+    employmentEnd: null,
+    includeInPayrollExport: true,
+    deputyIds: ['emp-peter'],
+    taxId: '8000000005',
+  },
 ]
 
 export class InMemoryEmployeeRepository implements EmployeeRepository {

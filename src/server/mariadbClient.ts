@@ -59,7 +59,8 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
     ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, 1, '8000000001', '[]'),
     ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, 1, '8000000002', '["emp-piri"]'),
     ('emp-peter', 'Kovács Péter', 'peter.kovacs@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1993-11-04', '2022-09-01', NULL, 1, '8000000003', '["emp-anna"]'),
-    ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, 1, '8000000004', '["emp-peter"]')`,
+    ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, 1, '8000000004', '["emp-peter"]'),
+    ('emp-eszter', 'Tóth Eszter', 'eszter.toth@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1989-05-08', '2021-09-01', NULL, 1, '8000000005', '["emp-peter"]')`,
 
   `CREATE TABLE IF NOT EXISTS leave_types (
     code VARCHAR(32) NOT NULL,
@@ -114,7 +115,8 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
     ('ent-peter-2026-base', 'emp-peter', 2026, 'BASE', 20.0, 20.0, NULL, NULL, 20.0, 0.0, 5.0, 0.0, 0.0, 5.0, '2026-01-02T08:00:00Z', 'emp-piri'),
     ('ent-peter-2026-age', 'emp-peter', 2026, 'AGE_ADDITIONAL', 4.0, 4.0, NULL, NULL, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-02T08:00:00Z', 'emp-piri'),
     ('ent-katalin-2026-base', 'emp-katalin', 2026, 'BASE', 20.0, 20.0, NULL, NULL, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-02T08:00:00Z', 'emp-piri'),
-    ('ent-katalin-2026-child', 'emp-katalin', 2026, 'CHILD_ADDITIONAL', NULL, NULL, 4.0, 'Éves nyilatkozat alapján (2 gyermek)', 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-05T09:30:00Z', 'emp-piri')`,
+    ('ent-katalin-2026-child', 'emp-katalin', 2026, 'CHILD_ADDITIONAL', NULL, NULL, 4.0, 'Éves nyilatkozat alapján (2 gyermek)', 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-05T09:30:00Z', 'emp-piri'),
+    ('ent-eszter-2026-child', 'emp-eszter', 2026, 'CHILD_ADDITIONAL', NULL, NULL, 9.0, 'Éves nyilatkozat alapján (3 gyermek 16 év alatt, ebből 1 fogyatékos: 7 + 2 nap)', 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, '2026-01-05T09:45:00Z', 'emp-piri')`,
 
   `CREATE TABLE IF NOT EXISTS leave_request (
     id VARCHAR(64) PRIMARY KEY,

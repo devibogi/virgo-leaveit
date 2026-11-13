@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Employee } from '../types/model.ts'
-import { ageAdditionalDays, defaultEntitlements, employedFraction, prorateDays } from './entitlementDefaults.ts'
+import { ageAdditionalDays, childAdditionalDays, defaultEntitlements, employedFraction, prorateDays } from './entitlementDefaults.ts'
 
 const base: Employee = {
   id: 'emp-x',
@@ -23,7 +23,24 @@ describe('ageAdditionalDays', () => {
     expect(ageAdditionalDays('2001-12-31', 2026)).toBe(1) // 25, birthday on 31 Dec still counts
     expect(ageAdditionalDays('1993-11-04', 2026)).toBe(4) // 33
     expect(ageAdditionalDays('1984-03-12', 2026)).toBe(8) // 42
-    expect(ageAdditionalDays('1960-01-01', 2026)).toBe(10) // 66
+    expect(ageAdditionalDays('1960-01-01', 2026)).toBe(10) // 66, capped at 10 (45+)
+    expect(ageAdditionalDays('1981-12-31', 2026)).toBe(10) // 45 in the year, even on 31 Dec
+    expect(ageAdditionalDays('1982-01-01', 2026)).toBe(9) // 44
+  })
+  it('young worker gets 5 days up to and including the year they turn 18', () => {
+    expect(ageAdditionalDays('2008-12-31', 2026)).toBe(5) // 18
+    expect(ageAdditionalDays('2007-01-01', 2026)).toBe(0) // 19
+  })
+})
+
+describe('childAdditionalDays', () => {
+  it('2 / 4 / 7 days by children under 16, +2 per disabled child', () => {
+    expect(childAdditionalDays(0)).toBe(0)
+    expect(childAdditionalDays(1)).toBe(2)
+    expect(childAdditionalDays(2)).toBe(4)
+    expect(childAdditionalDays(3)).toBe(7)
+    expect(childAdditionalDays(5)).toBe(7)
+    expect(childAdditionalDays(3, 1)).toBe(9)
   })
 })
 
