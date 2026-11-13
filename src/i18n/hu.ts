@@ -164,6 +164,7 @@ export const myTeamEmployeesText = {
 
 export const employeeAdminText = {
   tabLabel: 'Munkavállalók (Employees)',
+  newButton: '+ Új munkavállaló',
   eyebrow: 'HR ADMINISZTRÁCIÓ · MUNKAVÁLLALÓK',
   pageTitle: 'Munkavállalók kezelése',
   pageIntro:

@@ -53,6 +53,9 @@ export function EmployeeAdminCrud({
 
   // Form state (used for both Create and Edit)
   const [editingId, setEditingId] = useState<string | null>(null)
+  // The create form is hidden by default; opened by the "new" button or by editing.
+  const [formOpen, setFormOpen] = useState<boolean>(false)
+  const showForm = formOpen || editingId !== null
   const [empId, setEmpId] = useState<string>('')
   const [displayName, setDisplayName] = useState<string>('')
   const [email, setEmail] = useState<string>('')
@@ -104,6 +107,7 @@ export function EmployeeAdminCrud({
 
   function resetForm() {
     setEditingId(null)
+    setFormOpen(false)
     setEmpId('')
     setDisplayName('')
     setEmail('')
@@ -239,8 +243,9 @@ export function EmployeeAdminCrud({
 
   return (
     <section className="admin-container">
-      <div className="admin-grid">
-        {/* Create / Edit Form Card */}
+      <div className={`admin-grid ${showForm ? '' : 'admin-grid-single'}`}>
+        {/* Create / Edit Form Card: hidden until "new" or edit */}
+        {showForm && (
         <div className="card">
           <h2 className="card-title">
             {editingId
@@ -410,19 +415,18 @@ export function EmployeeAdminCrud({
                   ? employeeAdminText.saveButton
                   : employeeAdminText.createButton}
               </button>
-              {editingId && (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={resetForm}
-                  disabled={submitting}
-                >
-                  {employeeAdminText.cancelButton}
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={resetForm}
+                disabled={submitting}
+              >
+                {employeeAdminText.cancelButton}
+              </button>
             </div>
           </form>
         </div>
+        )}
 
         {/* Employee Table Card */}
         <div className="card">
@@ -437,6 +441,15 @@ export function EmployeeAdminCrud({
             </div>
 
             <div className="filter-bar">
+              {!showForm && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setFormOpen(true)}
+                >
+                  {employeeAdminText.newButton}
+                </button>
+              )}
               <select
                 value={entityFilter}
                 onChange={(e) =>
