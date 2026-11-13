@@ -43,6 +43,21 @@ function extractActorRole(
   return null
 }
 
+function extractActorId(
+  headers?: Record<string, string | undefined>,
+): string | null {
+  const raw = headers?.['x-actor-id'] ?? headers?.['X-Actor-Id']
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+}
+
+/** Personal fields (birth date, tax id) are HR-only and stripped for managers. */
+function toManagerView(employee: CreateEmployeeInput) {
+  const { birthDate: _b, taxId: _t, ...rest } = employee
+  void _b
+  void _t
+  return rest
+}
+
 function parseEmployeePayload(
   id: string,
   payload: Record<string, unknown>,
@@ -108,6 +123,23 @@ export function createEmployeeApiHandler(
     }
 
     const actorRole = extractActorRole(req.headers)
+    // Managers: read-only list of their direct reports, without personal fields.
+    // Demo-only: role/id come from client headers, not a verified session.
+    if (actorRole === 'MANAGER' && isCollection && method === 'GET') {
+      const actorId = extractActorId(req.headers)
+      if (!actorId) {
+        return {
+          status: 403,
+          body: {
+            error: 'Forbidden',
+            details: ['A bejelentkezett felhasználó azonosítója szükséges.'],
+          },
+        }
+      }
+      const team = await repository.findAll({ managerId: actorId })
+      return { status: 200, body: team.map(toManagerView) }
+    }
+
     if (!actorRole || !canManageEmployees(actorRole)) {
       return {
         status: 403,

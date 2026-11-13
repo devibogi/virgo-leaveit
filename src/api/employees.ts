@@ -18,6 +18,7 @@ export interface EmployeeApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
   getActorRole?: () => Role
+  getActorId?: () => string
 }
 
 export function createEmployeeApiClient(
@@ -32,6 +33,8 @@ export function createEmployeeApiClient(
       Accept: 'application/json',
       'X-Actor-Role': getRole(),
     }
+    const actorId = options.getActorId?.()
+    if (actorId) headers['X-Actor-Id'] = actorId
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
     }

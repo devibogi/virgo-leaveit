@@ -121,4 +121,38 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
       TeamApiError,
     )
   })
+
+  it('lets managers list only their direct reports, read-only, without personal fields', async () => {
+    const { fakeFetch } = createInMemoryEmployeeFetch()
+    const hr = createEmployeeApiClient({ fetchFn: fakeFetch, getActorRole: () => 'HR_ADMIN' })
+    await hr.createEmployee({
+      id: 'emp-report',
+      displayName: 'Teszt Beosztott',
+      email: 'report@virgo.example',
+      legalEntityId: 'VIRGO_ZRT',
+      managerId: 'emp-piri',
+      roles: ['EMPLOYEE'],
+      birthDate: '1995-05-05',
+      employmentStart: '2024-01-01',
+      employmentEnd: null,
+      includeInPayrollExport: true,
+      deputyIds: [],
+      taxId: '8000000002',
+    })
+
+    const manager = createEmployeeApiClient({
+      fetchFn: fakeFetch,
+      getActorRole: () => 'MANAGER',
+      getActorId: () => 'emp-piri',
+    })
+    const team = await manager.listEmployees({ managerId: 'someone-else' })
+    expect(team.map((e) => e.id)).toEqual(['emp-report'])
+    expect(team[0]).not.toHaveProperty('birthDate')
+    expect(team[0]).not.toHaveProperty('taxId')
+
+    await expect(manager.getEmployeeById('emp-report')).rejects.toMatchObject({ status: 403 })
+    const anonymous = createEmployeeApiClient({ fetchFn: fakeFetch, getActorRole: () => 'MANAGER' })
+    await expect(anonymous.listEmployees()).rejects.toMatchObject({ status: 403 })
+  })
 })
+

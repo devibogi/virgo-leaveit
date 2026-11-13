@@ -5,6 +5,7 @@ import { LeaveEntitlementAdminCrud } from './components/LeaveEntitlementAdminCru
 import { LeaveRequestAdminCrud } from './components/LeaveRequestAdminCrud'
 import { LoginView } from './components/LoginView'
 import { MyEntitlementsView } from './components/MyEntitlementsView'
+import { MyTeamEmployeesView } from './components/MyTeamEmployeesView'
 import { TeamAdminCrud } from './components/TeamAdminCrud'
 import {
   authText,
@@ -40,7 +41,7 @@ export default function App() {
 
   // Teams (and their tab) are visible to HR admin only.
   const isHrAdmin = activeRole === 'HR_ADMIN'
-  // The Employees page is hidden from the EMPLOYEE role.
+  // Employees page: HR Admin manages everyone; managers see their direct reports read-only.
   const canSeeEmployees = activeRole !== 'EMPLOYEE'
   const visibleSection: AdminSection =
     (section === 'TEAMS' && !isHrAdmin) ||
@@ -168,10 +169,17 @@ export default function App() {
             onRequestRoleChange={setActiveRole}
           />
         ) : visibleSection === 'EMPLOYEES' ? (
-          <EmployeeAdminCrud
-            activeRole={activeRole}
-            onRequestRoleChange={setActiveRole}
-          />
+          isHrAdmin ? (
+            <EmployeeAdminCrud
+              activeRole={activeRole}
+              onRequestRoleChange={setActiveRole}
+            />
+          ) : (
+            <MyTeamEmployeesView
+              activeRole={activeRole}
+              currentUserId={currentUser.id}
+            />
+          )
         ) : visibleSection === 'ENTITLEMENTS' ? (
           isHrAdmin ? (
             <LeaveEntitlementAdminCrud

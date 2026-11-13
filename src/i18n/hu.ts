@@ -148,6 +148,20 @@ export const teamAdminText = {
   deleteError: 'Hiba történt a csapat törlésekor.',
 } as const
 
+export const myTeamEmployeesText = {
+  title: 'Csapatom tagjai',
+  subtitle:
+    'Közvetlen beosztottak, csak olvasható nézet. A személyes adatok (születési dátum, adóazonosító) csak HR adminisztrátornak láthatók.',
+  colName: 'Név és e-mail',
+  colEntity: 'Jogi személy',
+  colRoles: 'Szerepkörök',
+  colStart: 'Munkaviszony kezdete',
+  colDeputies: 'Helyettesek',
+  loading: 'Csapattagok betöltése...',
+  empty: 'Nincs közvetlen beosztottad.',
+  loadError: 'A csapattagok betöltése nem sikerült.',
+} as const
+
 export const employeeAdminText = {
   tabLabel: 'Munkavállalók (Employees)',
   eyebrow: 'HR ADMINISZTRÁCIÓ · MUNKAVÁLLALÓK',
