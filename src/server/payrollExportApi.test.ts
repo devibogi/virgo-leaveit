@@ -31,12 +31,33 @@ describe('payroll export API', () => {
     expect(res?.status).toBe(400)
   })
 
-  it('returns the CSV with download headers for HR_ADMIN', async () => {
+  it('returns .xlsx by default for HR_ADMIN', async () => {
     const res = await handler({ method: 'GET', url, session: session('HR_ADMIN') })
+    expect(res?.status).toBe(200)
+    expect(res?.headers?.['Content-Type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    expect(res?.headers?.['Content-Disposition']).toContain('payroll_VIRGO_KFT_2026-11.xlsx')
+    const bytes = res?.body as Uint8Array
+    expect(bytes).toBeInstanceOf(Uint8Array)
+    expect(String.fromCharCode(bytes[0], bytes[1])).toBe('PK')
+    const text = new TextDecoder().decode(bytes)
+    expect(text).toContain('Varga Piri')
+    expect(text).toContain('Szabadság')
+    expect(text).not.toContain('Anna') // VIRGO_ZRT
+  })
+
+  it('rejects an unknown format with 400', async () => {
+    const res = await handler({ method: 'GET', url: `${url}&format=pdf`, session: session('HR_ADMIN') })
+    expect(res?.status).toBe(400)
+  })
+
+  it('returns the CSV with BOM and download headers for format=csv', async () => {
+    const res = await handler({ method: 'GET', url: `${url}&format=csv`, session: session('HR_ADMIN') })
     expect(res?.status).toBe(200)
     expect(res?.headers?.['Content-Type']).toBe('text/csv; charset=utf-8')
     expect(res?.headers?.['Content-Disposition']).toContain('payroll_VIRGO_KFT_2026-11.csv')
-    const lines = String(res?.body).split('\r\n')
+    const body = String(res?.body)
+    expect(body.startsWith('\uFEFF')).toBe(true)
+    const lines = body.slice(1).split('\r\n')
     expect(lines[0].startsWith('Virgo Kft.;')).toBe(true)
     expect(lines.some((l) => l.startsWith('Varga Piri;8000000001;'))).toBe(true)
     expect(lines.some((l) => l.includes('Anna'))).toBe(false) // VIRGO_ZRT

@@ -84,7 +84,7 @@
 - More than 5 periods → extra row with the same name and tax id (Q28 assumption).
 - Odd last half-day of the month exported on its own date (Q26 assumption).
 - Only APPROVED requests on working days; multi-month requests clipped to the month.
-- Endpoint: 403 for EMPLOYEE/MANAGER/no session, 400 for invalid year/month/entity, CSV download headers for HR_ADMIN.
+- Endpoint: 403 for EMPLOYEE/MANAGER/no session, 400 for invalid year/month/entity, default .xlsx (PK zip) for HR_ADMIN; `format=csv` → CSV with BOM; unknown format 400.
 - Change after export is written out (Q31).
 
 ## Payroll export flag

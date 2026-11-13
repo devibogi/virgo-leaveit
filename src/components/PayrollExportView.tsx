@@ -42,6 +42,9 @@ export function PayrollExportView() {
         <a className="btn btn-primary" href={href} download>
           {t.download}
         </a>
+        <a className="btn" href={`${href}&format=csv`} download>
+          {t.downloadCsv}
+        </a>
       </div>
       <p className="card-subtitle">{t.assumptionsNote}</p>
     </div>

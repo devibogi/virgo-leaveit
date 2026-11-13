@@ -1,4 +1,4 @@
-import { buildPayrollCsv, payrollExportFileName } from '../domain/payrollExport.ts'
+import { buildPayrollCsv, buildPayrollXlsx, payrollExportFileName } from '../domain/payrollExport.ts'
 import { LEGAL_ENTITIES } from '../domain/legalEntity.ts'
 import type { LegalEntityId } from '../types/model.ts'
 import type { EmployeeRepository } from './employeeRepository.ts'
@@ -11,7 +11,10 @@ const forbidden = (detail: string): ApiResponse => ({
   body: { error: 'Forbidden', details: [detail] },
 })
 
-/** GET /api/exports/payroll?year=2026&month=11&legalEntityId=VIRGO_KFT → CSV (HR_ADMIN only). */
+/**
+ * GET /api/exports/payroll?year=2026&month=11&legalEntityId=VIRGO_KFT[&format=xlsx|csv] (HR_ADMIN only).
+ * Default .xlsx (§6a). CSV gets a UTF-8 BOM so Excel shows Hungarian accents correctly.
+ */
 export function createPayrollExportApiHandler(
   employeeRepository: EmployeeRepository,
   requestRepository: LeaveRequestRepository,
@@ -31,7 +34,9 @@ export function createPayrollExportApiHandler(
     const year = Number(url.searchParams.get('year'))
     const month = Number(url.searchParams.get('month'))
     const legalEntityId = url.searchParams.get('legalEntityId') as LegalEntityId
+    const format = url.searchParams.get('format') ?? 'xlsx'
     const errors: string[] = []
+    if (format !== 'xlsx' && format !== 'csv') errors.push('Érvénytelen formátum (xlsx vagy csv).')
     if (!Number.isInteger(year) || year < 2000 || year > 2100) errors.push('Érvénytelen év.')
     if (!Number.isInteger(month) || month < 1 || month > 12) errors.push('Érvénytelen hónap.')
     if (!LEGAL_ENTITIES.some((e) => e.id === legalEntityId)) errors.push('Érvénytelen jogi személy.')
@@ -41,13 +46,24 @@ export function createPayrollExportApiHandler(
       employeeRepository.findAll(),
       requestRepository.findAll({ legalEntityId, status: 'APPROVED' }),
     ])
+    const fileName = payrollExportFileName(legalEntityId, year, month, format as 'xlsx' | 'csv')
+    if (format === 'csv') {
+      return {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+        },
+        body: '\uFEFF' + buildPayrollCsv(employees, requests, legalEntityId, year, month),
+      }
+    }
     return {
       status: 200,
       headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${payrollExportFileName(legalEntityId, year, month)}"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
       },
-      body: buildPayrollCsv(employees, requests, legalEntityId, year, month),
+      body: buildPayrollXlsx(employees, requests, legalEntityId, year, month),
     }
   }
 }

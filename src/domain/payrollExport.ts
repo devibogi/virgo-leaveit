@@ -2,6 +2,7 @@ import type { Employee, IsoDate, LeaveCategory, LeaveRequest, LegalEntityId } fr
 import { createCalendarService, type CalendarService } from './calendar.ts'
 import { getLeaveType } from './leaveType.ts'
 import { getLegalEntity } from './legalEntity.ts'
+import { buildXlsx, columnName } from './xlsx.ts'
 
 /**
  * Monthly payroll (bérszámfejtés) export, layout per docs/samples/payroll_template_2026.csv
@@ -148,14 +149,9 @@ export function buildPayrollRows(
 }
 
 const csvCell = (v: string) => (/[;"\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
-const line = (cells: readonly string[]) => {
-  const full = [...cells]
-  while (full.length < PAYROLL_COLUMNS) full.push('')
-  return full.map(csvCell).join(';')
-}
 
-/** Renders rows in the exact template layout (UTF-8, no BOM, CRLF, no trailing newline). */
-export function renderPayrollCsv(legalEntityName: string, rows: readonly PayrollExportRow[]): string {
+/** The template grid: 3 header rows + data rows, every row PAYROLL_COLUMNS wide (no padding rows). */
+export function payrollGrid(legalEntityName: string, rows: readonly PayrollExportRow[]): string[][] {
   const span = PAYROLL_PERIODS_PER_GROUP * 2
   const header1 = [legalEntityName, '']
   const header2 = ['', '']
@@ -167,7 +163,7 @@ export function renderPayrollCsv(legalEntityName: string, rows: readonly Payroll
       header3.push(i % 2 === 0 ? 'Tól' : 'Ig')
     }
   }
-  const lines = [line(header1), line(header2), line(header3)]
+  const grid = [header1, header2, header3]
 
   for (const row of rows) {
     const chunks = Math.max(
@@ -183,11 +179,49 @@ export function renderPayrollCsv(legalEntityName: string, rows: readonly Payroll
           cells.push(p ? String(p.from) : '', p ? String(p.to) : '')
         }
       }
-      lines.push(line(cells))
+      grid.push(cells)
     }
   }
-  while (lines.length < PAYROLL_TEMPLATE_ROWS) lines.push(line([]))
+  return grid.map((r) => {
+    const full = [...r]
+    while (full.length < PAYROLL_COLUMNS) full.push('')
+    return full
+  })
+}
+
+/** Renders rows in the exact template layout (UTF-8, no BOM, CRLF, no trailing newline). */
+export function renderPayrollCsv(legalEntityName: string, rows: readonly PayrollExportRow[]): string {
+  const lines = payrollGrid(legalEntityName, rows).map((r) => r.map(csvCell).join(';'))
+  while (lines.length < PAYROLL_TEMPLATE_ROWS) lines.push(';'.repeat(PAYROLL_COLUMNS - 1))
   return lines.join('\r\n')
+}
+
+/**
+ * Same grid as the CSV template, as a real .xlsx (BUSINESS_RULES §6a asks for Excel):
+ * group headers merged over their 10 columns, period numbers over their Tól/Ig pair,
+ * Tól/Ig day numbers stored as numbers, tax id kept as text.
+ */
+export function renderPayrollXlsx(legalEntityName: string, rows: readonly PayrollExportRow[]): Uint8Array {
+  const grid = payrollGrid(legalEntityName, rows)
+  const cells = grid.map((r, ri) =>
+    r.map((v, ci) => (ri >= 3 && ci >= 2 && /^\d+$/.test(v) ? Number(v) : v)),
+  )
+  const span = PAYROLL_PERIODS_PER_GROUP * 2
+  const merges: string[] = []
+  GROUPS.forEach((_, g) => {
+    const first = 2 + g * span
+    merges.push(`${columnName(first)}1:${columnName(first + span - 1)}1`)
+    for (let i = 0; i < PAYROLL_PERIODS_PER_GROUP; i++) {
+      const c = first + i * 2
+      merges.push(`${columnName(c)}2:${columnName(c + 1)}2`)
+    }
+  })
+  return buildXlsx({
+    name: legalEntityName,
+    rows: cells,
+    merges,
+    colWidths: [24, 18, ...Array(span * GROUPS.length).fill(6)],
+  })
 }
 
 export function buildPayrollCsv(
@@ -204,6 +238,25 @@ export function buildPayrollCsv(
   )
 }
 
-export function payrollExportFileName(legalEntityId: LegalEntityId, year: number, month: number): string {
-  return `payroll_${legalEntityId}_${year}-${pad2(month)}.csv`
+export function payrollExportFileName(
+  legalEntityId: LegalEntityId,
+  year: number,
+  month: number,
+  format: 'csv' | 'xlsx' = 'csv',
+): string {
+  return `payroll_${legalEntityId}_${year}-${pad2(month)}.${format}`
+}
+
+export function buildPayrollXlsx(
+  employees: readonly Employee[],
+  requests: readonly LeaveRequest[],
+  legalEntityId: LegalEntityId,
+  year: number,
+  month: number,
+  calendar: CalendarService = createCalendarService(),
+): Uint8Array {
+  return renderPayrollXlsx(
+    getLegalEntity(legalEntityId).name,
+    buildPayrollRows(employees, requests, legalEntityId, year, month, calendar),
+  )
 }

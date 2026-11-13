@@ -44,7 +44,7 @@ interface NodeRequestLike {
 interface NodeResponseLike {
   statusCode: number
   setHeader: (name: string, value: string) => void
-  end: (body?: string) => void
+  end: (body?: string | Uint8Array) => void
 }
 
 function getEnv(
@@ -181,6 +181,8 @@ function leaveItApiPlugin(): Plugin {
           }
           if (typeof apiRes.body === 'string') {
             res.end(apiRes.body)
+          } else if (apiRes.body instanceof Uint8Array) {
+            res.end(Buffer.from(apiRes.body))
           } else if (apiRes.body !== undefined) {
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify(apiRes.body))
