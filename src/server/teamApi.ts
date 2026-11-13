@@ -126,6 +126,7 @@ export function createTeamApiHandler(
           id: typeof payload.id === 'string' && payload.id.trim() ? payload.id : undefined,
           managerId:
             typeof payload.managerId === 'string' ? payload.managerId : '',
+          deputyId: typeof payload.deputyId === 'string' ? payload.deputyId : '',
           name: typeof payload.name === 'string' ? payload.name : '',
         }
 
@@ -186,6 +187,10 @@ export function createTeamApiHandler(
             typeof payload.managerId === 'string' && payload.managerId.trim()
               ? payload.managerId
               : existing.managerId,
+          deputyId:
+            typeof payload.deputyId === 'string' && payload.deputyId.trim()
+              ? payload.deputyId
+              : existing.deputyId,
           name: typeof payload.name === 'string' ? payload.name : '',
         }
 
@@ -203,6 +208,7 @@ export function createTeamApiHandler(
         const updated = await repository.update(id, {
           name: candidate.name,
           managerId: candidate.managerId,
+          deputyId: candidate.deputyId,
         })
         return updated ? { status: 200, body: updated } : notFound
       }

@@ -4,6 +4,8 @@ import { attachCsrfHeader } from './csrf.ts'
 export interface CreateTeamRequest {
   id?: string
   managerId: string
+  /** Required team deputy; must differ from managerId. */
+  deputyId: string
   name: string
 }
 
@@ -11,6 +13,8 @@ export interface UpdateTeamRequest {
   name: string
   /** Optional: reassign the team to another manager. */
   managerId?: string
+  /** Optional: change the team deputy. */
+  deputyId?: string
 }
 
 export interface ErrorResponse {

@@ -3,7 +3,7 @@ export const openApiDocument = {
   info: {
     title: 'LeaveIt API',
     description:
-      'REST API for the LeaveIt leave management prototype (Team management endpoints). Team is keyed by managerId (one team per manager) and requires HR_ADMIN role.',
+      'REST API for the LeaveIt leave management prototype (Team management endpoints). Team is keyed by id; one manager may lead several teams; every team has a required deputy (deputyId != managerId). Requires HR_ADMIN role.',
     version: '0.2.0',
   },
   servers: [
@@ -94,7 +94,7 @@ export const openApiDocument = {
             },
           },
           '409': {
-            description: 'Team for the given managerId already exists',
+            description: 'Team with the given id already exists',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
@@ -189,7 +189,7 @@ export const openApiDocument = {
       },
       delete: {
         tags: ['Teams'],
-        summary: 'Delete a team by managerId',
+        summary: 'Delete a team by id',
         operationId: 'deleteTeam',
         responses: {
           '204': {
@@ -239,10 +239,11 @@ export const openApiDocument = {
       },
       Team: {
         type: 'object',
-        required: ['id', 'managerId', 'name'],
+        required: ['id', 'managerId', 'deputyId', 'name'],
         properties: {
           id: { type: 'string', maxLength: 64, example: 'team-dev' },
           managerId: { type: 'string', maxLength: 64, example: 'emp-katalin' },
+          deputyId: { type: 'string', maxLength: 64, example: 'emp-peter' },
           name: {
             type: 'string',
             maxLength: 255,
@@ -252,13 +253,19 @@ export const openApiDocument = {
       },
       CreateTeamRequest: {
         type: 'object',
-        required: ['managerId', 'name'],
+        required: ['managerId', 'deputyId', 'name'],
         properties: {
           managerId: {
             type: 'string',
             minLength: 1,
             maxLength: 64,
             example: 'emp-katalin',
+          },
+          deputyId: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64,
+            example: 'emp-peter',
           },
           name: {
             type: 'string',

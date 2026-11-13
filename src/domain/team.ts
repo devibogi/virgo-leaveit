@@ -6,12 +6,14 @@ export interface CreateTeamInput {
   /** Generated when missing. */
   id?: string
   managerId: EmployeeId
+  deputyId: EmployeeId
   name: string
 }
 
 export interface TeamRow {
   id: string
   manager_id: string
+  deputy_id: string
   name: string
 }
 
@@ -48,6 +50,11 @@ export function validateTeam(
   if (!input.managerId || input.managerId.trim().length === 0) {
     errors.push('A vezető azonosítója (managerId) kötelező.')
   }
+  if (!input.deputyId || input.deputyId.trim().length === 0) {
+    errors.push('A csapat helyettese (deputyId) kötelező.')
+  } else if (input.deputyId.trim() === input.managerId?.trim()) {
+    errors.push('A helyettes nem lehet azonos a csapat vezetőjével.')
+  }
   if (!input.name || input.name.trim().length === 0) {
     errors.push('A csapat neve kötelező.')
   }
@@ -72,6 +79,7 @@ export function createTeam(input: CreateTeamInput): Team {
   return {
     id: input.id?.trim() || generateTeamId(),
     managerId: input.managerId.trim(),
+    deputyId: input.deputyId.trim(),
     name: input.name.trim(),
   }
 }
@@ -80,6 +88,7 @@ export function mapRowToTeam(row: TeamRow): Team {
   return {
     id: row.id,
     managerId: row.manager_id,
+    deputyId: row.deputy_id,
     name: row.name,
   }
 }
@@ -88,6 +97,7 @@ export function mapTeamToRow(team: Team): TeamRow {
   return {
     id: team.id,
     manager_id: team.managerId,
+    deputy_id: team.deputyId,
     name: team.name,
   }
 }

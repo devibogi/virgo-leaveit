@@ -16,10 +16,28 @@ describe('Team API: every team has a manager', () => {
   it('rejects a team whose manager is missing or lacks the MANAGER role', async () => {
     const handler = createTeamApiHandler(new InMemoryTeamRepository([]), new InMemoryEmployeeRepository())
     const post = (managerId: string) =>
-      handler({ method: 'POST', url: '/api/teams', body: { managerId, name: 'Új csapat' }, session: hr })
+      handler({ method: 'POST', url: '/api/teams', body: { managerId, deputyId: 'emp-anna', name: 'Új csapat' }, session: hr })
     expect((await post('emp-peter'))?.status).toBe(400)
     expect((await post('emp-nobody'))?.status).toBe(400)
     expect((await post('emp-gabor'))?.status).toBe(201)
+  })
+
+  it('requires a team deputy different from the manager', async () => {
+    const handler = createTeamApiHandler(new InMemoryTeamRepository([]), new InMemoryEmployeeRepository())
+    const post = (deputyId: string) =>
+      handler({ method: 'POST', url: '/api/teams', body: { managerId: 'emp-gabor', deputyId, name: 'X' }, session: hr })
+    expect((await post(''))?.status).toBe(400)
+    expect((await post('emp-gabor'))?.status).toBe(400)
+    const ok = await post('emp-anna')
+    expect(ok?.status).toBe(201)
+    expect((ok?.body as { deputyId: string }).deputyId).toBe('emp-anna')
+  })
+
+  it('every seeded team has a deputy who is not its manager', () => {
+    for (const team of SYNTHETIC_SEED_TEAMS) {
+      expect(team.deputyId, team.id).toBeTruthy()
+      expect(team.deputyId, team.id).not.toBe(team.managerId)
+    }
   })
 
   it('seeds Nagy Katalin with two teams; every member shares the team manager', () => {

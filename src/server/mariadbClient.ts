@@ -22,16 +22,27 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
   `CREATE TABLE IF NOT EXISTS teams (
     id VARCHAR(64) NOT NULL,
     manager_id VARCHAR(64) NOT NULL,
+    deputy_id VARCHAR(64) NOT NULL DEFAULT '',
     name VARCHAR(255) NOT NULL,
     PRIMARY KEY (id),
     INDEX idx_teams_manager_id (manager_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-  `INSERT IGNORE INTO teams (id, manager_id, name) VALUES
-    ('team-dev', 'emp-katalin', 'Fejlesztési csapat'),
-    ('team-qa', 'emp-katalin', 'Minőségbiztosítás'),
-    ('team-hr', 'emp-piri', 'HR és Operáció'),
-    ('team-product', 'emp-gabor', 'Termékfejlesztés')`,
+  `ALTER TABLE teams ADD COLUMN IF NOT EXISTS deputy_id VARCHAR(64) NOT NULL DEFAULT '' AFTER manager_id`,
+
+  `INSERT IGNORE INTO teams (id, manager_id, deputy_id, name) VALUES
+    ('team-dev', 'emp-katalin', 'emp-peter', 'Fejlesztési csapat'),
+    ('team-qa', 'emp-katalin', 'emp-eszter', 'Minőségbiztosítás'),
+    ('team-hr', 'emp-piri', 'emp-katalin', 'HR és Operáció'),
+    ('team-product', 'emp-gabor', 'emp-katalin', 'Termékfejlesztés')`,
+
+  `UPDATE teams SET deputy_id = CASE id
+    WHEN 'team-dev' THEN 'emp-peter'
+    WHEN 'team-qa' THEN 'emp-eszter'
+    WHEN 'team-hr' THEN 'emp-katalin'
+    WHEN 'team-product' THEN 'emp-katalin'
+    ELSE deputy_id END
+   WHERE deputy_id = ''`,
 
   `CREATE TABLE IF NOT EXISTS employees (
     id VARCHAR(64) NOT NULL,

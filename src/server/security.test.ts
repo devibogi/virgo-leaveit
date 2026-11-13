@@ -128,7 +128,7 @@ describe('XSS and CSRF security protections', () => {
         url: '/api/teams',
         headers: {},
         session: sessionWithCsrf,
-        body: { name: 'Új csapat', managerId: 'emp-piri' },
+        body: { name: 'Új csapat', managerId: 'emp-piri', deputyId: 'emp-anna' },
       })
       expect(blocked?.status).toBe(403)
 
@@ -140,7 +140,7 @@ describe('XSS and CSRF security protections', () => {
         session: sessionWithCsrf,
         body: {
           name: '<script>alert(1)</script>Biztonságos Csapat<img onerror=alert(1)>',
-          managerId: 'emp-piri',
+          managerId: 'emp-piri', deputyId: 'emp-anna',
         },
       })
       expect(created?.status).toBe(201)

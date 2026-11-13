@@ -80,6 +80,8 @@ export interface Team {
   id: string
   /** The manager who approves this team's leave. Not unique: one manager may lead several teams. */
   managerId: EmployeeId
+  /** Required team deputy who stands in for the manager; must differ from managerId. */
+  deputyId: EmployeeId
   name: string
 }
 

@@ -18,6 +18,7 @@ export interface SqlExecutor {
 export interface TeamUpdate {
   name: string
   managerId: string
+  deputyId: string
 }
 
 /** Teams are keyed by id; one manager may lead several teams. */
@@ -30,10 +31,10 @@ export interface TeamRepository {
 }
 
 export const SYNTHETIC_SEED_TEAMS: readonly Team[] = [
-  { id: 'team-dev', managerId: 'emp-katalin', name: 'Fejlesztési csapat' },
-  { id: 'team-qa', managerId: 'emp-katalin', name: 'Minőségbiztosítás' },
-  { id: 'team-hr', managerId: 'emp-piri', name: 'HR és Operáció' },
-  { id: 'team-product', managerId: 'emp-gabor', name: 'Termékfejlesztés' },
+  { id: 'team-dev', managerId: 'emp-katalin', deputyId: 'emp-peter', name: 'Fejlesztési csapat' },
+  { id: 'team-qa', managerId: 'emp-katalin', deputyId: 'emp-eszter', name: 'Minőségbiztosítás' },
+  { id: 'team-hr', managerId: 'emp-piri', deputyId: 'emp-katalin', name: 'HR és Operáció' },
+  { id: 'team-product', managerId: 'emp-gabor', deputyId: 'emp-katalin', name: 'Termékfejlesztés' },
 ]
 
 export class InMemoryTeamRepository implements TeamRepository {
@@ -73,7 +74,7 @@ export class InMemoryTeamRepository implements TeamRepository {
     if (!this.store.has(id)) {
       return null
     }
-    const validated = createTeam({ id, managerId: update.managerId, name: update.name })
+    const validated = createTeam({ id, managerId: update.managerId, deputyId: update.deputyId, name: update.name })
     const row = mapTeamToRow(validated)
     this.store.set(id, row)
     return mapRowToTeam(row)
@@ -94,18 +95,18 @@ export class MariaDbTeamRepository implements TeamRepository {
   async findAll(filter?: { managerId?: string }): Promise<Team[]> {
     const rows = filter?.managerId
       ? await this.db.query<TeamRow>(
-          'SELECT id, manager_id, name FROM teams WHERE manager_id = ? ORDER BY name ASC',
+          'SELECT id, manager_id, deputy_id, name FROM teams WHERE manager_id = ? ORDER BY name ASC',
           [filter.managerId],
         )
       : await this.db.query<TeamRow>(
-          'SELECT id, manager_id, name FROM teams ORDER BY name ASC',
+          'SELECT id, manager_id, deputy_id, name FROM teams ORDER BY name ASC',
         )
     return rows.map(mapRowToTeam)
   }
 
   async findById(id: string): Promise<Team | null> {
     const rows = await this.db.query<TeamRow>(
-      'SELECT id, manager_id, name FROM teams WHERE id = ? LIMIT 1',
+      'SELECT id, manager_id, deputy_id, name FROM teams WHERE id = ? LIMIT 1',
       [id],
     )
     return rows[0] ? mapRowToTeam(rows[0]) : null
@@ -118,18 +119,18 @@ export class MariaDbTeamRepository implements TeamRepository {
     }
     const row = mapTeamToRow(validated)
     await this.db.execute(
-      'INSERT INTO teams (id, manager_id, name) VALUES (?, ?, ?)',
-      [row.id, row.manager_id, row.name],
+      'INSERT INTO teams (id, manager_id, deputy_id, name) VALUES (?, ?, ?, ?)',
+      [row.id, row.manager_id, row.deputy_id, row.name],
     )
     return validated
   }
 
   async update(id: string, update: TeamUpdate): Promise<Team | null> {
-    const validated = createTeam({ id, managerId: update.managerId, name: update.name })
+    const validated = createTeam({ id, managerId: update.managerId, deputyId: update.deputyId, name: update.name })
     const row = mapTeamToRow(validated)
     const result = await this.db.execute(
-      'UPDATE teams SET manager_id = ?, name = ? WHERE id = ?',
-      [row.manager_id, row.name, row.id],
+      'UPDATE teams SET manager_id = ?, deputy_id = ?, name = ? WHERE id = ?',
+      [row.manager_id, row.deputy_id, row.name, row.id],
     )
     if (result.affectedRows === 0) {
       return null

@@ -13,7 +13,7 @@ function createInMemoryFetch(getSession?: () => SessionContext | null) {
   const repository = new InMemoryTeamRepository([
     {
       id: 'team-dev',
-      managerId: 'emp-katalin',
+      managerId: 'emp-katalin', deputyId: 'emp-dep',
       name: 'Fejlesztési csapat',
     },
   ])
@@ -82,7 +82,7 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
 
     currentRole = 'MANAGER'
     await expect(
-      client.createTeam({ managerId: 'emp-piri', name: 'HR Csapat' }),
+      client.createTeam({ managerId: 'emp-piri', deputyId: 'emp-dep', name: 'HR Csapat' }),
     ).rejects.toMatchObject({
       status: 403,
     })
@@ -102,19 +102,19 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     expect(initial).toEqual([
       {
         id: 'team-dev',
-        managerId: 'emp-katalin',
+        managerId: 'emp-katalin', deputyId: 'emp-dep',
         name: 'Fejlesztési csapat',
       },
     ])
 
     const created = await client.createTeam({
       id: 'team-hr',
-      managerId: 'emp-piri',
+      managerId: 'emp-piri', deputyId: 'emp-dep',
       name: 'HR és Operáció',
     })
     expect(created).toEqual({
       id: 'team-hr',
-      managerId: 'emp-piri',
+      managerId: 'emp-piri', deputyId: 'emp-dep',
       name: 'HR és Operáció',
     })
 
@@ -122,7 +122,7 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     expect(filtered).toEqual([created])
 
     // A manager may lead a second team.
-    const second = await client.createTeam({ managerId: 'emp-piri', name: 'Operáció 2' })
+    const second = await client.createTeam({ managerId: 'emp-piri', deputyId: 'emp-dep', name: 'Operáció 2' })
     expect(second.id).not.toBe('team-hr')
     expect(await client.listTeams({ managerId: 'emp-piri' })).toHaveLength(2)
     await client.deleteTeam(second.id)
@@ -135,7 +135,7 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     })
     expect(updated).toEqual({
       id: 'team-hr',
-      managerId: 'emp-piri',
+      managerId: 'emp-piri', deputyId: 'emp-dep',
       name: 'People & Operations',
     })
 
@@ -157,7 +157,7 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     })
 
     await expect(
-      client.createTeam({ managerId: '', name: '' }),
+      client.createTeam({ managerId: '', deputyId: 'emp-dep', name: '' }),
     ).rejects.toMatchObject({
       status: 400,
     })
@@ -165,7 +165,7 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     await expect(
       client.createTeam({
         id: 'team-dev',
-        managerId: 'emp-katalin',
+        managerId: 'emp-katalin', deputyId: 'emp-dep',
         name: 'Duplikált csapat',
       }),
     ).rejects.toMatchObject({
@@ -177,7 +177,7 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     const rows: TeamRow[] = [
       {
         id: 'team-dev',
-        manager_id: 'emp-katalin',
+        manager_id: 'emp-katalin', deputy_id: 'emp-dep',
         name: 'Fejlesztési csapat',
       },
     ]
@@ -195,7 +195,8 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
           rows.push({
             id: String(params?.[0]),
             manager_id: String(params?.[1]),
-            name: String(params?.[2]),
+            deputy_id: String(params?.[2]),
+            name: String(params?.[3]),
           })
           return { affectedRows: 1 }
         }
@@ -206,13 +207,13 @@ describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend cl
     const repo = new MariaDbTeamRepository(mockSql)
     const created = await repo.create({
       id: 'team-hr',
-      managerId: 'emp-piri',
+      managerId: 'emp-piri', deputyId: 'emp-dep',
       name: 'HR és Operáció',
     })
 
     expect(created).toEqual({
       id: 'team-hr',
-      managerId: 'emp-piri',
+      managerId: 'emp-piri', deputyId: 'emp-dep',
       name: 'HR és Operáció',
     })
     expect(await repo.findAll()).toHaveLength(2)

@@ -62,12 +62,15 @@ export function TeamAdminCrud({
   // Create form state (Team: managerId key + name)
   const [newManagerId, setNewManagerId] = useState<string>('')
   const [newName, setNewName] = useState<string>('')
+  const [newDeputyId, setNewDeputyId] = useState<string>('')
+  const [newMemberIds, setNewMemberIds] = useState<string[]>([])
   const [formErrors, setFormErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState<boolean>(false)
 
   // Edit state (keyed by team id; only the name is editable here)
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
   const [editName, setEditName] = useState<string>('')
+  const [editDeputyId, setEditDeputyId] = useState<string>('')
   const [editErrors, setEditErrors] = useState<string[]>([])
 
   const loadTeams = useCallback(
@@ -157,6 +160,7 @@ export function TeamAdminCrud({
 
     const validation = validateTeam({
       managerId: newManagerId,
+      deputyId: newDeputyId,
       name: newName,
     })
 
@@ -167,14 +171,22 @@ export function TeamAdminCrud({
 
     setSubmitting(true)
     try {
-      await apiClient.createTeam({
+      const created = await apiClient.createTeam({
         managerId: newManagerId.trim(),
+        deputyId: newDeputyId.trim(),
         name: newName.trim(),
       })
-      setNewManagerId('')
-      setNewName('')
-      setFormOpen(false)
+      // Selected members join the new team (and get its manager as approver).
+      const memberErrors: string[] = []
+      for (const memberId of newMemberIds) {
+        const emp = employees.find((e) => e.id === memberId)
+        if (!emp || emp.id === created.managerId) continue
+        const err = await assignToTeam(emp, created.id, created.managerId)
+        if (err) memberErrors.push(`${emp.displayName}: ${err}`)
+      }
+      closeCreateForm()
       await loadTeams(managerFilter)
+      if (memberErrors.length > 0) setMembershipError(memberErrors.join(' '))
     } catch (err) {
       if (err instanceof TeamApiError) {
         setFormErrors(err.details.length > 0 ? err.details : [err.message])
@@ -189,6 +201,7 @@ export function TeamAdminCrud({
   function startEditing(team: Team) {
     setEditingTeamId(team.id)
     setEditName(team.name)
+    setEditDeputyId(team.deputyId)
     setEditErrors([])
   }
 
@@ -202,6 +215,7 @@ export function TeamAdminCrud({
     setEditErrors([])
     const validation = validateTeam({
       managerId: team.managerId,
+      deputyId: editDeputyId,
       name: editName,
     })
 
@@ -214,6 +228,7 @@ export function TeamAdminCrud({
     try {
       await apiClient.updateTeam(team.id, {
         name: editName.trim(),
+        deputyId: editDeputyId.trim(),
       })
       cancelEditing()
       await loadTeams(managerFilter)
@@ -249,18 +264,15 @@ export function TeamAdminCrud({
   }
 
   // One team per employee; joining a team also makes its manager the approver.
-  async function handleTeamChange(emp: Employee, newTeamId: string) {
-    setMembershipMessage(null)
-    setMembershipError(null)
-    const teamId = newTeamId || null
-    const managerId = teamId ? (teams.find((t) => t.id === teamId)?.managerId ?? null) : null
+  // Returns an error message, or null on success.
+  async function assignToTeam(
+    emp: Employee,
+    teamId: string | null,
+    managerId: string | null,
+  ): Promise<string | null> {
     if (wouldCreateManagementCycle(employees, emp.id, managerId)) {
-      setMembershipError(
-        'A vezető-hozzárendelés körkörös vezetési láncot hozna létre.',
-      )
-      return
+      return 'A vezető-hozzárendelés körkörös vezetési láncot hozna létre.'
     }
-    setSubmitting(true)
     try {
       const { id: _id, ...rest } = emp
       void _id
@@ -270,13 +282,24 @@ export function TeamAdminCrud({
         managerId,
       })
       setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
-      setMembershipMessage(teamAdminText.membershipSaved(emp.displayName))
+      return null
     } catch (err) {
-      setMembershipError(
-        err instanceof TeamApiError
-          ? err.details.join(' ') || err.message
-          : teamAdminText.membershipError,
-      )
+      return err instanceof TeamApiError
+        ? err.details.join(' ') || err.message
+        : teamAdminText.membershipError
+    }
+  }
+
+  async function handleTeamChange(emp: Employee, newTeamId: string) {
+    setMembershipMessage(null)
+    setMembershipError(null)
+    const teamId = newTeamId || null
+    const managerId = teamId ? (teams.find((t) => t.id === teamId)?.managerId ?? null) : null
+    setSubmitting(true)
+    try {
+      const err = await assignToTeam(emp, teamId, managerId)
+      if (err) setMembershipError(err)
+      else setMembershipMessage(teamAdminText.membershipSaved(emp.displayName))
     } finally {
       setSubmitting(false)
     }
@@ -286,11 +309,12 @@ export function TeamAdminCrud({
     setFormOpen(false)
     setNewManagerId('')
     setNewName('')
+    setNewDeputyId('')
+    setNewMemberIds([])
     setFormErrors([])
   }
 
   const employeeName = new Map(employees.map((e) => [e.id, e.displayName]))
-  const employeesById = new Map(employees.map((e) => [e.id, e]))
 
   return (
     <section className="admin-container">
@@ -312,6 +336,42 @@ export function TeamAdminCrud({
                 disabled={submitting}
               />
             </label>
+
+            <label className="form-field">
+              <span>{teamAdminText.deputyLabel}</span>
+              <EmployeeSelect
+                employees={employees.filter((e) => e.id !== newManagerId)}
+                value={newDeputyId}
+                onChange={setNewDeputyId}
+                emptyLabel={teamAdminText.deputyPlaceholder}
+                disabled={submitting}
+              />
+            </label>
+
+            <fieldset className="form-field">
+              <legend>{teamAdminText.membersLabel}</legend>
+              {employees
+                .filter((e) => e.id !== newManagerId)
+                .map((e) => (
+                  <label key={e.id} className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={newMemberIds.includes(e.id)}
+                      onChange={(ev) =>
+                        setNewMemberIds((prev) =>
+                          ev.target.checked
+                            ? [...prev, e.id]
+                            : prev.filter((id) => id !== e.id),
+                        )
+                      }
+                      disabled={submitting}
+                    />{' '}
+                    {e.displayName}
+                    {e.teamId ? ` (${teams.find((t) => t.id === e.teamId)?.name ?? e.teamId})` : ''}
+                  </label>
+                ))}
+              <small>{teamAdminText.membersHint}</small>
+            </fieldset>
 
             <label className="form-field">
               <span>{teamAdminText.teamNameLabel}</span>
@@ -437,13 +497,17 @@ export function TeamAdminCrud({
                           )}
                         </td>
                         <td>
-                          {/* Deputies of the team's manager (act for them on their leave days) */}
-                          {(employeesById.get(team.managerId)?.deputyIds ?? []).length === 0
-                            ? '—'
-                            : employeesById
-                                .get(team.managerId)!
-                                .deputyIds.map((d) => employeeName.get(d) ?? '—')
-                                .join(', ')}
+                          {isEditing ? (
+                            <EmployeeSelect
+                              employees={employees.filter((e) => e.id !== team.managerId)}
+                              value={editDeputyId}
+                              onChange={setEditDeputyId}
+                              emptyLabel={teamAdminText.deputyPlaceholder}
+                              disabled={submitting}
+                            />
+                          ) : (
+                            employeeName.get(team.deputyId) ?? '—'
+                          )}
                         </td>
                         <td className="actions-cell">
                           {isEditing ? (

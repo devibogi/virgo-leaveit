@@ -51,8 +51,10 @@ CREATE TABLE employee_deputy (
 CREATE TABLE team (
   id         VARCHAR(64)  PRIMARY KEY,
   manager_id VARCHAR(64)  NOT NULL,
+  deputy_id  VARCHAR(64)  NOT NULL,                 -- required team deputy, <> manager_id (app-enforced)
   name       VARCHAR(200) NOT NULL,
   CONSTRAINT fk_team_manager FOREIGN KEY (manager_id) REFERENCES employee(id),
+  CONSTRAINT fk_team_deputy FOREIGN KEY (deputy_id) REFERENCES employee(id),
   INDEX ix_team_manager (manager_id)
 );
 
