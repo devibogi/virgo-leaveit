@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LoginResponse } from './api'
 import { EmployeeAdminCrud } from './components/EmployeeAdminCrud'
 import { LeaveEntitlementAdminCrud } from './components/LeaveEntitlementAdminCrud'
@@ -16,17 +16,34 @@ import {
   myEntitlementText,
   roleLabel,
   teamAdminText,
+  themeText,
   viewLabel,
 } from './i18n/hu'
 import type { Employee, Role } from './types/model'
 
 const ALL_ROLES: readonly Role[] = ['EMPLOYEE', 'MANAGER', 'HR_ADMIN']
+type Theme = 'light' | 'dark'
+
+function initialTheme(): Theme {
+  try {
+    const saved = localStorage.getItem('leaveit-theme')
+    if (saved === 'light' || saved === 'dark') return saved
+  } catch { /* storage unavailable */ }
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
   const [activeRole, setActiveRole] = useState<Role>('HR_ADMIN')
   const [section, setSection] = useState<AdminSection>('MY_REQUESTS')
+  const [theme, setTheme] = useState<Theme>(initialTheme)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try { localStorage.setItem('leaveit-theme', theme) } catch { /* ignore */ }
+  }, [theme])
 
   function handleLoginSuccess(session: LoginResponse) {
     setCurrentUser(session.employee)
@@ -99,6 +116,14 @@ export default function App() {
               ))}
             </div>
           </div>
+
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? themeText.toLight : themeText.toDark}
+          </button>
 
           <div className="user-session-bar">
             <span className="user-session-info">
