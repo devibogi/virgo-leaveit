@@ -186,7 +186,7 @@ body {
 
 .section-tab-active {
   background: var(--text);
-  color: white;
+  color: var(--bg);
 }
 
 .page-heading {
