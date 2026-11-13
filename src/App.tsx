@@ -14,14 +14,12 @@ import {
   leaveRequestAdminText,
   myLeaveRequestText,
   myEntitlementText,
-  roleLabel,
   teamAdminText,
   themeText,
   viewLabel,
 } from './i18n/hu'
 import type { Employee, Role } from './types/model'
 
-const ALL_ROLES: readonly Role[] = ['EMPLOYEE', 'MANAGER', 'HR_ADMIN']
 type Theme = 'light' | 'dark'
 
 function initialTheme(): Theme {
@@ -95,28 +93,6 @@ export default function App() {
         </div>
 
         <div className="topbar-right">
-          <div
-            className="role-switcher"
-            role="group"
-            aria-label={teamAdminText.demoRoleLabel}
-          >
-            <span className="role-switcher-label">
-              {teamAdminText.demoRoleLabel}
-            </span>
-            <div className="role-pills">
-              {ALL_ROLES.map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  className={`role-pill ${activeRole === role ? 'role-pill-active' : ''}`}
-                  onClick={() => setActiveRole(role)}
-                >
-                  {roleLabel[role]} ({role})
-                </button>
-              ))}
-            </div>
-          </div>
-
           <button
             type="button"
             className="btn btn-secondary btn-sm"
