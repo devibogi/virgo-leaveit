@@ -40,8 +40,13 @@ export default function App() {
 
   // Teams (and their tab) are visible to HR admin only.
   const isHrAdmin = activeRole === 'HR_ADMIN'
+  // The Employees page is hidden from the EMPLOYEE role.
+  const canSeeEmployees = activeRole !== 'EMPLOYEE'
   const visibleSection: AdminSection =
-    section === 'TEAMS' && !isHrAdmin ? 'REQUESTS' : section
+    (section === 'TEAMS' && !isHrAdmin) ||
+    (section === 'EMPLOYEES' && !canSeeEmployees)
+      ? 'REQUESTS'
+      : section
 
   const heading =
     visibleSection === 'TEAMS'
@@ -124,6 +129,7 @@ export default function App() {
           >
             {entitlementAdminText.tabLabel}
           </button>
+          {canSeeEmployees && (
           <button
             type="button"
             role="tab"
@@ -133,6 +139,7 @@ export default function App() {
           >
             {employeeAdminText.tabLabel}
           </button>
+          )}
           {isHrAdmin && (
           <button
             type="button"
