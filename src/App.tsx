@@ -15,8 +15,8 @@ import {
   myLeaveRequestText,
   myEntitlementText,
   teamAdminText,
+  roleLabel,
   themeText,
-  viewLabel,
 } from './i18n/hu'
 import type { Employee, Role } from './types/model'
 
@@ -88,7 +88,7 @@ export default function App() {
             <span className="topbar-title">
               LeaveIt<span>.</span>
             </span>
-            <span className="topbar-badge">{viewLabel.hrOverview}</span>
+            <span className="topbar-badge">{roleLabel[activeRole]}</span>
           </div>
         </div>
 
