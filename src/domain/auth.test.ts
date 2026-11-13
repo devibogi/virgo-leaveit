@@ -19,6 +19,7 @@ const SAMPLE_EMPLOYEES: readonly Employee[] = [
     employmentEnd: null,
     includeInPayrollExport: true,
     deputyIds: [],
+    taxId: '8000000001',
   },
   {
     id: 'emp-katalin',
@@ -32,6 +33,7 @@ const SAMPLE_EMPLOYEES: readonly Employee[] = [
     employmentEnd: null,
     includeInPayrollExport: true,
     deputyIds: ['emp-piri'],
+    taxId: '8000000002',
   },
 ]
 

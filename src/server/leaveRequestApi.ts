@@ -1,18 +1,19 @@
 import {
+  buildLeaveRequestFromDraft,
   canManageLeaveRequests,
   isLeaveTypeCode,
   isLegalEntityId,
   isRequestStatus,
   validateLeaveRequest,
-  type Approval,
-  type Cancellation,
-  type CreateLeaveRequestInput,
   type DayPortion,
+  type LeaveRequestDraft,
   type LeaveTypeCode,
-  type LegalEntityId,
-  type RequestStatus,
   type Role,
 } from '../domain/index.ts'
+import {
+  InMemoryEmployeeRepository,
+  type EmployeeRepository,
+} from './employeeRepository.ts'
 import {
   DuplicateLeaveRequestError,
   InMemoryLeaveRequestRepository,
@@ -51,19 +52,16 @@ function extractActorRole(
   return null
 }
 
-function parseLeaveRequestPayload(
-  id: string,
+/**
+ * Reads only the user-editable fields. id, legalEntityId, approverId and status
+ * sent by a client are ignored (D21): they are generated / derived server-side.
+ */
+function parseLeaveRequestDraft(
   payload: Record<string, unknown>,
-): CreateLeaveRequestInput {
+): LeaveRequestDraft {
   return {
-    id,
     employeeId:
-      typeof payload.employeeId === 'string' ? payload.employeeId : '',
-    legalEntityId: (typeof payload.legalEntityId === 'string'
-      ? payload.legalEntityId
-      : '') as LegalEntityId,
-    approverId:
-      typeof payload.approverId === 'string' ? payload.approverId : '',
+      typeof payload.employeeId === 'string' ? payload.employeeId.trim() : '',
     leaveTypeCode: (typeof payload.leaveTypeCode === 'string'
       ? payload.leaveTypeCode
       : '') as LeaveTypeCode,
@@ -72,24 +70,26 @@ function parseLeaveRequestPayload(
     dayPortion: (typeof payload.dayPortion === 'string'
       ? payload.dayPortion
       : 'FULL') as DayPortion,
-    status: (typeof payload.status === 'string'
-      ? payload.status
-      : 'PENDING') as RequestStatus,
     employeeComment:
       typeof payload.employeeComment === 'string'
         ? payload.employeeComment
         : null,
-    submittedAt:
-      typeof payload.submittedAt === 'string' ? payload.submittedAt : undefined,
-    approval: (payload.approval as Approval | null | undefined) ?? null,
-    cancellation:
-      (payload.cancellation as Cancellation | null | undefined) ?? null,
   }
 }
 
 export function createLeaveRequestApiHandler(
   repository: LeaveRequestRepository = new InMemoryLeaveRequestRepository(),
+  employeeRepository: EmployeeRepository = new InMemoryEmployeeRepository(),
 ) {
+  async function buildFromPayload(payload: Record<string, unknown>, id?: string) {
+    const draft = parseLeaveRequestDraft(payload)
+    const employee = draft.employeeId
+      ? await employeeRepository.findById(draft.employeeId)
+      : null
+    const employees = await employeeRepository.findAll()
+    return buildLeaveRequestFromDraft(draft, employee, employees, id)
+  }
+
   return async function handleLeaveRequestApiRequest(
     req: ApiRequest,
   ): Promise<ApiResponse | null> {
@@ -142,22 +142,19 @@ export function createLeaveRequestApiHandler(
 
       if (method === 'POST') {
         const payload = (req.body ?? {}) as Record<string, unknown>
-        const candidateId = typeof payload.id === 'string' ? payload.id : ''
-        const candidate = parseLeaveRequestPayload(candidateId, payload)
-
-        const validation = validateLeaveRequest(candidate)
-        if (!validation.valid) {
+        const built = await buildFromPayload(payload)
+        if (!built.input) {
           return {
             status: 400,
             body: {
               error: 'Validation failed',
-              details: validation.errors,
+              details: built.errors,
             },
           }
         }
 
         try {
-          const created = await repository.create(candidate)
+          const created = await repository.create(built.input)
           return {
             status: 201,
             body: created,
@@ -235,10 +232,43 @@ export function createLeaveRequestApiHandler(
       }
 
       if (method === 'PUT') {
+        const existing = await repository.findById(id)
+        if (!existing) {
+          return {
+            status: 404,
+            body: {
+              error: 'Not found',
+              details: [`A(z) '${id}' szabadságkérelem nem található.`],
+            },
+          }
+        }
         const payload = (req.body ?? {}) as Record<string, unknown>
-        const candidate = parseLeaveRequestPayload(id, payload)
+        // The owner of a request never changes on edit.
+        const built = await buildFromPayload(
+          { ...payload, employeeId: existing.employeeId },
+          id,
+        )
+        if (!built.input) {
+          return {
+            status: 400,
+            body: {
+              error: 'Validation failed',
+              details: built.errors,
+            },
+          }
+        }
 
-        const validation = validateLeaveRequest(candidate)
+        // Status and decision/cancellation history are kept as they are.
+        const { id: _ignored, ...derived } = built.input
+        void _ignored
+        const candidate = {
+          ...derived,
+          status: existing.status,
+          submittedAt: existing.submittedAt,
+          approval: existing.approval,
+          cancellation: existing.cancellation,
+        }
+        const validation = validateLeaveRequest({ id, ...candidate })
         if (!validation.valid) {
           return {
             status: 400,

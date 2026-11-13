@@ -19,6 +19,7 @@ function createInMemoryEmployeeFetch() {
       employmentEnd: null,
       includeInPayrollExport: true,
       deputyIds: [],
+      taxId: '8000000001',
     },
   ])
   const handler = createEmployeeApiHandler(repository)
@@ -91,6 +92,7 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
       employmentStart: '2022-09-01',
       employmentEnd: null,
       deputyIds: ['emp-piri'],
+      taxId: '8000000002',
     })
 
     expect(created.id).toBe('emp-peter')
@@ -109,6 +111,7 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
       employmentStart: '2022-09-01',
       employmentEnd: null,
       deputyIds: ['emp-piri'],
+      taxId: '8000000003',
     })
     expect(updated.displayName).toBe('Dr. Kovács Péter')
     expect(updated.roles).toEqual(['EMPLOYEE', 'MANAGER'])

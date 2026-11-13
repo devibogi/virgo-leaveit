@@ -38,6 +38,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     employmentEnd: null,
     includeInPayrollExport: true,
     deputyIds: [],
+    taxId: '8000000001',
   },
   {
     id: 'emp-katalin',
@@ -51,6 +52,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     employmentEnd: null,
     includeInPayrollExport: true,
     deputyIds: ['emp-piri'],
+    taxId: '8000000002',
   },
   {
     id: 'emp-peter',
@@ -64,6 +66,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     employmentEnd: null,
     includeInPayrollExport: true,
     deputyIds: ['emp-anna'],
+    taxId: '8000000003',
   },
   {
     id: 'emp-anna',
@@ -77,6 +80,7 @@ export const SYNTHETIC_SEED_EMPLOYEES: readonly Employee[] = [
     employmentEnd: null,
     includeInPayrollExport: true,
     deputyIds: ['emp-peter'],
+    taxId: '8000000004',
   },
 ]
 

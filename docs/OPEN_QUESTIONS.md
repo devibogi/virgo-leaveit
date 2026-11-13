@@ -23,15 +23,16 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q24 | Approved usage beyond total entitlement (e.g. after HR lowers an override): where is it booked? | HR | Open | Usage cache | On BASE; balance shown negative; HR resolves |
 | Q25 | Unpaid leave approved by HR: any HR Admin or a named one? Is the manager informed / asked first? Same SLA? Deputy check? | HR | Open | Approval routing, `LeaveType.approverRole` | Any HR Admin decides instead of the manager; manager sees it as "Szabadság" in the team calendar; same 3-day SLA; deputy check applies |
 | Q26 | Unpaired (odd) last half-day in a month: exported on its own date? With what value? | Zsuzska | Open | Half-day pairing, export | Exported on its own date as a half-day (`payrollValue` 0.5), not carried to next month |
-| Q27 | UNPAID and FUNERAL in the export: which group, or left out? | Zsuzska | Open | Export | Under "Szabadság" (category LEAVE) |
+| Q27 | UNPAID and OTHER (incl. funeral) in the export: which group, or left out? | Zsuzska | Open | Export | Under "Szabadság" (category LEAVE) |
 | Q28 | More than 5 periods per group in a month for one employee? | Zsuzska | Open | Export | Export shows a warning listing the employee; extra periods go into an extra row with the same name/tax id |
 | Q29 | Period building: are consecutive same-group days merged into one Tól–Ig, bridging weekends/holidays? | Zsuzska | Open | Export | Yes: merged across non-working days between them; different groups never merged |
-| Q30 | Is FUNERAL subject to the deputy check? | HR | Open | `deputyCheckApplies` | No (not plannable) |
+| Q30 | Is OTHER (incl. funeral) subject to the deputy check? | HR | Open | `deputyCheckApplies` | No (not plannable) |
 | Q31 | Corrections after export ("kiírásra kerül"): re-export the closed month, or show in the next month's file? | Zsuzska | Open | Export | HR re-generates the affected month; the change is listed in an export audit event |
 | Q32 | Leaver proration rounding; sick-pool proration rounding; is the switch from betegszabadság to táppénz automatic at day 16? | HR / Zsuzska | Open | Entitlement, sick pool | Same rounding as joiners; system splits automatically at day 16 and shows it to HR |
 | Q33 | Are registered employees with no leave in the month listed in the export? | Zsuzska | Open | Export | Yes, with empty periods |
 | Q34 | Company-specific closure days (e.g. year-end shutdown): do they exist, who maintains them, do they consume leave? | HR | Open | Calendar service, balance | None in the prototype; HR can add non-working days to the calendar data, not deducted |
 | Q35 | Export layout per legal entity: one sheet per Cégnév, one file per entity, or one block per entity in a single sheet? | Zsuzska | Open | Export | One .xlsx, one sheet per Cégnév |
+| Q37 | D21 leave-type list (ANNUAL, SICK_LEAVE, UNPAID, OTHER, CHILD_SICK_LEAVE) drops táppénz: how is day 16+ of sickness recorded given the confirmed 15-day pool? Is child care "szabadság" or "táppénz" for payroll? Does OTHER cover anything besides funeral leave? | HR / Zsuzska | Open | Leave types, sick pool, export | Day 16+ stays SICK_LEAVE, split shown to HR only; CHILD_SICK_LEAVE exported under "Betegszabadság/táppénz"; OTHER = funeral + free text |
 | Q36 | Approved stack, deployment target (Vercel allowed?) and repo visibility | Project owner / Virgo | Open | Setup, hosting | React/Vite/TS + MariaDB as in PRODUCT_BRIEF §7; private repo; local demo, no public deployment |
 
 ## Resolved (do not reopen)
@@ -48,7 +49,7 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 - **Q3 Half-days (2026-11-13):** second half-day completes the pair, exported on its date; none for sick types; post-export changes are written out (D19).
 - **Q4 Payroll mapping (2026-11-13):** only "Szabadság" and "Betegszabadság/táppénz"; certificate subtypes not our concern.
 - **Q9 Deducting types (2026-11-13):** only paid leave (ANNUAL).
-- **Q11 Leave types (2026-11-13):** ANNUAL, SICK_LEAVE, SICK_PAY, UNPAID, FUNERAL, CHILD_SICK_PAY; no paternity/extraordinary.
+- **Q11 Leave types (2026-11-13):** ANNUAL, SICK_LEAVE, SICK_PAY, UNPAID, FUNERAL, CHILD_SICK_PAY; no paternity/extraordinary. *Changed by D21 (product-owner request): ANNUAL, SICK_LEAVE, UNPAID, OTHER, CHILD_SICK_LEAVE — see Q37.*
 - **Leaver proration (2026-11-13):** annual / days in year (366 in leap years) × days employed; overdrawn at exit → no clawback.
 - **Sick-leave pool (2026-11-13):** 15 days/year, prorated; then táppénz.
 - **Leave type visibility (2026-11-13):** everyone but HR sees only "Szabadság" / "Beteg" (D19).

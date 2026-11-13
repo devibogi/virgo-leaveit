@@ -166,6 +166,7 @@ export default function App() {
           <LeaveRequestAdminCrud
             activeRole={activeRole}
             onRequestRoleChange={setActiveRole}
+            currentUserId={currentUser.id}
           />
         )}
       </main>

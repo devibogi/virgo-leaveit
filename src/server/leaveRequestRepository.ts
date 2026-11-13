@@ -76,7 +76,7 @@ export const SYNTHETIC_SEED_REQUESTS: readonly LeaveRequest[] = [
     employeeId: 'emp-katalin',
     legalEntityId: 'VIRGO_KFT',
     approverId: 'emp-piri',
-    leaveTypeCode: 'EXTRAORDINARY',
+    leaveTypeCode: 'OTHER',
     startDate: '2026-05-04',
     endDate: '2026-05-05',
     dayPortion: 'FULL',

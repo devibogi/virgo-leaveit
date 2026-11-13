@@ -27,7 +27,10 @@ function leaveItApiPlugin(): Plugin {
   const handleTeamApiRequest = createTeamApiHandler()
   const handleEmployeeApiRequest = createEmployeeApiHandler(sharedEmployeeRepo)
   const handleEntitlementApiRequest = createLeaveEntitlementApiHandler()
-  const handleLeaveRequestApiRequest = createLeaveRequestApiHandler()
+  const handleLeaveRequestApiRequest = createLeaveRequestApiHandler(
+    undefined,
+    sharedEmployeeRepo,
+  )
 
   const middleware: Connect.NextHandleFunction = (rawReq, rawRes, next) => {
     const req = rawReq as unknown as NodeRequestLike

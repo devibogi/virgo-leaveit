@@ -53,7 +53,7 @@ CREATE TABLE team (
 );
 
 CREATE TABLE leave_type (
-  code                        ENUM('ANNUAL','SICK_LEAVE','SICK_PAY','UNPAID','FUNERAL','CHILD_SICK_PAY') PRIMARY KEY,
+  code                        ENUM('ANNUAL','SICK_LEAVE','UNPAID','OTHER','CHILD_SICK_LEAVE') PRIMARY KEY,
   label                       VARCHAR(100) NOT NULL,
   category                    ENUM('LEAVE','SICK') NOT NULL,  -- non-HR visibility + payroll export group
   deducts_from_annual_balance BOOLEAN NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE leave_request (
   employee_id        VARCHAR(64) NOT NULL,
   legal_entity_id    ENUM('VIRGO_KFT','VIRGO_ZRT') NOT NULL, -- snapshot at submission
   approver_id        VARCHAR(64) NOT NULL,                   -- snapshot at submission
-  leave_type_code    ENUM('ANNUAL','SICK_LEAVE','SICK_PAY','UNPAID','FUNERAL','CHILD_SICK_PAY') NOT NULL,
+  leave_type_code    ENUM('ANNUAL','SICK_LEAVE','UNPAID','OTHER','CHILD_SICK_LEAVE') NOT NULL,
   start_date         DATE NOT NULL,
   end_date           DATE NOT NULL,
   day_portion        ENUM('FULL','AM','PM') NOT NULL,

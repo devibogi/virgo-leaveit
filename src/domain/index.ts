@@ -87,8 +87,11 @@ export {
 } from './entitlementUsage.ts'
 
 export {
+  buildLeaveRequestFromDraft,
   canManageLeaveRequests,
   createLeaveRequest,
+  generateRequestId,
+  resolveApproverId,
   DAY_PORTIONS,
   DayPortionEnum,
   isDayPortion,
@@ -103,7 +106,9 @@ export {
   type Cancellation,
   type CreateLeaveRequestInput,
   type DayPortion,
+  type BuildLeaveRequestResult,
   type LeaveRequest,
+  type LeaveRequestDraft,
   type LeaveRequestRow,
   type LeaveRequestValidationResult,
   type RequestId,

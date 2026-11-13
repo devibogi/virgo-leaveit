@@ -31,7 +31,7 @@
 - **Payroll pairing (confirmed 2026-11-13, D19, replaces the earlier "first = 1, second = 0" rule):** within each calendar month, approved and active half-days are sorted chronologically and paired. The **second half-day of a pair completes it**: the pair counts as 1 day and is exported **on the date of the second half-day** (first of the pair = 0, second = 1). Pairing restarts each month.
 - An unpaired (odd) last half-day in a month: see Q26.
 - If a half-day is cancelled before it takes place, re-pair the remaining active half-days chronologically.
-- **Half-days are not allowed for sick types** (SICK_LEAVE, SICK_PAY, CHILD_SICK_PAY).
+- **Half-days are not allowed for sick types** (SICK_LEAVE, CHILD_SICK_LEAVE).
 - A half-day revoked or changed after it was already exported is written out in the export (correction handling: Q31).
 - Do not allow retrospective edits. Before the leave starts, cancellation is allowed under the same rules as full-day leave.
 - Store balance deduction and payroll value separately; never represent both with a single `days` field.
@@ -62,17 +62,16 @@
 - Do not rely on a browser's locale or a hard-coded weekday-only calculation.
 - Production should use a maintained, HR-approved calendar source and define how calendar updates are applied.
 
-## 6. Leave types — confirmed 2026-11-13 (HR/payroll)
+## 6. Leave types — list per product-owner request 2026-11-13 (D21; HR confirmation pending, Q37)
 | Code | Hungarian | Category | Reduces annual balance | Half-day | Approver | Deputy check |
 |---|---|---|---|---|---|---|
 | `ANNUAL` | Fizetett szabadság | LEAVE (Szabadság) | yes | yes | Manager | yes |
 | `UNPAID` | Fizetés nélküli szabadság | LEAVE (Szabadság) | no | yes | **HR Admin** | yes |
-| `FUNERAL` | Temetési szabadság | LEAVE (Szabadság) | no | yes | Manager | no (assumption, Q30) |
+| `OTHER` | Egyéb (pl. temetési szabadság) | LEAVE (Szabadság) | no | yes | Manager | no (assumption, Q30) |
 | `SICK_LEAVE` | Betegszabadság | SICK (Beteg) | no | no | Manager | no |
-| `SICK_PAY` | Táppénz | SICK (Beteg) | no | no | Manager | no |
-| `CHILD_SICK_PAY` | Gyermekápolási táppénz | SICK (Beteg) | no | no | Manager | no |
+| `CHILD_SICK_LEAVE` | Gyermekápolási szabadság | SICK (Beteg) | no | no | Manager | no |
 
-- Paternity and extraordinary leave are **not** LeaveIt types (removed).
+- Paternity leave is **not** a LeaveIt type. FUNERAL is folded into `OTHER`; there is no separate táppénz (`SICK_PAY`) type (D21; conflicts with the sick pool below, Q37).
 - **Sick-leave pool:** 15 days of betegszabadság per calendar year, prorated for joiners/leavers; after that, absence is táppénz (proration rounding and the day-16 switch: Q32).
 - **Payroll categories:** only two groups, "Szabadság" and "Betegszabadság/táppénz". Medical-certificate subtypes are not LeaveIt's concern.
 
@@ -86,7 +85,7 @@
 
 ## 7. Deputy (substitute) availability — confirmed 2026-11-13
 - An employee can have **multiple deputies**. Employees without deputies are not checked.
-- **Planned leave only** (ANNUAL, UNPAID) is blocked. SICK_LEAVE, SICK_PAY, CHILD_SICK_PAY and FUNERAL are never blocked (FUNERAL: assumption, Q30).
+- **Planned leave only** (ANNUAL, UNPAID) is blocked. SICK_LEAVE, CHILD_SICK_LEAVE and OTHER are never blocked (OTHER: assumption, Q30).
 - A requested working day is **blocked if ALL of the requester's deputies are away** that day.
 - "Away" = the deputy has an **APPROVED**, active leave on that day (any leave type). Pending deputy requests do not block.
 - **One-way:** only the requester's own deputies matter. Being someone else's deputy does not restrict your leave.

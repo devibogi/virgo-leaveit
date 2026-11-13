@@ -28,7 +28,7 @@ Priority definitions: **P0** demo must-have · **P1** valuable if time · **P2**
 | LI-23 | P1 | LDAP sign-in | Backend binds to LDAP with the user's credentials over LDAPS; matches the employee by email; roles from DB; server-side session (httpOnly cookie); unknown/inactive user denied; Hungarian login page; `AUTH_MODE=demo` keeps the role switcher; LDAP credentials only in `.env`. |
 | LI-24 | P1 | Entitlement usage cache | `used_q1..q4`, `used_year` on every entitlement row; backend calls `recomputeEntitlementUsage()` in the same transaction on every trigger in DATA_MODEL "Usage cache"; admin "recompute all"; consistency test. Domain function + tests done. |
 | LI-25 | P1 | HR approves unpaid leave | UNPAID requests go to the HR Admin queue instead of the manager (`approverRole`); manager cannot decide them; flow per Q25 assumption. |
-| LI-26 | P1 | Category visibility + sick pool | Non-HR views show only "Szabadság" / "Beteg"; HR sees the exact type; 15-day prorated betegszabadság pool, then táppénz (Q32). |
+| LI-26 | P1 | Category visibility + sick pool | Non-HR views show only "Szabadság" / "Beteg"; HR sees the exact type; 15-day prorated betegszabadság pool, then táppénz (Q32; no separate táppénz type since D21, Q37). |
 | LI-27 | P1 | Leaver proration | Annual / days in year (366 leap) × days employed; overdrawn warning, no clawback. |
 | LI-16 | P2 | Google Calendar/email | Integration feasibility and permissions confirmed before implementation. |
 

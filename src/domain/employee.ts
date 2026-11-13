@@ -21,6 +21,8 @@ export interface CreateEmployeeInput {
   employmentEnd?: IsoDate | null
   includeInPayrollExport?: boolean
   deputyIds?: EmployeeId[]
+  /** Synthetic 10-digit adóazonosító jel. */
+  taxId?: string
 }
 
 export interface EmployeeRow {
@@ -35,6 +37,7 @@ export interface EmployeeRow {
   employment_end: string | null
   include_in_payroll_export: number | boolean
   deputy_ids_json: string
+  tax_id?: string | null
 }
 
 export interface EmployeeValidationResult {
@@ -159,6 +162,7 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
     employmentEnd: trimmedEmploymentEnd,
     includeInPayrollExport: input.includeInPayrollExport ?? true,
     deputyIds: uniqueDeputies,
+    taxId: input.taxId?.trim() ?? '',
   }
 }
 
@@ -195,6 +199,7 @@ export function mapRowToEmployee(row: EmployeeRow): Employee {
     employmentEnd: row.employment_end,
     includeInPayrollExport: Boolean(row.include_in_payroll_export),
     deputyIds,
+    taxId: row.tax_id ?? '',
   }
 }
 
@@ -211,5 +216,6 @@ export function mapEmployeeToRow(employee: Employee): EmployeeRow {
     employment_end: employee.employmentEnd,
     include_in_payroll_export: employee.includeInPayrollExport ? 1 : 0,
     deputy_ids_json: JSON.stringify(employee.deputyIds),
+    tax_id: employee.taxId,
   }
 }

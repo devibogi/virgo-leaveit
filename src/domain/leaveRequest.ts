@@ -2,6 +2,7 @@ import type {
   Approval,
   Cancellation,
   DayPortion,
+  Employee,
   EmployeeId,
   IsoDate,
   IsoDateTime,
@@ -72,6 +73,20 @@ export interface CreateLeaveRequestInput {
   submittedAt?: IsoDateTime
   approval?: Approval | null
   cancellation?: Cancellation | null
+}
+
+/**
+ * What the client sends when submitting / editing a request (D21).
+ * id, legalEntityId, approverId and status are never taken from the client:
+ * the server generates or derives them.
+ */
+export interface LeaveRequestDraft {
+  employeeId: EmployeeId
+  leaveTypeCode: LeaveTypeCode
+  startDate: IsoDate
+  endDate: IsoDate
+  dayPortion: DayPortion
+  employeeComment?: string | null
 }
 
 export interface LeaveRequestRow {
@@ -336,4 +351,86 @@ export function mapLeaveRequestToRow(req: LeaveRequest): LeaveRequestRow {
     cancelled_at: req.cancellation?.cancelledAt ?? null,
     cancellation_reason: req.cancellation?.reason ?? null,
   }
+}
+
+export function generateRequestId(): RequestId {
+  const uuid = (
+    globalThis as { crypto?: { randomUUID?: () => string } }
+  ).crypto?.randomUUID?.()
+  return uuid
+    ? `req-${uuid}`
+    : `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+/**
+ * Approver derivation (D21):
+ * - leave type with approverRole HR_ADMIN (UNPAID) → first active HR Admin who is not the requester;
+ * - otherwise → the employee's line manager (managerId).
+ * Returns null when no approver can be determined.
+ */
+export function resolveApproverId(
+  employee: Employee,
+  leaveTypeCode: LeaveTypeCode,
+  employees: readonly Employee[],
+): EmployeeId | null {
+  const approverRole = isLeaveTypeCode(leaveTypeCode)
+    ? getLeaveType(leaveTypeCode).approverRole
+    : 'MANAGER'
+
+  if (approverRole === 'HR_ADMIN') {
+    const hr = employees.find(
+      (e) =>
+        e.id !== employee.id &&
+        e.roles.includes('HR_ADMIN') &&
+        e.employmentEnd === null,
+    )
+    return hr?.id ?? null
+  }
+  return employee.managerId
+}
+
+export interface BuildLeaveRequestResult {
+  input: CreateLeaveRequestInput | null
+  errors: string[]
+}
+
+/**
+ * Builds the full create input from a client draft: id is generated, status is PENDING,
+ * legalEntityId comes from the employee, approverId is derived.
+ */
+export function buildLeaveRequestFromDraft(
+  draft: LeaveRequestDraft,
+  employee: Employee | null,
+  employees: readonly Employee[],
+  id: RequestId = generateRequestId(),
+): BuildLeaveRequestResult {
+  if (!employee) {
+    return {
+      input: null,
+      errors: [`A(z) '${draft.employeeId}' munkavállaló nem található.`],
+    }
+  }
+  const approverId = resolveApproverId(employee, draft.leaveTypeCode, employees)
+  if (!approverId) {
+    return {
+      input: null,
+      errors: ['Nem határozható meg jóváhagyó ehhez a kérelemhez.'],
+    }
+  }
+  const input: CreateLeaveRequestInput = {
+    id,
+    employeeId: employee.id,
+    legalEntityId: employee.legalEntityId,
+    approverId,
+    leaveTypeCode: draft.leaveTypeCode,
+    startDate: draft.startDate,
+    endDate: draft.endDate,
+    dayPortion: draft.dayPortion,
+    status: 'PENDING',
+    employeeComment: draft.employeeComment ?? null,
+  }
+  const validation = validateLeaveRequest(input)
+  return validation.valid
+    ? { input, errors: [] }
+    : { input: null, errors: validation.errors }
 }

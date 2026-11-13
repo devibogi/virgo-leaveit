@@ -1,6 +1,6 @@
 import type {
-  CreateLeaveRequestInput,
   LeaveRequest,
+  LeaveRequestDraft,
   LeaveTypeCode,
   LegalEntityId,
   RequestStatus,
@@ -8,8 +8,10 @@ import type {
 } from '../domain/leaveRequest.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
-export type CreateLeaveRequestPayload = CreateLeaveRequestInput
-export type UpdateLeaveRequestPayload = Omit<CreateLeaveRequestInput, 'id'>
+/** id, legalEntityId, approverId and status are generated/derived by the server (D21). */
+export type CreateLeaveRequestPayload = LeaveRequestDraft
+/** The request owner (employeeId) cannot change on edit. */
+export type UpdateLeaveRequestPayload = Omit<LeaveRequestDraft, 'employeeId'>
 
 export interface ListLeaveRequestsQuery {
   employeeId?: string

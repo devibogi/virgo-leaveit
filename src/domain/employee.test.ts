@@ -35,6 +35,7 @@ describe('Employee entity (shared DATA_MODEL contract)', () => {
       employmentEnd: null,
       includeInPayrollExport: true,
       deputyIds: ['emp-anna'],
+      taxId: '',
     })
   })
 

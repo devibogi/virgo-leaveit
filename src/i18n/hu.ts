@@ -24,12 +24,11 @@ export const legalEntityLabel: Record<LegalEntityId, string> = {
 }
 
 export const leaveTypeLabel: Record<LeaveTypeCode, string> = {
-  ANNUAL: 'Szabadság',
+  ANNUAL: 'Fizetett szabadság',
   SICK_LEAVE: 'Betegszabadság',
-  SICK_PAY: 'Táppénz',
   UNPAID: 'Fizetés nélküli szabadság',
-  FUNERAL: 'Temetési szabadság',
-  CHILD_SICK_PAY: 'Gyermekápolási táppénz',
+  OTHER: 'Egyéb (pl. temetési szabadság)',
+  CHILD_SICK_LEAVE: 'Gyermekápolási szabadság',
 }
 
 /** What everyone except HR Admin sees instead of the exact leave type (D19). */
@@ -255,7 +254,7 @@ export const leaveRequestAdminText = {
   pageIntro:
     'Kérelmek áttekintése, rögzítése, státuszkezelése és HR általi visszavonása (REVOKED). A visszavont és elutasított kérelmek nem törlődnek véglegesen, a történetben megmaradnak.',
   createTitle: 'Új szabadságkérelem rögzítése',
-  editTitle: (id: string) => `Kérelem szerkesztése: ${id}`,
+  editTitle: () => 'Kérelem szerkesztése',
   createSubtitle:
     'Félnapos (AM/PM) kérelem esetén a kezdő és záró dátumnak meg kell egyeznie, és csak félnapot engedélyező szabadságtípus választható.',
   idLabel: 'Kérelem azonosító (id)',

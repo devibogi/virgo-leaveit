@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import type { Employee } from '../types/model.ts'
 import {
+  buildLeaveRequestFromDraft,
   canManageLeaveRequests,
+  generateRequestId,
+  resolveApproverId,
   createLeaveRequest,
   mapLeaveRequestToRow,
   mapRowToLeaveRequest,
@@ -99,5 +103,56 @@ describe('LeaveRequest entity & validation (shared DATA_MODEL contract)', () => 
     expect(canManageLeaveRequests('HR_ADMIN')).toBe(true)
     expect(canManageLeaveRequests('MANAGER')).toBe(false)
     expect(canManageLeaveRequests('EMPLOYEE')).toBe(false)
+  })
+
+  describe('server-side derivation of hidden fields (D21)', () => {
+    const base = {
+      displayName: 'X',
+      email: 'x@virgo.example',
+      birthDate: '1990-01-01',
+      employmentStart: '2020-01-01',
+      employmentEnd: null,
+      includeInPayrollExport: true,
+      deputyIds: [],
+      taxId: '8000000009',
+    }
+    const hr: Employee = { ...base, id: 'emp-hr', legalEntityId: 'VIRGO_KFT', managerId: null, roles: ['EMPLOYEE', 'HR_ADMIN'] }
+    const mgr: Employee = { ...base, id: 'emp-mgr', legalEntityId: 'VIRGO_KFT', managerId: 'emp-hr', roles: ['EMPLOYEE', 'MANAGER'] }
+    const emp: Employee = { ...base, id: 'emp-e', legalEntityId: 'VIRGO_ZRT', managerId: 'emp-mgr', roles: ['EMPLOYEE'] }
+    const all = [hr, mgr, emp]
+    const draft = { employeeId: 'emp-e', leaveTypeCode: 'ANNUAL' as const, startDate: '2026-08-10', endDate: '2026-08-11', dayPortion: 'FULL' as const }
+
+    it('generates unique request ids', () => {
+      const a = generateRequestId()
+      expect(a).toMatch(/^req-/)
+      expect(generateRequestId()).not.toBe(a)
+    })
+
+    it('uses the line manager as approver, HR Admin for UNPAID', () => {
+      expect(resolveApproverId(emp, 'ANNUAL', all)).toBe('emp-mgr')
+      expect(resolveApproverId(emp, 'SICK_LEAVE', all)).toBe('emp-mgr')
+      expect(resolveApproverId(emp, 'UNPAID', all)).toBe('emp-hr')
+      expect(resolveApproverId(hr, 'UNPAID', all)).toBeNull()
+      expect(resolveApproverId(hr, 'ANNUAL', all)).toBeNull()
+    })
+
+    it('builds a PENDING request with entity from the employee', () => {
+      const result = buildLeaveRequestFromDraft(draft, emp, all, 'req-x')
+      expect(result.errors).toEqual([])
+      expect(result.input).toMatchObject({
+        id: 'req-x',
+        employeeId: 'emp-e',
+        legalEntityId: 'VIRGO_ZRT',
+        approverId: 'emp-mgr',
+        status: 'PENDING',
+      })
+    })
+
+    it('fails for unknown employee or missing approver', () => {
+      expect(buildLeaveRequestFromDraft(draft, null, all).input).toBeNull()
+      const noApprover = buildLeaveRequestFromDraft({ ...draft, employeeId: 'emp-hr' }, hr, all)
+      expect(noApprover.input).toBeNull()
+      expect(noApprover.errors[0]).toContain('jóváhagyó')
+    })
   })
 })
