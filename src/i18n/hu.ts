@@ -170,7 +170,6 @@ export const myTeamEmployeesText = {
   colName: 'Név és e-mail',
   colEntity: 'Jogi személy',
   colRoles: 'Szerepkörök',
-  colStart: 'Munkaviszony kezdete',
   colDeputies: 'Helyettesek',
   loading: 'Csapattagok betöltése...',
   empty: 'Nincs közvetlen beosztottad.',

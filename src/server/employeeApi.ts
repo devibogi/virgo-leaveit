@@ -43,9 +43,11 @@ function extractActorId(req: ApiRequest): string | null {
   return typeof id === 'string' && id.trim() ? id.trim() : null
 }
 
-/** Personal fields (birth date, tax id) and legal entity are HR-only and stripped for managers. */
+/** Personal fields (birth date, tax id, employment start) and legal entity are HR-only and stripped for managers. */
 function toManagerView(employee: CreateEmployeeInput, nameOf: (id: string) => string) {
-  const { birthDate: _b, taxId: _t, legalEntityId: _l, ...rest } = employee
+  // GDPR (product-owner request 2026-11-13): no birth date, tax id, entity or employment start for managers.
+  const { birthDate: _b, taxId: _t, legalEntityId: _l, employmentStart: _s, ...rest } = employee
+  void _s
   void _b
   void _t
   void _l

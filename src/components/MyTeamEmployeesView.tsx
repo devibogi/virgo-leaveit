@@ -61,7 +61,6 @@ export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmploye
                 <tr>
                   <th>{myTeamEmployeesText.colName}</th>
                   <th>{myTeamEmployeesText.colRoles}</th>
-                  <th>{myTeamEmployeesText.colStart}</th>
                   <th>{myTeamEmployeesText.colDeputies}</th>
                 </tr>
               </thead>
@@ -83,7 +82,6 @@ export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmploye
                         ))}
                       </div>
                     </td>
-                    <td className="sub-cell">{emp.employmentStart}</td>
                     <td>
                       {(emp as { deputyNames?: string[] }).deputyNames?.join(', ') || '—'}
                     </td>
