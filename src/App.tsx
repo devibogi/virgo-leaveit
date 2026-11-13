@@ -127,6 +127,15 @@ export default function App() {
           >
             {myLeaveRequestText.tabLabel}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visibleSection === 'ENTITLEMENTS'}
+            className={`section-tab ${visibleSection === 'ENTITLEMENTS' ? 'section-tab-active' : ''}`}
+            onClick={() => setSection('ENTITLEMENTS')}
+          >
+            {myEntitlementText.tabLabel}
+          </button>
           {isHrAdmin && (
           <button
             type="button"
@@ -138,15 +147,6 @@ export default function App() {
             {leaveRequestAdminText.tabLabel}
           </button>
           )}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={visibleSection === 'ENTITLEMENTS'}
-            className={`section-tab ${visibleSection === 'ENTITLEMENTS' ? 'section-tab-active' : ''}`}
-            onClick={() => setSection('ENTITLEMENTS')}
-          >
-            {myEntitlementText.tabLabel}
-          </button>
           {isHrAdmin && (
           <button
             type="button"
