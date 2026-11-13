@@ -44,7 +44,7 @@ export const payrollGroupLabel: Record<LeaveCategory, string> = {
 }
 
 export const entitlementComponentLabel: Record<EntitlementComponent, string> = {
-  BASE: 'Alapszabadság (BASE)',
+  BASE: 'Alapszabadság',
   AGE_ADDITIONAL: 'Életkor alapú pótszabadság',
   CHILD_ADDITIONAL: 'Gyermek utáni pótszabadság',
   AGE_ADDITIONAL_CARRYOVER:
@@ -111,7 +111,7 @@ export const authText = {
 } as const
 
 export const teamAdminText = {
-  tabLabel: 'Csapatok (Teams)',
+  tabLabel: 'Csapatok',
   eyebrow: 'HR ADMINISZTRÁCIÓ · CSAPATOK',
   pageTitle: 'Csapatok kezelése',
   pageIntro:
@@ -139,7 +139,7 @@ export const teamAdminText = {
   membershipLoading: 'Munkavállalók betöltése...',
   membershipSaved: (name: string) => `${name} csapata frissítve.`,
   membershipError: 'Hiba történt a csapat módosításakor.',
-  listTitle: 'Csapatok (Teams)',
+  listTitle: 'Csapatok',
   totalCount: (count: number) => `Összesen: ${count} csapat`,
   filterPlaceholder: 'Minden vezető',
   refreshButton: 'Frissítés',
@@ -174,7 +174,7 @@ export const myTeamEmployeesText = {
 } as const
 
 export const employeeAdminText = {
-  tabLabel: 'Munkavállalók (Employees)',
+  tabLabel: 'Munkavállalók',
   newButton: '+ Új munkavállaló',
   eyebrow: 'HR ADMINISZTRÁCIÓ · MUNKAVÁLLALÓK',
   pageTitle: 'Munkavállalók kezelése',
@@ -202,7 +202,7 @@ export const employeeAdminText = {
   createButton: '+ Munkavállaló hozzáadása',
   saveButton: 'Módosítások mentése',
   cancelButton: 'Mégse',
-  listTitle: 'Munkavállalók (Employees)',
+  listTitle: 'Munkavállalók',
   totalCount: (count: number) => `Összesen: ${count} munkavállaló`,
   allEntitiesFilter: 'Mindkét cég (Kft. + Zrt.)',
   filterManagerPlaceholder: 'Minden vezető',
@@ -258,7 +258,7 @@ export const myEntitlementText = {
 } as const
 
 export const entitlementAdminText = {
-  tabLabel: 'Összes szabadságkeret (Entitlements)',
+  tabLabel: 'Összes szabadságkeret',
   newButton: '+ Új szabadságkeret',
   eyebrow: 'HR ADMINISZTRÁCIÓ · SZABADSÁGKERETEK',
   pageTitle: 'Szabadságkeretek kezelése',
@@ -322,11 +322,11 @@ export const myLeaveRequestText = {
 }
 
 export const leaveRequestAdminText = {
-  tabLabel: 'Összes kérelem (Requests)',
+  tabLabel: 'Összes kérelem',
   eyebrow: 'HR ADMINISZTRÁCIÓ · SZABADSÁGKÉRELMEK',
   pageTitle: 'Szabadságkérelmek kezelése',
   pageIntro:
-    'Kérelmek áttekintése, rögzítése, státuszkezelése és HR általi visszavonása (REVOKED). A visszavont és elutasított kérelmek nem törlődnek véglegesen, a történetben megmaradnak.',
+    'Kérelmek áttekintése, rögzítése, státuszkezelése és HR általi visszavonása. A visszavont és elutasított kérelmek nem törlődnek véglegesen, a történetben megmaradnak.',
   createTitle: 'Új szabadságkérelem rögzítése',
   editTitle: () => 'Kérelem szerkesztése',
   createSubtitle:
@@ -367,7 +367,7 @@ export const leaveRequestAdminText = {
   colDetails: 'Megjegyzés / Visszavonás oka',
   colActions: 'Műveletek',
   editButton: 'Szerkesztés',
-  revokeButton: 'HR visszavonás (REVOKED)',
+  revokeButton: 'HR visszavonás',
   loadError: 'Nem sikerült betölteni a szabadságkérelmeket.',
   saveError: 'Hiba történt a szabadságkérelem mentésekor.',
   revokeError: 'Hiba történt a szabadságkérelem visszavonásakor.',
