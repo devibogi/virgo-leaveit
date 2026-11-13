@@ -107,7 +107,13 @@ export function LeaveRequestAdminCrud({
           legalEntityId: entity || undefined,
           status: st || undefined,
         })
-        setRequests(data)
+        setRequests(
+          [...data].sort(
+            (a, b) =>
+              a.startDate.localeCompare(b.startDate) ||
+              a.endDate.localeCompare(b.endDate),
+          ),
+        )
       } catch (err) {
         if (err instanceof TeamApiError) {
           setError(`${err.message}: ${err.details.join(' ')}`)
@@ -138,8 +144,8 @@ export function LeaveRequestAdminCrud({
   function resetForm() {
     setShowForm(false)
     setLeaveTypeCode(LeaveTypeCodeEnum.ANNUAL)
-    setStartDate('2026-08-03')
-    setEndDate('2026-08-07')
+    setStartDate(localIsoDate())
+    setEndDate(localIsoDate())
     setDayPortion(DayPortionEnum.FULL)
     setEmployeeComment('')
     setFormErrors([])
