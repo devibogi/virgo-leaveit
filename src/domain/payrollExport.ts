@@ -2,7 +2,7 @@ import type { Employee, IsoDate, LeaveCategory, LeaveRequest, LegalEntityId } fr
 import { createCalendarService, type CalendarService } from './calendar.ts'
 import { getLeaveType } from './leaveType.ts'
 import { getLegalEntity } from './legalEntity.ts'
-import { buildXlsx, columnName } from './xlsx.ts'
+import { buildXlsx, columnName, type XlsxBorder, type XlsxStyle } from './xlsx.ts'
 
 /**
  * Monthly payroll (bérszámfejtés) export, layout per docs/samples/payroll_template_2026.csv
@@ -196,18 +196,65 @@ export function renderPayrollCsv(legalEntityName: string, rows: readonly Payroll
   return lines.join('\r\n')
 }
 
+/** Data rows with borders: at least as many as the template (4). */
+const PAYROLL_XLSX_MIN_DATA_ROWS = 4
+
 /**
- * Same grid as the CSV template, as a real .xlsx (BUSINESS_RULES §6a asks for Excel):
- * group headers merged over their 10 columns, period numbers over their Tól/Ig pair,
- * Tól/Ig day numbers stored as numbers, tax id kept as text.
+ * Same grid as the CSV template, as .xlsx (BUSINESS_RULES §6a) with the formatting of the
+ * HR template workbook: fonts, fills, medium/thin borders, merges, widths, heights, frozen panes.
  */
 export function renderPayrollXlsx(legalEntityName: string, rows: readonly PayrollExportRow[]): Uint8Array {
   const grid = payrollGrid(legalEntityName, rows)
-  const cells = grid.map((r, ri) =>
-    r.map((v, ci) => (ri >= 3 && ci >= 2 && /^\d+$/.test(v) ? Number(v) : v)),
-  )
   const span = PAYROLL_PERIODS_PER_GROUP * 2
-  const merges: string[] = []
+  const lastCol = 1 + span * GROUPS.length
+  while (grid.length < 3 + PAYROLL_XLSX_MIN_DATA_ROWS) grid.push(Array(PAYROLL_COLUMNS).fill(''))
+
+  // Medium vertical line before each group and after the last column; thin elsewhere.
+  const sides = (c: number) => ({
+    left: (c === 0 || (c >= 2 && (c - 2) % span === 0) ? 'medium' : 'thin') as XlsxBorder,
+    right: (c === 1 || (c >= 2 && (c - 2) % span === span - 1) ? 'medium' : 'thin') as XlsxBorder,
+  })
+  const style = (r: number, c: number): XlsxStyle => {
+    const { left, right } = sides(c)
+    if (r <= 1 && c <= 1)
+      return {
+        font: { name: 'Arial', size: 16, color: '000080' },
+        align: { h: 'center', v: 'center', wrap: true },
+        border: { left: c === 0 ? 'medium' : undefined, right: c === 1 ? 'medium' : undefined, top: r === 0 ? 'medium' : undefined, bottom: r === 1 ? 'thin' : undefined },
+      }
+    if (r === 0) return { font: { bold: true }, align: { h: 'center', v: 'center' }, border: { left, right, top: 'medium', bottom: 'thin' } }
+    if (r === 1) return { align: { h: 'center', v: 'bottom' }, border: { left, right, top: 'thin', bottom: 'thin' } }
+    if (r === 2 && c <= 1)
+      return {
+        font: { name: 'Arial', size: 10, bold: true, color: 'FFFFFF' },
+        fill: '808080',
+        align: { h: c === 0 ? 'justify' : 'left', v: 'top', wrap: true },
+        border: { left, right, top: 'thin', bottom: 'thin' },
+      }
+    if (r === 2)
+      return {
+        font: { name: 'Tahoma', size: 9, bold: true },
+        fill: 'C0C0C0',
+        align: { h: 'center', v: 'center', wrap: true },
+        border: { left, right, top: 'thin', bottom: 'thin' },
+      }
+    if (c <= 1)
+      return {
+        font: { name: 'Arial', size: 8 },
+        align: { h: c === 0 ? 'justify' : 'left', v: 'top', wrap: true },
+        border: { left, right, top: 'thin', bottom: 'thin' },
+      }
+    return { font: { size: 8 }, numFmtId: 1, align: { v: 'bottom' }, border: { left, right, top: 'thin', bottom: 'thin' } }
+  }
+
+  const cells = grid.map((r, ri) =>
+    r.slice(0, lastCol + 1).map((v, ci) => {
+      const numeric = (ri === 1 && ci >= 2) || (ri >= 3 && ci >= 1)
+      return { v: numeric && /^\d+$/.test(v) ? Number(v) : v, s: style(ri, ci) }
+    }),
+  )
+
+  const merges = ['A1:B2']
   GROUPS.forEach((_, g) => {
     const first = 2 + g * span
     merges.push(`${columnName(first)}1:${columnName(first + span - 1)}1`)
@@ -220,7 +267,9 @@ export function renderPayrollXlsx(legalEntityName: string, rows: readonly Payrol
     name: legalEntityName,
     rows: cells,
     merges,
-    colWidths: [24, 18, ...Array(span * GROUPS.length).fill(6)],
+    colWidths: [22.82, 15.18, ...Array.from({ length: span * GROUPS.length }, (_, i) => (i === 0 ? 3.27 : i % 2 ? 2.82 : 3.45))],
+    rowHeights: [26, 14.25, 12, ...Array(grid.length - 3).fill(12)],
+    freeze: { rows: 3, cols: 2 },
   })
 }
 

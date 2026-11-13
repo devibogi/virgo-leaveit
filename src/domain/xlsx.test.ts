@@ -19,3 +19,18 @@ describe('xlsx writer', () => {
     expect(text).toContain('name="Virgo Zrt"')
   })
 })
+
+describe('xlsx styles', () => {
+  it('writes styles.xml and dedupes identical styles', () => {
+    const s = { font: { name: 'Arial', size: 8 }, border: { left: 'medium' as const } }
+    const text = new TextDecoder().decode(
+      buildXlsx({ name: 'S', rows: [[{ v: 'a', s }, { v: 1, s }, { v: 'b', s: { fill: 'C0C0C0' } }]], freeze: { rows: 3, cols: 2 } }),
+    )
+    expect(text).toContain('xl/styles.xml')
+    expect(text).toContain('<c r="A1" s="1" t="inlineStr">')
+    expect(text).toContain('<c r="B1" s="1"><v>1</v></c>')
+    expect(text).toContain('<c r="C1" s="2"')
+    expect(text).toContain('<fgColor rgb="FFC0C0C0"/>')
+    expect(text).toContain('topLeftCell="C4"')
+  })
+})

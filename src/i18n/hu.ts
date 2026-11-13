@@ -412,7 +412,6 @@ export const payrollExportText = {
   monthLabel: 'Hónap',
   legalEntityLabel: 'Jogi személy',
   download: 'Excel letöltése',
-  downloadCsv: 'CSV letöltése',
   assumptionsNote:
     'Feltételezések (HR megerősítésre vár): fizetés nélküli és temetési szabadság a Szabadság oszlopban; félnapok párosítva, páratlan utolsó félnap a saját napján; 5-nél több időszak új sorba kerül.',
   months: [

@@ -3,11 +3,28 @@
  * Output is an uncompressed (STORE) ZIP container, which Excel / Numbers / LibreOffice open.
  */
 
-export type XlsxCell = string | number | null | undefined
+export type XlsxBorder = 'thin' | 'medium'
+
+export interface XlsxStyle {
+  font?: { name?: string; size?: number; bold?: boolean; color?: string }
+  /** Solid fill, RGB hex like "C0C0C0". */
+  fill?: string
+  border?: { left?: XlsxBorder; right?: XlsxBorder; top?: XlsxBorder; bottom?: XlsxBorder }
+  align?: { h?: 'left' | 'center' | 'right' | 'justify'; v?: 'top' | 'center' | 'bottom'; wrap?: boolean }
+  /** Built-in number format id (1 = "0"). */
+  numFmtId?: number
+}
+
+export type XlsxValue = string | number | null | undefined
+export type XlsxCell = XlsxValue | { v: XlsxValue; s?: XlsxStyle }
 
 export interface XlsxSheet {
   name: string
   rows: readonly (readonly XlsxCell[])[]
+  /** Row heights in points, by row index. */
+  rowHeights?: readonly (number | undefined)[]
+  /** Freeze panes: number of top rows / left columns kept visible. */
+  freeze?: { rows: number; cols: number }
   /** A1-style ranges, e.g. "C1:L1". */
   merges?: readonly string[]
   /** Column widths in characters, by column index. */
@@ -29,7 +46,59 @@ export function columnName(index: number): string {
   return name
 }
 
-function sheetXml(sheet: XlsxSheet): string {
+class StyleTable {
+  fonts = ['<font><sz val="11"/><name val="Calibri"/></font>']
+  fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>']
+  borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>']
+  xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>']
+  private idx(list: string[], xml: string) {
+    const i = list.indexOf(xml)
+    if (i >= 0) return i
+    list.push(xml)
+    return list.length - 1
+  }
+  add(st: XlsxStyle): number {
+    const f = st.font ?? {}
+    const fontId = this.idx(
+      this.fonts,
+      `<font>${f.bold ? '<b/>' : ''}<sz val="${f.size ?? 11}"/>${f.color ? `<color rgb="FF${f.color}"/>` : ''}<name val="${esc(f.name ?? 'Calibri')}"/></font>`,
+    )
+    const fillId = st.fill
+      ? this.idx(this.fills, `<fill><patternFill patternType="solid"><fgColor rgb="FF${st.fill}"/><bgColor indexed="64"/></patternFill></fill>`)
+      : 0
+    const b = st.border ?? {}
+    const side = (n: string, v?: XlsxBorder) => (v ? `<${n} style="${v}"><color indexed="64"/></${n}>` : `<${n}/>`)
+    const borderId = this.idx(
+      this.borders,
+      `<border>${side('left', b.left)}${side('right', b.right)}${side('top', b.top)}${side('bottom', b.bottom)}<diagonal/></border>`,
+    )
+    const a = st.align
+    const align = a
+      ? `<alignment${a.h ? ` horizontal="${a.h}"` : ''}${a.v ? ` vertical="${a.v}"` : ''}${a.wrap ? ' wrapText="1"' : ''}/>`
+      : ''
+    const numFmtId = st.numFmtId ?? 0
+    return this.idx(
+      this.xfs,
+      `<xf numFmtId="${numFmtId}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0"` +
+        `${numFmtId ? ' applyNumberFormat="1"' : ''} applyFont="1" applyFill="1" applyBorder="1"${align ? ` applyAlignment="1">${align}</xf>` : '/>'}`,
+    )
+  }
+  xml(): string {
+    return (
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      `<fonts count="${this.fonts.length}">${this.fonts.join('')}</fonts>` +
+      `<fills count="${this.fills.length}">${this.fills.join('')}</fills>` +
+      `<borders count="${this.borders.length}">${this.borders.join('')}</borders>` +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      `<cellXfs count="${this.xfs.length}">${this.xfs.join('')}</cellXfs>` +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>'
+    )
+  }
+}
+
+function sheetXml(sheet: XlsxSheet, styles: StyleTable): string {
   const cols = sheet.colWidths?.length
     ? `<cols>${sheet.colWidths
         .map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`)
@@ -38,23 +107,32 @@ function sheetXml(sheet: XlsxSheet): string {
   const rows = sheet.rows
     .map((row, r) => {
       const cells = row
-        .map((v, c) => {
+        .map((cell, c) => {
           const ref = `${columnName(c)}${r + 1}`
-          if (typeof v === 'number') return `<c r="${ref}"><v>${v}</v></c>`
-          if (v === null || v === undefined || v === '') return ''
-          return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`
+          const { v, s } = cell !== null && typeof cell === 'object' ? cell : { v: cell, s: undefined }
+          const sAttr = s ? ` s="${styles.add(s)}"` : ''
+          if (typeof v === 'number') return `<c r="${ref}"${sAttr}><v>${v}</v></c>`
+          if (v === null || v === undefined || v === '') return sAttr ? `<c r="${ref}"${sAttr}/>` : ''
+          return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`
         })
         .join('')
-      return `<row r="${r + 1}">${cells}</row>`
+      const h = sheet.rowHeights?.[r]
+      return `<row r="${r + 1}"${h ? ` ht="${h}" customHeight="1"` : ''}>${cells}</row>`
     })
     .join('')
+  const fz = sheet.freeze
+  const views =
+    fz && (fz.rows || fz.cols)
+      ? `<sheetViews><sheetView workbookViewId="0"><pane${fz.cols ? ` xSplit="${fz.cols}"` : ''}${fz.rows ? ` ySplit="${fz.rows}"` : ''}` +
+        ` topLeftCell="${columnName(fz.cols)}${fz.rows + 1}" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>`
+      : ''
   const merges = sheet.merges?.length
     ? `<mergeCells count="${sheet.merges.length}">${sheet.merges.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>`
     : ''
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-    `${cols}<sheetData>${rows}</sheetData>${merges}</worksheet>`
+    `${views}${cols}<sheetData>${rows}</sheetData>${merges}</worksheet>`
   )
 }
 
@@ -62,6 +140,8 @@ function sheetXml(sheet: XlsxSheet): string {
 const sheetName = (s: string) => s.replace(/[[\]:*?/\\]/g, ' ').slice(0, 31) || 'Sheet1'
 
 export function buildXlsx(sheet: XlsxSheet): Uint8Array {
+  const styles = new StyleTable()
+  const sheetBody = sheetXml(sheet, styles)
   const files: [string, string][] = [
     [
       '[Content_Types].xml',
@@ -70,6 +150,7 @@ export function buildXlsx(sheet: XlsxSheet): Uint8Array {
         '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
         '<Default Extension="xml" ContentType="application/xml"/>' +
         '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
         '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
         '</Types>',
     ],
@@ -91,9 +172,11 @@ export function buildXlsx(sheet: XlsxSheet): Uint8Array {
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
         '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
         '</Relationships>',
     ],
-    ['xl/worksheets/sheet1.xml', sheetXml(sheet)],
+    ['xl/worksheets/sheet1.xml', sheetBody],
+    ['xl/styles.xml', styles.xml()],
   ]
   return zipStore(files.map(([name, text]) => [name, enc.encode(text)]))
 }

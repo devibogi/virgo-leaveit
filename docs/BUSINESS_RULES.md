@@ -93,7 +93,7 @@
 - `Tól`/`Ig` are day-of-month numbers of the exported month. A half-day pair appears on the second half-day's date.
 - One block/sheet per legal entity (assumption: one sheet per `Cégnév`).
 - Open details: Q26–Q29, Q31, Q33.
-- **Implemented (2026-11-13):** default **.xlsx** with the template grid (3 header rows, 25 columns, group headers merged, Tól/Ig as numbers); optional `format=csv` = template layout (`;`, CRLF, 25 columns, padded to 16 rows) with a UTF-8 BOM so Excel shows accents. HR Admin tab "Bérszámfejtés" → `GET /api/exports/payroll?year&month&legalEntityId[&format=xlsx|csv]` (HR_ADMIN only); xlsx writer: `src/domain/xlsx.ts` (no dependency). Logic: `src/domain/payrollExport.ts`.
+- **Implemented (2026-11-13):** default **.xlsx** with the template grid and the HR template workbook formatting (fonts, grey header fills, medium/thin borders, merges, column widths, frozen panes at C4; Tól/Ig and tax id as numbers); optional `format=csv` = template layout (`;`, CRLF, 25 columns, padded to 16 rows) with a UTF-8 BOM so Excel shows accents. HR Admin tab "Bérszámfejtés" → `GET /api/exports/payroll?year&month&legalEntityId[&format=xlsx|csv]` (HR_ADMIN only); xlsx writer: `src/domain/xlsx.ts` (no dependency). Logic: `src/domain/payrollExport.ts`.
 - Implemented **assumptions (not HR-confirmed)**: Q26 odd last half-day of the month exported on its own date; Q27 UNPAID and FUNERAL under `Szabadság`; Q28 more than 5 periods → extra row with the same name/tax id; Q29 periods merge across non-working days only; Q33 employees without leave are listed with empty cells; `Cégnév` = legal entity name.
 
 ## 7. Deputy (substitute) availability — confirmed 2026-11-13
