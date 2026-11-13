@@ -120,3 +120,4 @@ export {
   type RequestStatus,
 } from './leaveRequest.ts'
 export * from './calendar.ts'
+export * from './entitlementDefaults.ts'

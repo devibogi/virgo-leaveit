@@ -165,7 +165,7 @@ describe('LeaveEntitlement API endpoints, session authorization & usage cache re
       })),
     })
     const own = await peter.listEntitlements({ employeeId: 'emp-anna', year: 2026 })
-    expect(own.map((e) => e.employeeId)).toEqual(['emp-peter'])
+    expect(new Set(own.map((e) => e.employeeId))).toEqual(new Set(['emp-peter']))
 
     const anna = createLeaveEntitlementApiClient({
       fetchFn: makeFetch(() => ({
@@ -174,7 +174,12 @@ describe('LeaveEntitlement API endpoints, session authorization & usage cache re
         activeRole: 'EMPLOYEE',
       })),
     })
-    expect(await anna.listEntitlements({ year: 2026 })).toEqual([])
+    // Defaults are generated for everyone: Anna (31 in 2026) gets BASE 20 + age 3.
+    const annaOwn = await anna.listEntitlements({ year: 2026 })
+    expect(annaOwn.map((e) => [e.employeeId, e.component, e.calculatedDays])).toEqual([
+      ['emp-anna', 'BASE', 20],
+      ['emp-anna', 'AGE_ADDITIONAL', 3],
+    ])
     await expect(anna.getEntitlementById('ent-peter-2026-base')).rejects.toMatchObject({ status: 403 })
   })
 
@@ -189,7 +194,7 @@ describe('LeaveEntitlement API endpoints, session authorization & usage cache re
     })
     const team = await manager.listTeamSummary(2026)
     const peter = team.find((m) => m.employeeId === 'emp-peter')
-    expect(peter).toMatchObject({ totalDays: 20, usedDays: 0, remainingDays: 20 })
+    expect(peter).toMatchObject({ totalDays: 24, usedDays: 0, remainingDays: 24 })
     expect(team.map((m) => m.employeeId).sort()).toEqual(['emp-anna', 'emp-peter'])
     for (const m of team) {
       expect(Object.keys(m).sort()).toEqual(

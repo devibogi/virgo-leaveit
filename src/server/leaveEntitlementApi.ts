@@ -18,6 +18,7 @@ import {
 } from './employeeRepository.ts'
 import type { ApiRequest, ApiResponse } from './teamApi.ts'
 import { withPastUsage } from '../domain/entitlementUsage.ts'
+import { defaultEntitlements } from '../domain/entitlementDefaults.ts'
 import type { LeaveEntitlement } from '../types/model.ts'
 import type { LeaveRequestRepository } from './leaveRequestRepository.ts'
 
@@ -115,6 +116,22 @@ export function createLeaveEntitlementApiHandler(
     return withPastUsage(items, await requestRepository.findAll(), today())
   }
 
+  /** Every employee gets default BASE + age-based rows for the year if missing (persisted, HR-editable). */
+  async function ensureDefaults(year: number): Promise<void> {
+    const existing = await repository.findAll({ year })
+    const has = new Set(existing.map((e) => `${e.employeeId}|${e.component}`))
+    for (const employee of await employeeRepository.findAll()) {
+      for (const input of defaultEntitlements(employee, year, 'system')) {
+        if (has.has(`${input.employeeId}|${input.component}`)) continue
+        try {
+          await repository.create(input)
+        } catch (err) {
+          if (!(err instanceof DuplicateEntitlementError)) throw err
+        }
+      }
+    }
+  }
+
   return async function handleLeaveEntitlementApiRequest(
     req: ApiRequest,
   ): Promise<ApiResponse | null> {
@@ -140,6 +157,9 @@ export function createLeaveEntitlementApiHandler(
       query.year && !Number.isNaN(Number(query.year))
         ? Number(query.year)
         : undefined
+    if (method === 'GET') {
+      await ensureDefaults(year ?? Number(today().slice(0, 4)))
+    }
 
     // Manager: direct reports' balances as numbers only (no component, no leave type).
     if (isTeamSummary && method === 'GET') {

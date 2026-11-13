@@ -16,6 +16,7 @@
 - **Overdrawn at exit (confirmed 2026-11-13):** if a leaver has used more than the prorated entitlement, nothing happens (no clawback, no financial deduction). The system shows the prorated limit and warns when it is exceeded.
 - **Only paid leave (ANNUAL) reduces the annual balance (confirmed 2026-11-13).**
 - **Consumption order (confirmed 2026-11-13):** approved leave uses entitlement components in this order: age-based carryover from the previous year → base → age-based additional → child-related additional. (Payroll mentioned base → additional → other; the project owner kept the order above, which only adds the carryover in front.)
+- **Default entitlements for everyone (product-owner request 2026-11-13; HR confirmation pending):** when entitlements for a year are read, every employee employed in that year gets BASE (20 days, Mt. §116) and AGE_ADDITIONAL (statutory Mt. §117 table: age reached in the year 25→1, 28→2, 31→3, 33→4, 35→5, 37→6, 39→7, 41→8, 43→9, 45+→10) if missing. Days are prorated by calendar days employed in the year, fraction ≥ 0.5 rounds up. Rows are persisted (updatedBy `system`) and HR can override them. CHILD_ADDITIONAL is never generated. The age table is statutory, not yet confirmed by HR.
 - **Used days (product-owner request 2026-11-13; HR confirmation pending):** approved leave counts as *used* only for working days up to and including today. Future approved leave is booked but not yet used. Pending, rejected, cancelled and revoked requests never count.
 
 ## 2. Requests and approvals
