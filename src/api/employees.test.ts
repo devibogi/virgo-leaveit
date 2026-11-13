@@ -168,6 +168,7 @@ describe('Employee API endpoints, session authorization & frontend client', () =
     expect(team[0]).not.toHaveProperty('birthDate')
     expect(team[0]).not.toHaveProperty('taxId')
     expect(team[0]).not.toHaveProperty('legalEntityId')
+    expect(team[0]).not.toHaveProperty('legalEntityId')
 
     await expect(manager.getEmployeeById('emp-report')).rejects.toMatchObject({ status: 403 })
     const anonymous = createEmployeeApiClient({
