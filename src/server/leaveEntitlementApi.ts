@@ -41,22 +41,13 @@ function parseUrlPathAndQuery(rawUrl: string): {
   }
 }
 
-function extractActorRole(
-  headers?: Record<string, string | undefined>,
-): Role | null {
-  if (!headers) return null
-  const raw = headers['x-actor-role'] ?? headers['X-Actor-Role'] ?? undefined
-  if (raw === 'EMPLOYEE' || raw === 'MANAGER' || raw === 'HR_ADMIN') {
-    return raw
-  }
-  return null
+function extractActorRole(req: ApiRequest): Role | null {
+  return req.session?.activeRole ?? null
 }
 
-function extractActorId(
-  headers?: Record<string, string | undefined>,
-): string | null {
-  const raw = headers?.['x-actor-id'] ?? headers?.['X-Actor-Id']
-  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+function extractActorId(req: ApiRequest): string | null {
+  const id = req.session?.employeeId
+  return typeof id === 'string' && id.trim() ? id.trim() : null
 }
 
 const FORBIDDEN_HR_ONLY: ApiResponse = {
@@ -140,9 +131,8 @@ export function createLeaveEntitlementApiHandler(
       return null
     }
 
-    // Demo-only: role and id come from client headers, not a verified session.
-    const actorRole = extractActorRole(req.headers)
-    const actorId = extractActorId(req.headers)
+    const actorRole = extractActorRole(req)
+    const actorId = extractActorId(req)
     if (!actorRole) {
       return FORBIDDEN_HR_ONLY
     }

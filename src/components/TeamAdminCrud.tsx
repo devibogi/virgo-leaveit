@@ -33,18 +33,16 @@ export function TeamAdminCrud({
     () =>
       createTeamApiClient({
         ...apiClientOptions,
-        getActorRole: () => activeRole,
       }),
-    [activeRole, apiClientOptions],
+    [apiClientOptions],
   )
   const employeeClient = useMemo(
     () =>
       createEmployeeApiClient({
         fetchFn: apiClientOptions?.fetchFn,
         baseUrl: apiClientOptions?.baseUrl,
-        getActorRole: () => activeRole,
       }),
-    [activeRole, apiClientOptions],
+    [apiClientOptions],
   )
 
   // Team membership (team = direct manager): HR can move anyone to another team.

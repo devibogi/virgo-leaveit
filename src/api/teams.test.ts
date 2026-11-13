@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createTeamApiClient, TeamApiError } from './teams.ts'
 import { createTeamApiHandler } from '../server/teamApi.ts'
+import type { SessionContext } from '../server/sessionRepository.ts'
 import {
   InMemoryTeamRepository,
   MariaDbTeamRepository,
@@ -8,7 +9,7 @@ import {
 } from '../server/teamRepository.ts'
 import type { Role, TeamRow } from '../domain/team.ts'
 
-function createInMemoryFetch() {
+function createInMemoryFetch(getSession?: () => SessionContext | null) {
   const repository = new InMemoryTeamRepository([
     {
       managerId: 'emp-katalin',
@@ -29,6 +30,7 @@ function createInMemoryFetch() {
       url,
       headers: rawHeaders,
       body,
+      session: getSession ? getSession() : null,
     })
     if (!result) {
       return new Response(
@@ -50,7 +52,7 @@ function createInMemoryFetch() {
   return { fakeFetch, handler }
 }
 
-describe('Team OpenAPI 3 endpoints, HR_ADMIN authorization & frontend client', () => {
+describe('Team OpenAPI 3 endpoints, session HR_ADMIN authorization & frontend client', () => {
   it('serves the OpenAPI 3.0.3 document at GET /api/openapi.json', async () => {
     const { handler } = createInMemoryFetch()
     const res = await handler({ method: 'GET', url: '/api/openapi.json' })
@@ -62,12 +64,15 @@ describe('Team OpenAPI 3 endpoints, HR_ADMIN authorization & frontend client', (
     })
   })
 
-  it('rejects non-HR_ADMIN roles with 403 Forbidden', async () => {
-    const { fakeFetch } = createInMemoryFetch()
+  it('rejects non-HR_ADMIN session roles and unauthenticated requests with 403 Forbidden', async () => {
     let currentRole: Role = 'EMPLOYEE'
+    const { fakeFetch } = createInMemoryFetch(() => ({
+      sessionId: 'sess-1',
+      employeeId: 'emp-peter',
+      activeRole: currentRole,
+    }))
     const client = createTeamApiClient({
       fetchFn: fakeFetch,
-      getActorRole: () => currentRole,
     })
 
     await expect(client.listTeams()).rejects.toMatchObject({
@@ -82,11 +87,14 @@ describe('Team OpenAPI 3 endpoints, HR_ADMIN authorization & frontend client', (
     })
   })
 
-  it('lists, creates, fetches, updates and deletes teams as HR_ADMIN', async () => {
-    const { fakeFetch } = createInMemoryFetch()
+  it('lists, creates, fetches, updates and deletes teams as HR_ADMIN in session', async () => {
+    const { fakeFetch } = createInMemoryFetch(() => ({
+      sessionId: 'sess-hr',
+      employeeId: 'emp-piri',
+      activeRole: 'HR_ADMIN',
+    }))
     const client = createTeamApiClient({
       fetchFn: fakeFetch,
-      getActorRole: () => 'HR_ADMIN',
     })
 
     const initial = await client.listTeams()
@@ -128,10 +136,13 @@ describe('Team OpenAPI 3 endpoints, HR_ADMIN authorization & frontend client', (
   })
 
   it('returns 400 on invalid input and 409 on duplicate managerId', async () => {
-    const { fakeFetch } = createInMemoryFetch()
+    const { fakeFetch } = createInMemoryFetch(() => ({
+      sessionId: 'sess-hr',
+      employeeId: 'emp-piri',
+      activeRole: 'HR_ADMIN',
+    }))
     const client = createTeamApiClient({
       fetchFn: fakeFetch,
-      getActorRole: () => 'HR_ADMIN',
     })
 
     await expect(

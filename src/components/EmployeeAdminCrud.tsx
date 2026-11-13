@@ -39,9 +39,8 @@ export function EmployeeAdminCrud({
     () =>
       createEmployeeApiClient({
         ...apiClientOptions,
-        getActorRole: () => activeRole,
       }),
-    [activeRole, apiClientOptions],
+    [apiClientOptions],
   )
 
   const [employees, setEmployees] = useState<Employee[]>([])

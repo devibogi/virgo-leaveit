@@ -1,4 +1,4 @@
-import type { Role, Team } from '../domain/team.ts'
+import type { Team } from '../domain/team.ts'
 
 export interface CreateTeamRequest {
   managerId: string
@@ -21,7 +21,6 @@ export interface ListTeamsQuery {
 export interface TeamApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
-  getActorRole?: () => Role
 }
 
 export class TeamApiError extends Error {
@@ -39,12 +38,10 @@ export class TeamApiError extends Error {
 export function createTeamApiClient(options: TeamApiClientOptions = {}) {
   const baseUrl = (options.baseUrl ?? '/api').replace(/\/$/, '')
   const fetchImpl = options.fetchFn ?? fetch
-  const getRole = options.getActorRole ?? (() => 'HR_ADMIN' as Role)
 
   function buildHeaders(includeJsonContentType = false): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      'X-Actor-Role': getRole(),
     }
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
@@ -83,6 +80,7 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
       const url = `${baseUrl}/teams${queryString ? `?${queryString}` : ''}`
       const response = await fetchImpl(url, {
         method: 'GET',
+        credentials: 'same-origin',
         headers: buildHeaders(false),
       })
       return parseResponse<Team[]>(response)
@@ -93,6 +91,7 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
         `${baseUrl}/teams/${encodeURIComponent(managerId)}`,
         {
           method: 'GET',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )
@@ -102,6 +101,7 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
     async createTeam(body: CreateTeamRequest): Promise<Team> {
       const response = await fetchImpl(`${baseUrl}/teams`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: buildHeaders(true),
         body: JSON.stringify(body),
       })
@@ -116,6 +116,7 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
         `${baseUrl}/teams/${encodeURIComponent(managerId)}`,
         {
           method: 'PUT',
+          credentials: 'same-origin',
           headers: buildHeaders(true),
           body: JSON.stringify(body),
         },
@@ -128,6 +129,7 @@ export function createTeamApiClient(options: TeamApiClientOptions = {}) {
         `${baseUrl}/teams/${encodeURIComponent(managerId)}`,
         {
           method: 'DELETE',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )

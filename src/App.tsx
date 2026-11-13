@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { LoginResponse } from './api'
+import { authApi, type LoginResponse } from './api'
 import { EmployeeAdminCrud } from './components/EmployeeAdminCrud'
 import { LeaveEntitlementAdminCrud } from './components/LeaveEntitlementAdminCrud'
 import { LeaveRequestAdminCrud } from './components/LeaveRequestAdminCrud'
@@ -35,22 +35,67 @@ type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'TEAM_ENTITLEM
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
-  const [activeRole, setActiveRole] = useState<Role>('HR_ADMIN')
+  const [activeRole, setActiveRole] = useState<Role>('EMPLOYEE')
   const [section, setSection] = useState<AdminSection>('MY_REQUESTS')
   const [theme, setTheme] = useState<Theme>(initialTheme)
+  const [sessionChecking, setSessionChecking] = useState<boolean>(true)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     try { localStorage.setItem('leaveit-theme', theme) } catch { /* ignore */ }
   }, [theme])
 
+  useEffect(() => {
+    let cancelled = false
+    authApi
+      .getSession()
+      .then((session) => {
+        if (cancelled) return
+        if (session) {
+          setCurrentUser(session.employee)
+          setActiveRole(session.activeRole ?? session.defaultRole)
+        }
+      })
+      .catch(() => {
+        // Ignore session check error; show LoginView
+      })
+      .finally(() => {
+        if (!cancelled) setSessionChecking(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   function handleLoginSuccess(session: LoginResponse) {
     setCurrentUser(session.employee)
-    setActiveRole(session.defaultRole)
+    setActiveRole(session.activeRole ?? session.defaultRole)
   }
 
-  function handleSignOut() {
-    setCurrentUser(null)
+  async function handleRoleSwitch(role: Role) {
+    if (!currentUser || !currentUser.roles.includes(role)) {
+      return
+    }
+    try {
+      const updated = await authApi.switchRole(role)
+      setCurrentUser(updated.employee)
+      setActiveRole(updated.activeRole ?? updated.defaultRole)
+    } catch {
+      // Ignore if role switch fails
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      await authApi.logout()
+    } finally {
+      setCurrentUser(null)
+      setActiveRole('EMPLOYEE')
+    }
+  }
+
+  if (sessionChecking) {
+    return null
   }
 
   if (!currentUser) {
@@ -98,6 +143,27 @@ export default function App() {
         </div>
 
         <div className="topbar-right">
+          {currentUser.roles.length > 1 && (
+            <div
+              className="role-switcher"
+              role="group"
+              aria-label={teamAdminText.demoRoleLabel}
+            >
+              <div className="role-pills">
+                {currentUser.roles.map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`role-pill ${activeRole === role ? 'role-pill-active' : ''}`}
+                    onClick={() => void handleRoleSwitch(role)}
+                  >
+                    {roleLabel[role]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -211,13 +277,13 @@ export default function App() {
         {visibleSection === 'TEAMS' ? (
           <TeamAdminCrud
             activeRole={activeRole}
-            onRequestRoleChange={setActiveRole}
+            onRequestRoleChange={(r) => void handleRoleSwitch(r)}
           />
         ) : visibleSection === 'EMPLOYEES' ? (
           isHrAdmin ? (
             <EmployeeAdminCrud
               activeRole={activeRole}
-              onRequestRoleChange={setActiveRole}
+              onRequestRoleChange={(r) => void handleRoleSwitch(r)}
             />
           ) : (
             <MyTeamEmployeesView
@@ -228,7 +294,7 @@ export default function App() {
         ) : visibleSection === 'ENTITLEMENTS_ADMIN' ? (
           <LeaveEntitlementAdminCrud
             activeRole={activeRole}
-            onRequestRoleChange={setActiveRole}
+            onRequestRoleChange={(r) => void handleRoleSwitch(r)}
           />
         ) : visibleSection === 'TEAM_ENTITLEMENTS' ? (
           <MyEntitlementsView
@@ -248,7 +314,7 @@ export default function App() {
             key={visibleSection}
             mode={visibleSection === 'REQUESTS' ? 'ALL' : 'MINE'}
             activeRole={activeRole}
-            onRequestRoleChange={setActiveRole}
+            onRequestRoleChange={(r) => void handleRoleSwitch(r)}
             currentUserId={currentUser.id}
           />
         )}

@@ -47,9 +47,8 @@ export function LeaveEntitlementAdminCrud({
     () =>
       createLeaveEntitlementApiClient({
         ...apiClientOptions,
-        getActorRole: () => activeRole,
       }),
-    [activeRole, apiClientOptions],
+    [apiClientOptions],
   )
 
   const [items, setItems] = useState<LeaveEntitlement[]>([])

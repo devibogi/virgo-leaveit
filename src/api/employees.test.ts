@@ -3,6 +3,7 @@ import { createEmployeeApiClient } from './employees.ts'
 import { TeamApiError } from './teams.ts'
 import { createEmployeeApiHandler } from '../server/employeeApi.ts'
 import { InMemoryEmployeeRepository } from '../server/employeeRepository.ts'
+import type { SessionContext } from '../server/sessionRepository.ts'
 import type { Role } from '../domain/employee.ts'
 
 function createInMemoryEmployeeFetch() {
@@ -24,46 +25,52 @@ function createInMemoryEmployeeFetch() {
   ])
   const handler = createEmployeeApiHandler(repository)
 
-  const fakeFetch: typeof fetch = async (input, init) => {
-    const url = typeof input === 'string' ? input : input.toString()
-    const method = init?.method ?? 'GET'
-    const rawHeaders = (init?.headers ?? {}) as Record<string, string>
-    const body =
-      typeof init?.body === 'string' ? JSON.parse(init.body) : undefined
+  function makeFetch(getSession: () => SessionContext | null): typeof fetch {
+    return async (input, init) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      const method = init?.method ?? 'GET'
+      const rawHeaders = (init?.headers ?? {}) as Record<string, string>
+      const body =
+        typeof init?.body === 'string' ? JSON.parse(init.body) : undefined
 
-    const result = await handler({
-      method,
-      url,
-      headers: rawHeaders,
-      body,
-    })
-    if (!result) {
-      return new Response(
-        JSON.stringify({ error: 'Not found', details: ['Route not found'] }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } },
-      )
+      const result = await handler({
+        method,
+        url,
+        headers: rawHeaders,
+        body,
+        session: getSession(),
+      })
+      if (!result) {
+        return new Response(
+          JSON.stringify({ error: 'Not found', details: ['Route not found'] }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+
+      if (result.status === 204) {
+        return new Response(null, { status: 204 })
+      }
+
+      return new Response(JSON.stringify(result.body), {
+        status: result.status,
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
-
-    if (result.status === 204) {
-      return new Response(null, { status: 204 })
-    }
-
-    return new Response(JSON.stringify(result.body), {
-      status: result.status,
-      headers: { 'Content-Type': 'application/json' },
-    })
   }
 
-  return { fakeFetch }
+  return { makeFetch }
 }
 
-describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () => {
+describe('Employee API endpoints, session authorization & frontend client', () => {
   it('blocks non-HR_ADMIN roles with 403 Forbidden', async () => {
-    const { fakeFetch } = createInMemoryEmployeeFetch()
+    const { makeFetch } = createInMemoryEmployeeFetch()
     let role: Role = 'EMPLOYEE'
     const client = createEmployeeApiClient({
-      fetchFn: fakeFetch,
-      getActorRole: () => role,
+      fetchFn: makeFetch(() => ({
+        sessionId: 'sess-1',
+        employeeId: 'emp-piri',
+        activeRole: role,
+      })),
     })
 
     await expect(client.listEmployees()).rejects.toMatchObject({ status: 403 })
@@ -75,10 +82,13 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
   })
 
   it('performs full Employee CRUD as HR_ADMIN', async () => {
-    const { fakeFetch } = createInMemoryEmployeeFetch()
+    const { makeFetch } = createInMemoryEmployeeFetch()
     const client = createEmployeeApiClient({
-      fetchFn: fakeFetch,
-      getActorRole: () => 'HR_ADMIN',
+      fetchFn: makeFetch(() => ({
+        sessionId: 'sess-hr',
+        employeeId: 'emp-piri',
+        activeRole: 'HR_ADMIN',
+      })),
     })
 
     const created = await client.createEmployee({
@@ -123,8 +133,14 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
   })
 
   it('lets managers list only their direct reports, read-only, without personal fields', async () => {
-    const { fakeFetch } = createInMemoryEmployeeFetch()
-    const hr = createEmployeeApiClient({ fetchFn: fakeFetch, getActorRole: () => 'HR_ADMIN' })
+    const { makeFetch } = createInMemoryEmployeeFetch()
+    const hr = createEmployeeApiClient({
+      fetchFn: makeFetch(() => ({
+        sessionId: 'sess-hr',
+        employeeId: 'emp-piri',
+        activeRole: 'HR_ADMIN',
+      })),
+    })
     await hr.createEmployee({
       id: 'emp-report',
       displayName: 'Teszt Beosztott',
@@ -141,9 +157,11 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
     })
 
     const manager = createEmployeeApiClient({
-      fetchFn: fakeFetch,
-      getActorRole: () => 'MANAGER',
-      getActorId: () => 'emp-piri',
+      fetchFn: makeFetch(() => ({
+        sessionId: 'sess-mgr',
+        employeeId: 'emp-piri',
+        activeRole: 'MANAGER',
+      })),
     })
     const team = await manager.listEmployees({ managerId: 'someone-else' })
     expect(team.map((e) => e.id)).toEqual(['emp-report'])
@@ -152,15 +170,20 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
     expect(team[0]).not.toHaveProperty('legalEntityId')
 
     await expect(manager.getEmployeeById('emp-report')).rejects.toMatchObject({ status: 403 })
-    const anonymous = createEmployeeApiClient({ fetchFn: fakeFetch, getActorRole: () => 'MANAGER' })
+    const anonymous = createEmployeeApiClient({
+      fetchFn: makeFetch(() => null),
+    })
     await expect(anonymous.listEmployees()).rejects.toMatchObject({ status: 403 })
   })
 
   it('HR moves an employee to another team; rejects a management cycle', async () => {
-    const { fakeFetch } = createInMemoryEmployeeFetch()
+    const { makeFetch } = createInMemoryEmployeeFetch()
     const client = createEmployeeApiClient({
-      fetchFn: fakeFetch,
-      getActorRole: () => 'HR_ADMIN',
+      fetchFn: makeFetch(() => ({
+        sessionId: 'sess-hr',
+        employeeId: 'emp-piri',
+        activeRole: 'HR_ADMIN',
+      })),
     })
     const base = {
       email: 'x@virgo.example',
@@ -177,7 +200,6 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
     const moved = await client.updateEmployee('emp-d', { ...rest, managerId: 'emp-piri' })
     expect(moved.managerId).toBe('emp-piri')
 
-    // emp-m -> under emp-d is fine now (emp-d no longer reports to emp-m) ...
     const m = await client.getEmployeeById('emp-m')
     const { id: _mid, ...mRest } = m
     void _mid
@@ -186,7 +208,7 @@ describe('Employee API endpoints, HR_ADMIN authorization & frontend client', () 
         ...(await client.getEmployeeById('emp-piri')),
         managerId: 'emp-m',
       }),
-    ).rejects.toMatchObject({ status: 400 }) // piri -> m -> piri would be a cycle
+    ).rejects.toMatchObject({ status: 400 })
     expect((await client.updateEmployee('emp-m', { ...mRest, managerId: 'emp-d' })).managerId).toBe('emp-d')
   })
 })

@@ -155,6 +155,16 @@ const SCHEMA_AND_SEED_STATEMENTS: readonly string[] = [
     ('req-0001', 'emp-peter', 'VIRGO_KFT', 'emp-katalin', 'ANNUAL', '2026-06-15', '2026-06-19', 'FULL', 'APPROVED', 'Családi nyaralás', '2026-06-01T08:30:00Z', 'APPROVED', 'emp-katalin', NULL, '2026-06-02T10:15:00Z', 'Jóváhagyva', NULL, NULL, NULL, NULL),
     ('req-0002', 'emp-anna', 'VIRGO_ZRT', 'emp-katalin', 'ANNUAL', '2026-07-03', '2026-07-03', 'AM', 'PENDING', 'Hivatali ügyintézés délelőtt', '2026-06-25T14:00:00Z', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('req-0003', 'emp-katalin', 'VIRGO_KFT', 'emp-piri', 'OTHER', '2026-05-04', '2026-05-05', 'FULL', 'REVOKED', 'Költözés', '2026-04-20T09:00:00Z', 'APPROVED', 'emp-piri', NULL, '2026-04-21T11:00:00Z', 'Rendben', 'REVOKED', 'emp-piri', '2026-04-28T16:00:00Z', 'Időpont módosulás miatt HR által visszavonva')`,
+
+  `CREATE TABLE IF NOT EXISTS sessions (
+    id VARCHAR(128) NOT NULL,
+    employee_id VARCHAR(64) NOT NULL,
+    active_role ENUM('EMPLOYEE', 'MANAGER', 'HR_ADMIN') NOT NULL,
+    created_at VARCHAR(64) NOT NULL,
+    expires_at VARCHAR(64) NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_sessions_employee_id (employee_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ]
 
 interface MysqlPromisePool {

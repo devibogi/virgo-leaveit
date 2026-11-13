@@ -1,4 +1,4 @@
-import type { LeaveRequest } from '../domain'
+import type { LeaveRequest } from '../domain/index.ts'
 
 /** Synthetic demo requests (Nov 2026 – Jan 2027) so the calendar shows every type/status. */
 type Row = [

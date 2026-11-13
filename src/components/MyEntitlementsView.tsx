@@ -34,10 +34,8 @@ export function MyEntitlementsView({
     () =>
       createLeaveEntitlementApiClient({
         ...apiClientOptions,
-        getActorRole: () => activeRole,
-        getActorId: () => currentUserId,
       }),
-    [activeRole, currentUserId, apiClientOptions],
+    [apiClientOptions],
   )
   const isManager = activeRole === 'MANAGER'
   const showTeam = view === 'TEAM' && isManager

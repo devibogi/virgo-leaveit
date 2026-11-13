@@ -3,7 +3,6 @@ import type {
   CreateLeaveEntitlementInput,
   EntitlementComponent,
   LeaveEntitlement,
-  Role,
 } from '../domain/leaveEntitlement.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
@@ -22,9 +21,6 @@ export interface ListLeaveEntitlementsQuery {
 export interface LeaveEntitlementApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
-  getActorRole?: () => Role
-  /** Demo-only: id of the signed-in user, sent as X-Actor-Id. */
-  getActorId?: () => string
 }
 
 export interface TeamMemberBalance extends EntitlementBalanceSummary {
@@ -36,16 +32,10 @@ export function createLeaveEntitlementApiClient(
 ) {
   const baseUrl = (options.baseUrl ?? '/api').replace(/\/$/, '')
   const fetchImpl = options.fetchFn ?? fetch
-  const getRole = options.getActorRole ?? (() => 'HR_ADMIN' as Role)
 
   function buildHeaders(includeJsonContentType = false): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      'X-Actor-Role': getRole(),
-    }
-    const actorId = options.getActorId?.()
-    if (actorId) {
-      headers['X-Actor-Id'] = actorId
     }
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
@@ -92,6 +82,7 @@ export function createLeaveEntitlementApiClient(
       const url = `${baseUrl}/entitlements${qs ? `?${qs}` : ''}`
       const response = await fetchImpl(url, {
         method: 'GET',
+        credentials: 'same-origin',
         headers: buildHeaders(false),
       })
       return parseResponse<LeaveEntitlement[]>(response)
@@ -101,7 +92,11 @@ export function createLeaveEntitlementApiClient(
     async listTeamSummary(year: number): Promise<TeamMemberBalance[]> {
       const response = await fetchImpl(
         `${baseUrl}/entitlements/team-summary?year=${year}`,
-        { method: 'GET', headers: buildHeaders(false) },
+        {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: buildHeaders(false),
+        },
       )
       return parseResponse<TeamMemberBalance[]>(response)
     },
@@ -111,6 +106,7 @@ export function createLeaveEntitlementApiClient(
         `${baseUrl}/entitlements/${encodeURIComponent(id)}`,
         {
           method: 'GET',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )
@@ -122,6 +118,7 @@ export function createLeaveEntitlementApiClient(
     ): Promise<LeaveEntitlement> {
       const response = await fetchImpl(`${baseUrl}/entitlements`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: buildHeaders(true),
         body: JSON.stringify(body),
       })
@@ -136,6 +133,7 @@ export function createLeaveEntitlementApiClient(
         `${baseUrl}/entitlements/${encodeURIComponent(id)}`,
         {
           method: 'PUT',
+          credentials: 'same-origin',
           headers: buildHeaders(true),
           body: JSON.stringify(body),
         },
@@ -148,6 +146,7 @@ export function createLeaveEntitlementApiClient(
         `${baseUrl}/entitlements/${encodeURIComponent(id)}`,
         {
           method: 'DELETE',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )

@@ -18,7 +18,12 @@ import {
   MariaDbLeaveRequestRepository,
 } from './src/server/leaveRequestRepository.ts'
 import { createMariaDbSqlExecutor } from './src/server/mariadbClient.ts'
-import { createTeamApiHandler } from './src/server/teamApi.ts'
+import {
+  extractSessionIdFromHeaders,
+  InMemorySessionRepository,
+  MariaDbSessionRepository,
+} from './src/server/sessionRepository.ts'
+import { createTeamApiHandler, type ApiRequest } from './src/server/teamApi.ts'
 import {
   InMemoryTeamRepository,
   MariaDbTeamRepository,
@@ -62,6 +67,9 @@ function leaveItApiPlugin(): Plugin {
       })
     : null
 
+  const sessionRepo = sqlExecutor
+    ? new MariaDbSessionRepository(sqlExecutor)
+    : new InMemorySessionRepository()
   const employeeRepo = sqlExecutor
     ? new MariaDbEmployeeRepository(sqlExecutor)
     : new InMemoryEmployeeRepository()
@@ -75,7 +83,7 @@ function leaveItApiPlugin(): Plugin {
     ? new MariaDbLeaveRequestRepository(sqlExecutor)
     : new InMemoryLeaveRequestRepository()
 
-  const handleAuthApiRequest = createAuthApiHandler(employeeRepo)
+  const handleAuthApiRequest = createAuthApiHandler(employeeRepo, sessionRepo)
   const handleTeamApiRequest = createTeamApiHandler(teamRepo)
   const handleEmployeeApiRequest = createEmployeeApiHandler(employeeRepo)
   const handleEntitlementApiRequest = createLeaveEntitlementApiHandler(
@@ -119,20 +127,35 @@ function leaveItApiPlugin(): Plugin {
         }
       }
 
-      const apiReq = {
-        method: req.method ?? 'GET',
-        url,
-        headers: req.headers,
-        body: parsedBody,
-      }
+      const cookieSessionId = extractSessionIdFromHeaders(req.headers)
+      const sessionLookup = cookieSessionId
+        ? sessionRepo.findById(cookieSessionId)
+        : Promise.resolve(null)
 
-      void Promise.all([
-        handleAuthApiRequest(apiReq),
-        handleTeamApiRequest(apiReq),
-        handleEmployeeApiRequest(apiReq),
-        handleEntitlementApiRequest(apiReq),
-        handleLeaveRequestApiRequest(apiReq),
-      ])
+      void sessionLookup
+        .then((session) => {
+          const apiReq: ApiRequest = {
+            method: req.method ?? 'GET',
+            url,
+            headers: req.headers,
+            body: parsedBody,
+            session: session
+              ? {
+                  sessionId: session.id,
+                  employeeId: session.employeeId,
+                  activeRole: session.activeRole,
+                }
+              : null,
+          }
+
+          return Promise.all([
+            handleAuthApiRequest(apiReq),
+            handleTeamApiRequest(apiReq),
+            handleEmployeeApiRequest(apiReq),
+            handleEntitlementApiRequest(apiReq),
+            handleLeaveRequestApiRequest(apiReq),
+          ])
+        })
         .then(([authRes, teamRes, empRes, entRes, reqRes]) => {
           const apiRes = authRes ?? teamRes ?? empRes ?? entRes ?? reqRes
           if (!apiRes) {
@@ -140,6 +163,11 @@ function leaveItApiPlugin(): Plugin {
             return
           }
           res.statusCode = apiRes.status
+          if (apiRes.headers) {
+            for (const [k, v] of Object.entries(apiRes.headers)) {
+              res.setHeader(k, v)
+            }
+          }
           if (apiRes.body !== undefined) {
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify(apiRes.body))

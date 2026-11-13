@@ -61,10 +61,8 @@ export function LeaveRequestAdminCrud({
     () =>
       createLeaveRequestApiClient({
         ...apiClientOptions,
-        getActorRole: () => activeRole,
-        getActorId: () => currentUserId,
       }),
-    [activeRole, apiClientOptions, currentUserId],
+    [apiClientOptions],
   )
 
   const [requests, setRequests] = useState<LeaveRequestListItem[]>([])

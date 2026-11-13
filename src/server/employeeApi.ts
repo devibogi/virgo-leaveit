@@ -33,22 +33,13 @@ function parseUrlPathAndQuery(rawUrl: string): {
   }
 }
 
-function extractActorRole(
-  headers?: Record<string, string | undefined>,
-): Role | null {
-  if (!headers) return null
-  const raw = headers['x-actor-role'] ?? headers['X-Actor-Role'] ?? undefined
-  if (raw === 'EMPLOYEE' || raw === 'MANAGER' || raw === 'HR_ADMIN') {
-    return raw
-  }
-  return null
+function extractActorRole(req: ApiRequest): Role | null {
+  return req.session?.activeRole ?? null
 }
 
-function extractActorId(
-  headers?: Record<string, string | undefined>,
-): string | null {
-  const raw = headers?.['x-actor-id'] ?? headers?.['X-Actor-Id']
-  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+function extractActorId(req: ApiRequest): string | null {
+  const id = req.session?.employeeId
+  return typeof id === 'string' && id.trim() ? id.trim() : null
 }
 
 /** Personal fields (birth date, tax id) and legal entity are HR-only and stripped for managers. */
@@ -124,11 +115,10 @@ export function createEmployeeApiHandler(
       return null
     }
 
-    const actorRole = extractActorRole(req.headers)
+    const actorRole = extractActorRole(req)
     // Managers: read-only list of their direct reports, without personal fields.
-    // Demo-only: role/id come from client headers, not a verified session.
     if (actorRole === 'MANAGER' && isCollection && method === 'GET') {
-      const actorId = extractActorId(req.headers)
+      const actorId = extractActorId(req)
       if (!actorId) {
         return {
           status: 403,

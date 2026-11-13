@@ -10,14 +10,7 @@ export interface MyTeamEmployeesViewProps {
 
 /** Manager: read-only list of direct reports (no birth date / tax id / legal entity). */
 export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmployeesViewProps) {
-  const apiClient = useMemo(
-    () =>
-      createEmployeeApiClient({
-        getActorRole: () => activeRole,
-        getActorId: () => currentUserId,
-      }),
-    [activeRole, currentUserId],
-  )
+  const apiClient = useMemo(() => createEmployeeApiClient(), [])
   const [members, setMembers] = useState<Employee[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +38,7 @@ export function MyTeamEmployeesView({ activeRole, currentUserId }: MyTeamEmploye
     return () => {
       cancelled = true
     }
-  }, [apiClient])
+  }, [apiClient, activeRole, currentUserId])
 
   return (
     <section className="admin-container">

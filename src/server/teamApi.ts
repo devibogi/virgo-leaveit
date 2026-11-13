@@ -1,5 +1,6 @@
 import { openApiDocument } from '../api/openapi.ts'
 import { canManageTeams, validateTeam, type Role } from '../domain/team.ts'
+import type { SessionContext } from './sessionRepository.ts'
 import {
   DuplicateTeamError,
   InMemoryTeamRepository,
@@ -11,10 +12,12 @@ export interface ApiRequest {
   url: string
   headers?: Record<string, string | undefined>
   body?: unknown
+  session?: SessionContext | null
 }
 
 export interface ApiResponse {
   status: number
+  headers?: Record<string, string>
   body?: unknown
 }
 
@@ -38,16 +41,8 @@ function parseUrlPathAndQuery(rawUrl: string): {
   }
 }
 
-function extractActorRole(
-  headers?: Record<string, string | undefined>,
-): Role | null {
-  if (!headers) return null
-  const raw =
-    headers['x-actor-role'] ?? headers['X-Actor-Role'] ?? undefined
-  if (raw === 'EMPLOYEE' || raw === 'MANAGER' || raw === 'HR_ADMIN') {
-    return raw
-  }
-  return null
+function extractActorRole(req: ApiRequest): Role | null {
+  return req.session?.activeRole ?? null
 }
 
 export function createTeamApiHandler(
@@ -73,8 +68,8 @@ export function createTeamApiHandler(
       return null
     }
 
-    // Backend authorization check: only HR_ADMIN may access Team CRUD endpoints
-    const actorRole = extractActorRole(req.headers)
+    // Backend authorization check: only HR_ADMIN in the server session may access Team CRUD endpoints
+    const actorRole = extractActorRole(req)
     if (!actorRole || !canManageTeams(actorRole)) {
       return {
         status: 403,

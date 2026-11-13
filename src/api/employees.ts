@@ -2,7 +2,6 @@ import type {
   CreateEmployeeInput,
   Employee,
   LegalEntityId,
-  Role,
 } from '../domain/employee.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
@@ -17,8 +16,6 @@ export interface ListEmployeesQuery {
 export interface EmployeeApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
-  getActorRole?: () => Role
-  getActorId?: () => string
 }
 
 export function createEmployeeApiClient(
@@ -26,15 +23,11 @@ export function createEmployeeApiClient(
 ) {
   const baseUrl = (options.baseUrl ?? '/api').replace(/\/$/, '')
   const fetchImpl = options.fetchFn ?? fetch
-  const getRole = options.getActorRole ?? (() => 'HR_ADMIN' as Role)
 
   function buildHeaders(includeJsonContentType = false): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      'X-Actor-Role': getRole(),
     }
-    const actorId = options.getActorId?.()
-    if (actorId) headers['X-Actor-Id'] = actorId
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
     }
@@ -75,6 +68,7 @@ export function createEmployeeApiClient(
       const url = `${baseUrl}/employees${qs ? `?${qs}` : ''}`
       const response = await fetchImpl(url, {
         method: 'GET',
+        credentials: 'same-origin',
         headers: buildHeaders(false),
       })
       return parseResponse<Employee[]>(response)
@@ -85,6 +79,7 @@ export function createEmployeeApiClient(
         `${baseUrl}/employees/${encodeURIComponent(id)}`,
         {
           method: 'GET',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )
@@ -94,6 +89,7 @@ export function createEmployeeApiClient(
     async createEmployee(body: CreateEmployeeRequest): Promise<Employee> {
       const response = await fetchImpl(`${baseUrl}/employees`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: buildHeaders(true),
         body: JSON.stringify(body),
       })
@@ -108,6 +104,7 @@ export function createEmployeeApiClient(
         `${baseUrl}/employees/${encodeURIComponent(id)}`,
         {
           method: 'PUT',
+          credentials: 'same-origin',
           headers: buildHeaders(true),
           body: JSON.stringify(body),
         },
@@ -120,6 +117,7 @@ export function createEmployeeApiClient(
         `${baseUrl}/employees/${encodeURIComponent(id)}`,
         {
           method: 'DELETE',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )

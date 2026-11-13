@@ -4,7 +4,6 @@ import type {
   LeaveTypeCode,
   LegalEntityId,
   RequestStatus,
-  Role,
 } from '../domain/leaveRequest.ts'
 import { TeamApiError, type ErrorResponse } from './teams.ts'
 
@@ -29,9 +28,6 @@ export interface ListLeaveRequestsQuery {
 export interface LeaveRequestApiClientOptions {
   baseUrl?: string
   fetchFn?: typeof fetch
-  getActorRole?: () => Role
-  /** Demo-only: id of the signed-in user, sent as X-Actor-Id. */
-  getActorId?: () => string
 }
 
 export function createLeaveRequestApiClient(
@@ -39,16 +35,10 @@ export function createLeaveRequestApiClient(
 ) {
   const baseUrl = (options.baseUrl ?? '/api').replace(/\/$/, '')
   const fetchImpl = options.fetchFn ?? fetch
-  const getRole = options.getActorRole ?? (() => 'HR_ADMIN' as Role)
 
   function buildHeaders(includeJsonContentType = false): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      'X-Actor-Role': getRole(),
-    }
-    const actorId = options.getActorId?.()
-    if (actorId) {
-      headers['X-Actor-Id'] = actorId
     }
     if (includeJsonContentType) {
       headers['Content-Type'] = 'application/json'
@@ -96,6 +86,7 @@ export function createLeaveRequestApiClient(
       const url = `${baseUrl}/requests${qs ? `?${qs}` : ''}`
       const response = await fetchImpl(url, {
         method: 'GET',
+        credentials: 'same-origin',
         headers: buildHeaders(false),
       })
       return parseResponse<LeaveRequest[]>(response)
@@ -106,6 +97,7 @@ export function createLeaveRequestApiClient(
         `${baseUrl}/requests/${encodeURIComponent(id)}`,
         {
           method: 'GET',
+          credentials: 'same-origin',
           headers: buildHeaders(false),
         },
       )
@@ -115,6 +107,7 @@ export function createLeaveRequestApiClient(
     async createRequest(body: CreateLeaveRequestPayload): Promise<LeaveRequest> {
       const response = await fetchImpl(`${baseUrl}/requests`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: buildHeaders(true),
         body: JSON.stringify(body),
       })
@@ -129,6 +122,7 @@ export function createLeaveRequestApiClient(
         `${baseUrl}/requests/${encodeURIComponent(id)}`,
         {
           method: 'PUT',
+          credentials: 'same-origin',
           headers: buildHeaders(true),
           body: JSON.stringify(body),
         },
@@ -144,6 +138,7 @@ export function createLeaveRequestApiClient(
         `${baseUrl}/requests/${encodeURIComponent(id)}/revoke`,
         {
           method: 'POST',
+          credentials: 'same-origin',
           headers: buildHeaders(true),
           body: JSON.stringify(input),
         },
