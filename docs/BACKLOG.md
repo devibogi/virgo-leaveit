@@ -14,10 +14,10 @@ Priority definitions: **P0** demo must-have · **P1** valuable if time · **P2**
 | LI-08 | P0 | Team calendar | Shows direct-team approved absences and overlap warnings. |
 | LI-09 | P0 | HR overview | HR can filter employees/requests across Kft. and Zrt. |
 | LI-10 | P1 | Cancel and resubmit | Future approved request can be cancelled; history remains; employee can submit replacement. |
-| LI-11 | P1 | Half-day pairing | Each half-day deducts 0.5; monthly chronological first payroll=1, second=0; cancellation recalculates. |
+| LI-11 | P1 | Half-day pairing | Each half-day deducts 0.5; monthly chronological pairs, first = 0, second = 1 (exported on the second's date); cancellation re-pairs; no half-days for sick types. |
 | LI-12 | P1 | Three-working-day SLA | Due date skips weekends/rest days and counts designated working Saturdays; reminder can be simulated. |
 | LI-13 | P1 | HR manual adjustment | HR changes entitlement with reason; audit event is created. |
-| LI-14 | P1 | CSV export | Export includes clearly labelled provisional fields; final schema awaits HR; only employees with `includeInPayrollExport = true`. |
+| LI-14 | P1 | Monthly payroll Excel export | .xlsx matching `docs/samples/payroll_template_2026.csv`: per legal entity, name + tax id + 5 Tól/Ig per group (Szabadság / Betegszabadság/táppénz); only employees with `includeInPayrollExport = true`; assumptions Q26–Q29, Q31, Q33 labelled. |
 | LI-15 | P1 | AI conflict wording | Words the deputy conflict + suggested dates from `DeputyConflictAiInput` (dates only); never names the deputy, position or leave type; non-AI fallback text; never approves or calculates. |
 | LI-17 | P1 | Deputy availability check | Planned leave blocked on days all deputies have approved leave; checked at submit and re-checked at approval; employee/manager see conflict dates only; deterministic alternative dates (up to 3). |
 | LI-18 | P1 | Deputy assignment | HR Admin (assumption, Q13) edits an employee's deputies; no self-deputy; audit `DEPUTIES_UPDATED`. |
@@ -27,6 +27,9 @@ Priority definitions: **P0** demo must-have · **P1** valuable if time · **P2**
 | LI-22 | P1 | Payroll export flag | HR can toggle "Bérszámfejtésbe exportálandó" per employee (default igen); audited; export respects it. |
 | LI-23 | P1 | LDAP sign-in | Backend binds to LDAP with the user's credentials over LDAPS; matches the employee by email; roles from DB; server-side session (httpOnly cookie); unknown/inactive user denied; Hungarian login page; `AUTH_MODE=demo` keeps the role switcher; LDAP credentials only in `.env`. |
 | LI-24 | P1 | Entitlement usage cache | `used_q1..q4`, `used_year` on every entitlement row; backend calls `recomputeEntitlementUsage()` in the same transaction on every trigger in DATA_MODEL "Usage cache"; admin "recompute all"; consistency test. Domain function + tests done. |
+| LI-25 | P1 | HR approves unpaid leave | UNPAID requests go to the HR Admin queue instead of the manager (`approverRole`); manager cannot decide them; flow per Q25 assumption. |
+| LI-26 | P1 | Category visibility + sick pool | Non-HR views show only "Szabadság" / "Beteg"; HR sees the exact type; 15-day prorated betegszabadság pool, then táppénz (Q32). |
+| LI-27 | P1 | Leaver proration | Annual / days in year (366 leap) × days employed; overdrawn warning, no clawback. |
 | LI-16 | P2 | Google Calendar/email | Integration feasibility and permissions confirmed before implementation. |
 
 ## Definition of Done

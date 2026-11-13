@@ -20,6 +20,8 @@ CREATE TABLE employee (
   employment_start          DATE         NOT NULL,
   employment_end            DATE         NULL,
   include_in_payroll_export BOOLEAN      NOT NULL DEFAULT TRUE,
+  tax_id                    CHAR(10)     NOT NULL UNIQUE,  -- adóazonosító jel, synthetic only
+  CONSTRAINT ck_employee_tax_id CHECK (tax_id REGEXP '^[0-9]{10}$'),
   CONSTRAINT fk_employee_le      FOREIGN KEY (legal_entity_id) REFERENCES legal_entity(id),
   CONSTRAINT fk_employee_manager FOREIGN KEY (manager_id) REFERENCES employee(id),
   CONSTRAINT ck_employee_not_own_manager CHECK (manager_id IS NULL OR manager_id <> id),
@@ -51,10 +53,12 @@ CREATE TABLE team (
 );
 
 CREATE TABLE leave_type (
-  code                        ENUM('ANNUAL','SICK_LEAVE','SICK_PAY','PATERNITY','EXTRAORDINARY','UNPAID') PRIMARY KEY,
+  code                        ENUM('ANNUAL','SICK_LEAVE','SICK_PAY','UNPAID','FUNERAL','CHILD_SICK_PAY') PRIMARY KEY,
   label                       VARCHAR(100) NOT NULL,
+  category                    ENUM('LEAVE','SICK') NOT NULL,  -- non-HR visibility + payroll export group
   deducts_from_annual_balance BOOLEAN NOT NULL,
   half_day_allowed            BOOLEAN NOT NULL,
+  approver_role               ENUM('MANAGER','HR_ADMIN') NOT NULL DEFAULT 'MANAGER',
   payroll_code                VARCHAR(32) NULL,
   deputy_check_applies        BOOLEAN NOT NULL
 );
@@ -91,7 +95,7 @@ CREATE TABLE leave_request (
   employee_id        VARCHAR(64) NOT NULL,
   legal_entity_id    ENUM('VIRGO_KFT','VIRGO_ZRT') NOT NULL, -- snapshot at submission
   approver_id        VARCHAR(64) NOT NULL,                   -- snapshot at submission
-  leave_type_code    ENUM('ANNUAL','SICK_LEAVE','SICK_PAY','PATERNITY','EXTRAORDINARY','UNPAID') NOT NULL,
+  leave_type_code    ENUM('ANNUAL','SICK_LEAVE','SICK_PAY','UNPAID','FUNERAL','CHILD_SICK_PAY') NOT NULL,
   start_date         DATE NOT NULL,
   end_date           DATE NOT NULL,
   day_portion        ENUM('FULL','AM','PM') NOT NULL,

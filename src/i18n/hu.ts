@@ -2,7 +2,7 @@
  * Hungarian UI strings. The whole user interface is Hungarian; code, docs and commits stay English.
  * Add every user-facing string here instead of hard-coding it in components.
  */
-import type { LeaveTypeCode, RequestStatus, Role, DayPortion } from '../types/model'
+import type { LeaveCategory, LeaveTypeCode, RequestStatus, Role, DayPortion } from '../types/model'
 
 export const roleLabel: Record<Role, string> = {
   EMPLOYEE: 'Munkavállaló',
@@ -14,9 +14,21 @@ export const leaveTypeLabel: Record<LeaveTypeCode, string> = {
   ANNUAL: 'Szabadság',
   SICK_LEAVE: 'Betegszabadság',
   SICK_PAY: 'Táppénz',
-  PATERNITY: 'Apai szabadság',
-  EXTRAORDINARY: 'Rendkívüli szabadság',
   UNPAID: 'Fizetés nélküli szabadság',
+  FUNERAL: 'Temetési szabadság',
+  CHILD_SICK_PAY: 'Gyermekápolási táppénz',
+}
+
+/** What everyone except HR Admin sees instead of the exact leave type (D19). */
+export const leaveCategoryLabel: Record<LeaveCategory, string> = {
+  LEAVE: 'Szabadság',
+  SICK: 'Beteg',
+}
+
+/** Payroll export column group headers (template row 1). */
+export const payrollGroupLabel: Record<LeaveCategory, string> = {
+  LEAVE: 'Szabadság',
+  SICK: 'Betegszabadság/táppénz',
 }
 
 export const statusLabel: Record<RequestStatus, string> = {

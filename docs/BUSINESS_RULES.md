@@ -11,10 +11,14 @@
 - Child-related additional leave is entered manually by HR based on the employee's annual declaration; do not calculate it automatically.
 - For a mid-year joiner, add the full-year base and additional entitlements first, prorate by employment time in the calendar year, then round: fraction > 0.5 rounds up; fraction < 0.5 rounds down. Exactly 0.5 is not specified; keep configurable / flag for HR confirmation. HR can apply a manual correction. Payroll-provided values may be used as a double-check.
 - Pending requests do not reserve or reduce available balance.
-- **Consumption order (confirmed 2026-11-13):** approved leave uses entitlement components in this order: age-based carryover from the previous year → base → age-based additional → child-related additional.
+- **Quarterly breakdown (confirmed 2026-11-13):** the annual entitlement is split evenly, time-proportionally across Q1–Q4.
+- **Leaver proration (confirmed 2026-11-13):** entitlement = annual entitlement / calendar days of the year (365, or 366 in a leap year) × calendar days employed in that year. Rounding of the result: see Q32.
+- **Overdrawn at exit (confirmed 2026-11-13):** if a leaver has used more than the prorated entitlement, nothing happens (no clawback, no financial deduction). The system shows the prorated limit and warns when it is exceeded.
+- **Only paid leave (ANNUAL) reduces the annual balance (confirmed 2026-11-13).**
+- **Consumption order (confirmed 2026-11-13):** approved leave uses entitlement components in this order: age-based carryover from the previous year → base → age-based additional → child-related additional. (Payroll mentioned base → additional → other; the project owner kept the order above, which only adds the carryover in front.)
 
 ## 2. Requests and approvals
-- Every leave request requires manager approval; no automatic approval.
+- Every leave request requires approval; no automatic approval. The direct manager decides, except **unpaid leave (UNPAID), which HR Admin approves** (HR wish 2026-11-13; flow details Q25).
 - Approved requests cannot be edited in place. The employee cancels (stornoes) the future request and submits a new one.
 - Employee may cancel their own approved request only before its start date.
 - HR Admin may revoke/cancel on behalf of the employee; preserve the audit trail.
@@ -24,21 +28,25 @@
 ## 3. Half-day leave and payroll pairing
 - Half-day requests distinguish AM and PM.
 - Each approved half-day consumes 0.5 day from the employee's leave balance.
-- Within each calendar month, approved and active half-days are sorted chronologically. The first active half-day in the month has payroll value 1 day; the second has payroll value 0 days. Pairing restarts each month.
-- If an earlier half-day is cancelled before it takes place, recalculate the chronological order of remaining active half-days. The remaining half-day becomes first for payroll (1 day).
+- **Payroll pairing (confirmed 2026-11-13, D19, replaces the earlier "first = 1, second = 0" rule):** within each calendar month, approved and active half-days are sorted chronologically and paired. The **second half-day of a pair completes it**: the pair counts as 1 day and is exported **on the date of the second half-day** (first of the pair = 0, second = 1). Pairing restarts each month.
+- An unpaired (odd) last half-day in a month: see Q26.
+- If a half-day is cancelled before it takes place, re-pair the remaining active half-days chronologically.
+- **Half-days are not allowed for sick types** (SICK_LEAVE, SICK_PAY, CHILD_SICK_PAY).
+- A half-day revoked or changed after it was already exported is written out in the export (correction handling: Q31).
 - Do not allow retrospective edits. Before the leave starts, cancellation is allowed under the same rules as full-day leave.
 - Store balance deduction and payroll value separately; never represent both with a single `days` field.
-- Pairing eligibility should be based on approved, non-cancelled requests. Confirm edge cases with payroll before production.
+- Pairing eligibility is based on approved, non-cancelled requests.
 
 ## 4. Access and entities
 - Roles: Employee, Manager, HR Admin.
 - **Teams (confirmed 2026-11-13):** everyone belongs to exactly one team, defined by who approves their leave (their direct manager). A manager is a member of their own manager's team.
-- Managers can see only their direct team's leave data and can see the leave reason/type.
+- Managers can see only their direct team's leave data.
+- **Leave type visibility (confirmed 2026-11-13, D19, replaces "managers see the leave type"):** everyone except HR Admin — colleagues, team calendar, managers and acting deputies — sees only the **category**: "Szabadság" or "Beteg". Only HR Admin (and the employee for their own requests) sees the exact leave type.
 - HR Admin can manage employees in both Virgo Kft. and Virgo Zrt.
 - The two legal entities follow the same leave rules but remain separate employee attributes for filtering and reporting.
 - Enforce authorization in the backend in production; a client-side role switch is demo-only.
 - **Sign-in (confirmed 2026-11-13):** users sign in with their company LDAP account. LDAP only proves identity; the user is matched to an `employee` row by email. Roles (`employee_role`) and team/manager rights (`managerId`, delegation) come from the LeaveIt database, not from LDAP groups. LDAP user with no matching active employee → access denied.
-- **Manager delegation (confirmed 2026-11-13):** if A manages B and C is A's deputy, C gets A's **manager rights** over A's direct team (approve/reject, team calendar, leave type) **only on days A has approved leave**.
+- **Manager delegation (confirmed 2026-11-13):** if A manages B and C is A's deputy, C gets A's **manager rights** over A's direct team (approve/reject, team calendar; category only, not the exact type) **only on days A has approved leave**.
   - All of A's deputies get the rights; no chaining (C's deputies get nothing from A).
   - MANAGER rights only, never HR Admin rights.
   - C can never decide on C's own request (prototype: it waits for A, see Q19).
@@ -54,12 +62,31 @@
 - Do not rely on a browser's locale or a hard-coded weekday-only calculation.
 - Production should use a maintained, HR-approved calendar source and define how calendar updates are applied.
 
-## 6. Leave types from source brief
-Base leave; age-based additional leave; child-related additional leave; paternity leave; extraordinary leave; paid leave; sick leave (up to 15 days); sick pay / táppénz (after 15 days). Exact entitlements and payroll export mapping need HR confirmation.
+## 6. Leave types — confirmed 2026-11-13 (HR/payroll)
+| Code | Hungarian | Category | Reduces annual balance | Half-day | Approver | Deputy check |
+|---|---|---|---|---|---|---|
+| `ANNUAL` | Fizetett szabadság | LEAVE (Szabadság) | yes | yes | Manager | yes |
+| `UNPAID` | Fizetés nélküli szabadság | LEAVE (Szabadság) | no | yes | **HR Admin** | yes |
+| `FUNERAL` | Temetési szabadság | LEAVE (Szabadság) | no | yes | Manager | no (assumption, Q30) |
+| `SICK_LEAVE` | Betegszabadság | SICK (Beteg) | no | no | Manager | no |
+| `SICK_PAY` | Táppénz | SICK (Beteg) | no | no | Manager | no |
+| `CHILD_SICK_PAY` | Gyermekápolási táppénz | SICK (Beteg) | no | no | Manager | no |
+
+- Paternity and extraordinary leave are **not** LeaveIt types (removed).
+- **Sick-leave pool:** 15 days of betegszabadság per calendar year, prorated for joiners/leavers; after that, absence is táppénz (proration rounding and the day-16 switch: Q32).
+- **Payroll categories:** only two groups, "Szabadság" and "Betegszabadság/táppénz". Medical-certificate subtypes are not LeaveIt's concern.
+
+## 6a. Payroll export — confirmed 2026-11-13
+- **Monthly Excel (.xlsx)** matching the template [`docs/samples/payroll_template_2026.csv`](samples/payroll_template_2026.csv).
+- Header row 1: `Cégnév` (legal entity), then group headers `Szabadság` and `Betegszabadság/táppénz`. Row 2: periods 1–5 per group. Row 3: `Dolgozó neve`, `Adóazonosító jel`, then `Tól`/`Ig` pairs, 5 per group.
+- One row per registered employee with `includeInPayrollExport = true`; `Adóazonosító jel` = `Employee.taxId`.
+- `Tól`/`Ig` are day-of-month numbers of the exported month. A half-day pair appears on the second half-day's date.
+- One block/sheet per legal entity (assumption: one sheet per `Cégnév`).
+- Open details: Q26–Q29, Q31, Q33.
 
 ## 7. Deputy (substitute) availability — confirmed 2026-11-13
 - An employee can have **multiple deputies**. Employees without deputies are not checked.
-- **Planned leave only** (ANNUAL, EXTRAORDINARY, UNPAID) is blocked. SICK_LEAVE, SICK_PAY and PATERNITY are never blocked.
+- **Planned leave only** (ANNUAL, UNPAID) is blocked. SICK_LEAVE, SICK_PAY, CHILD_SICK_PAY and FUNERAL are never blocked (FUNERAL: assumption, Q30).
 - A requested working day is **blocked if ALL of the requester's deputies are away** that day.
 - "Away" = the deputy has an **APPROVED**, active leave on that day (any leave type). Pending deputy requests do not block.
 - **One-way:** only the requester's own deputies matter. Being someone else's deputy does not restrict your leave.
@@ -70,11 +97,8 @@ Base leave; age-based additional leave; child-related additional leave; paternit
 
 ## 8. Open questions / not yet specified
 - Exact treatment when a prorated result is exactly x.5 (the response says above/below 0.5 but does not explicitly state the tie).
-- Detailed Q1–Q4 allocation formula and whether quarterly display is based on calendar days, working days, or payroll-specific allocation.
 - Whether the Q4 carryover rule has any expiry/use-by date in the next year.
-- Payroll export columns, grouping, codes, file format, and period rules (awaiting Zsuzsanna).
-- Half-day pairing edge cases: multiple half-days, AM/PM ordering on same date, cancellation after payroll export, and whether all leave types are eligible.
-- Exact rules for sickness, paternity, extraordinary leave and other leave types.
+- Payroll export details, unpaid-leave approval flow, leaver/sick-pool rounding: see `OPEN_QUESTIONS.md` Q25–Q33.
 - Official source / process for maintaining Hungarian working-day calendar.
 - Reminder delivery channel and exact time/time zone.
 - Whether a manager's 3-working-day SLA is measured from submission timestamp or next working day. Prototype assumption: submission day excluded if submitted after working hours; confirm with HR.

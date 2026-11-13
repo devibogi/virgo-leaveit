@@ -4,17 +4,11 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 
 | # | Question | Owner | Status | Impact | Prototype assumption |
 |---|---|---|---|---|---|
-| Q1 | Exact Q1–Q4 allocation/display formula | HR | Open | Quarter view on dashboard | Provisional equal split, labelled "provisional" |
-| Q2 | Payroll export schema: columns, grouping, leave codes, period, file format | Zsuzska | Open | CSV export | Provisional CSV, clearly labelled |
-| Q3 | Half-day edge cases: AM+PM same day, >2 half-days in a month, cancellation after payroll export, which leave types allow half-days | Zsuzska / HR | Open | Half-day pairing, `LeaveType.halfDayAllowed` | Only `ANNUAL` allows half-days |
-| Q4 | Payroll mapping: sick leave vs sick pay, paternity, extraordinary, other types | Zsuzska | Open | `LeaveType.payrollCode`, export | `payrollCode = null` |
 | Q5 | Manager SLA: start point, cutoff time, reminder time/channel | HR | Open | SLA due date & reminder | Count 3 working days starting the working day after submission; in-app reminder 08:00 on due date |
 | Q6 | LDAP connection details: server URL, base DN, login attribute (`uid`/`sAMAccountName`/`mail`), LDAPS, test directory for the demo | Project owner / IT | Open | LI-23 | Configured via `.env`; local test directory (OpenLDAP container, synthetic users); demo role switcher stays when `AUTH_MODE=demo` |
 | Q7 | Priority of AI conflict wording (LI-15) now that deputy suggestions exist | Project owner | Open | Scope | P1, after deterministic deputy check (LI-17) |
-| Q8 | Are current Excel column definitions or sample data available? | HR | Open | Seed data, export | Synthetic data |
-| Q9 | Which leave types deduct from the annual balance? (e.g. extraordinary, unpaid) | HR | Open | `LeaveType.deductsFromAnnualBalance` | Only `ANNUAL` deducts |
+| Q8 | Sample data beyond the export template? (template received: `docs/samples/payroll_template_2026.csv`) | HR | Partly answered | Seed data | Synthetic data |
 | Q10 | Can an employee withdraw a **pending** request? | HR / Project owner | Open | Status lifecycle | Not in the model yet |
-| Q11 | Is the leave type list complete (ANNUAL, SICK_LEAVE, SICK_PAY, PATERNITY, EXTRAORDINARY, UNPAID)? "Paid leave" in the source brief is unclear | HR | Open | `LeaveTypeCode` | As listed |
 | Q12 | Source and review of the Hungarian 2026–2027 calendar file; file is missing from the repo | Project owner / Payroll | Open | All working-day validation, SLA | — (blocking for calendar service) |
 | Q13 | Who assigns/maintains deputies (HR Admin, manager, or employee)? | HR / Project owner | Open | Deputy admin UI, permissions | HR Admin maintains `deputyIds`; seed data pre-filled; change logged as `DEPUTIES_UPDATED` |
 | Q14 | Half-day overlap with a deputy: does a deputy's AM leave block the requester's PM leave? | HR | Open | Deputy check | Block only when portions overlap (FULL overlaps all; AM↔AM; PM↔PM) |
@@ -27,6 +21,15 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q21 | Who can change `includeInPayrollExport`, and does it appear in the HR overview/export? | HR | Open | HR admin UI | HR Admin only; change logged as `EMPLOYEE_UPDATED`; HR overview shows it, payroll export filters on it |
 | Q22 | MariaDB hosting for the demo (local Docker vs shared server) | Project owner | Open | Setup | Local Docker per developer; credentials only in `.env` |
 | Q24 | Approved usage beyond total entitlement (e.g. after HR lowers an override): where is it booked? | HR | Open | Usage cache | On BASE; balance shown negative; HR resolves |
+| Q25 | Unpaid leave approved by HR: any HR Admin or a named one? Is the manager informed / asked first? Same SLA? Deputy check? | HR | Open | Approval routing, `LeaveType.approverRole` | Any HR Admin decides instead of the manager; manager sees it as "Szabadság" in the team calendar; same 3-day SLA; deputy check applies |
+| Q26 | Unpaired (odd) last half-day in a month: exported on its own date? With what value? | Zsuzska | Open | Half-day pairing, export | Exported on its own date as a half-day (`payrollValue` 0.5), not carried to next month |
+| Q27 | UNPAID and FUNERAL in the export: which group, or left out? | Zsuzska | Open | Export | Under "Szabadság" (category LEAVE) |
+| Q28 | More than 5 periods per group in a month for one employee? | Zsuzska | Open | Export | Export shows a warning listing the employee; extra periods go into an extra row with the same name/tax id |
+| Q29 | Period building: are consecutive same-group days merged into one Tól–Ig, bridging weekends/holidays? | Zsuzska | Open | Export | Yes: merged across non-working days between them; different groups never merged |
+| Q30 | Is FUNERAL subject to the deputy check? | HR | Open | `deputyCheckApplies` | No (not plannable) |
+| Q31 | Corrections after export ("kiírásra kerül"): re-export the closed month, or show in the next month's file? | Zsuzska | Open | Export | HR re-generates the affected month; the change is listed in an export audit event |
+| Q32 | Leaver proration rounding; sick-pool proration rounding; is the switch from betegszabadság to táppénz automatic at day 16? | HR / Zsuzska | Open | Entitlement, sick pool | Same rounding as joiners; system splits automatically at day 16 and shows it to HR |
+| Q33 | Are registered employees with no leave in the month listed in the export? | Zsuzska | Open | Export | Yes, with empty periods |
 
 ## Resolved (do not reopen)
 - **Mid-year proration rounding:** fraction ≥ 0.5 rounds up; < 0.5 rounds down.
@@ -37,3 +40,12 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 - **UI language (2026-11-13):** Hungarian.
 - **Q23 Consumption order (2026-11-13):** carryover → base → age-based → child-related (BUSINESS_RULES §1).
 - **Sign-in (2026-11-13):** company LDAP; roles from LeaveIt DB, matched by email (BUSINESS_RULES §4).
+- **Q1 Quarter allocation (2026-11-13):** even, time-proportional split.
+- **Q2 Export schema (2026-11-13):** monthly Excel per template; two groups; name + tax id + 5 Tól/Ig per group (BUSINESS_RULES §6a). Details Q26–Q29, Q31, Q33.
+- **Q3 Half-days (2026-11-13):** second half-day completes the pair, exported on its date; none for sick types; post-export changes are written out (D19).
+- **Q4 Payroll mapping (2026-11-13):** only "Szabadság" and "Betegszabadság/táppénz"; certificate subtypes not our concern.
+- **Q9 Deducting types (2026-11-13):** only paid leave (ANNUAL).
+- **Q11 Leave types (2026-11-13):** ANNUAL, SICK_LEAVE, SICK_PAY, UNPAID, FUNERAL, CHILD_SICK_PAY; no paternity/extraordinary.
+- **Leaver proration (2026-11-13):** annual / days in year (366 in leap years) × days employed; overdrawn at exit → no clawback.
+- **Sick-leave pool (2026-11-13):** 15 days/year, prorated; then táppénz.
+- **Leave type visibility (2026-11-13):** everyone but HR sees only "Szabadság" / "Beteg" (D19).

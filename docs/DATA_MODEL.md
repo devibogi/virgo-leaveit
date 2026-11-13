@@ -14,11 +14,11 @@
 | Entity | Key fields | Notes |
 |---|---|---|
 | `LegalEntity` | `id` (`VIRGO_KFT` \| `VIRGO_ZRT`), `name` | Same leave rules for both. |
-| `Employee` | `id`, `displayName`, `email`, `legalEntityId`, `managerId`, `roles[]`, `birthDate`, `employmentStart`, `employmentEnd`, `includeInPayrollExport`, `deputyIds[]` | `includeInPayrollExport` (default `true`): `false` excludes the employee from the payroll (bérszámfejtés) export only; leave, balance and approvals work as usual. `deputyIds`: people who cover for this employee (one-way; empty = no deputy check). Also used for manager delegation: while a manager is on approved leave, their deputies get MANAGER rights over the manager's team (see `ActiveDelegation`). `managerId` is the **only** source for manager permissions (direct team = employees whose `managerId` = me). `roles` always includes `EMPLOYEE`; Katalin is `EMPLOYEE`+`MANAGER`, Piri is `EMPLOYEE`+`HR_ADMIN`. Synthetic data only. |
+| `Employee` | `id`, `displayName`, `email`, `legalEntityId`, `managerId`, `roles[]`, `birthDate`, `employmentStart`, `employmentEnd`, `includeInPayrollExport`, `taxId`, `deputyIds[]` | `taxId` = adóazonosító jel (10 digits, synthetic), column 2 of the payroll export. `includeInPayrollExport` (default `true`): `false` excludes the employee from the payroll (bérszámfejtés) export only; leave, balance and approvals work as usual. `deputyIds`: people who cover for this employee (one-way; empty = no deputy check). Also used for manager delegation: while a manager is on approved leave, their deputies get MANAGER rights over the manager's team (see `ActiveDelegation`). `managerId` is the **only** source for manager permissions (direct team = employees whose `managerId` = me). `roles` always includes `EMPLOYEE`; Katalin is `EMPLOYEE`+`MANAGER`, Piri is `EMPLOYEE`+`HR_ADMIN`. Synthetic data only. |
 | `Team` | `managerId` (key), `name` | Display name only. **Membership is derived:** team of M = employees whose `managerId` = M (= who approves their leave). Everyone is in exactly one team; a manager is in their own manager's team. No `teamId` on `Employee`. |
-| `LeaveType` | `code`, `label`, `deductsFromAnnualBalance`, `halfDayAllowed`, `payrollCode`, `deputyCheckApplies` | `deputyCheckApplies` true for planned leave (ANNUAL, EXTRAORDINARY, UNPAID), false for SICK_LEAVE, SICK_PAY, PATERNITY. Config data, not hard-coded logic. Values are provisional (see Open Questions). |
+| `LeaveType` | `code`, `label`, `category`, `deductsFromAnnualBalance`, `halfDayAllowed`, `approverRole`, `payrollCode`, `deputyCheckApplies` | Codes: ANNUAL, SICK_LEAVE, SICK_PAY, UNPAID, FUNERAL, CHILD_SICK_PAY (confirmed, BUSINESS_RULES §6). `category` LEAVE/SICK drives non-HR visibility and the export group. Only ANNUAL deducts; no half-days for SICK types; UNPAID `approverRole = HR_ADMIN`. `deputyCheckApplies` true for ANNUAL, UNPAID. Config data, not hard-coded logic. |
 | `LeaveEntitlement` | `employeeId`, `year`, `component`, `fullYearDays`, `calculatedDays`, `overrideDays`, `overrideReason`, `payrollReferenceDays`, `usedQ1`–`usedQ4`, `usedYear` | One row per employee/year/component. Effective = `overrideDays ?? calculatedDays`. `payrollReferenceDays` is for double-checking only. `used*` = **redundant cache**, see "Usage cache" below. |
-| `LeaveRequest` | `employeeId`, `legalEntityId`, `approverId`, `leaveTypeCode`, `startDate`, `endDate`, `dayPortion`, `status`, `employeeComment`, `submittedAt`, `approval`, `cancellation` | `legalEntityId` and `approverId` are snapshots at submission. AM/PM ⇒ `startDate === endDate`. |
+| `LeaveRequest` | `employeeId`, `legalEntityId`, `approverId`, `leaveTypeCode`, `startDate`, `endDate`, `dayPortion`, `status`, `employeeComment`, `submittedAt`, `approval`, `cancellation` | `legalEntityId` and `approverId` are snapshots at submission; for `approverRole = HR_ADMIN` types any HR Admin decides (Q25). AM/PM ⇒ `startDate === endDate`. |
 | `Approval` (embedded) | `decision`, `decidedBy`, `onBehalfOf`, `decidedAt`, `comment` | One manager decision per request; no auto-decisions. `onBehalfOf` = approver when a deputy decided. |
 | `Cancellation` (embedded) | `kind` (`CANCELLED` employee / `REVOKED` HR), `cancelledBy`, `cancelledAt`, `reason` | |
 | `AuditEvent` | `at`, `actorId`, `actorRole`, `onBehalfOf`, `action`, `entityType`, `entityId`, `reason`, `details` | Append-only. Includes simulated SLA reminders and exports. |
@@ -42,9 +42,9 @@ Default: Mon–Fri working, Sat–Sun non-working; overrides win. The calendar s
 ## Derived views (computed)
 | View | Computed from | Notes |
 |---|---|---|
-| `LeaveDay` | Active requests × working-day calendar | One row per working day: `balanceDeduction` (1 / 0.5 / 0) and `payrollValue` (half-day pairing: 1st active in month = 1, 2nd = 0). Never persist a "first/second" flag. |
+| `LeaveDay` | Active requests × working-day calendar | One row per working day: `balanceDeduction` (1 / 0.5 / 0) and `payrollValue` (half-day pairing per month: 1st of a pair = 0, 2nd = 1, exported on the 2nd's date — D19). Never persist a "first/second" flag. |
 | `LeaveBalance` | Entitlements (reads the `used*` cache) + approved `LeaveDay`s | `totalEntitlement`, `used`, `pending` (info only), `available`, `quarters[]`. |
-| `QuarterBalance` | `LeaveBalance` | `allocated`, `carriedIn`, `used`, `remaining`. Allocation formula is open — provisional. |
+| `QuarterBalance` | `LeaveBalance` | `allocated`, `carriedIn`, `used`, `remaining`. Even, time-proportional split of the annual entitlement (confirmed). |
 | SLA due date | `submittedAt` + 3 working days | Computed via calendar service; not stored. |
 | `CalendarDay` | Calendar dataset | See above. |
 | `DeputyCheckResult` | Request × requester's `deputyIds` × deputies' **approved** `LeaveDay`s × calendar | `blocked`, `conflictDates[]`, `suggestions[]`. Dates only — no deputy identity, position or leave type. Computed at submit and re-checked at approval. |
@@ -58,11 +58,11 @@ Schema: [`db/schema.sql`](../db/schema.sql). One table per persisted entity; der
 | Table | From type | Notes |
 |---|---|---|
 | `legal_entity` | `LegalEntity` | |
-| `employee` | `Employee` | `include_in_payroll_export BOOLEAN NOT NULL DEFAULT TRUE`; `manager_id` self-FK |
+| `employee` | `Employee` | `include_in_payroll_export BOOLEAN NOT NULL DEFAULT TRUE`; `tax_id CHAR(10)` unique, digits only; `manager_id` self-FK |
 | `employee_role` | `Employee.roles[]` | PK (employee, role) |
 | `employee_deputy` | `Employee.deputyIds[]` | PK (employee, deputy); CHECK no self-deputy |
 | `team` | `Team` | PK `manager_id` |
-| `leave_type` | `LeaveType` | config rows |
+| `leave_type` | `LeaveType` | config rows; `category`, `approver_role` |
 | `leave_entitlement` | `LeaveEntitlement` | UNIQUE (employee, year, component); `used_q1..q4`, `used_year` cache with CHECK `used_year = sum` |
 | `leave_request` | `LeaveRequest` + embedded `Approval`, `Cancellation` | nullable approval/cancellation columns |
 | `audit_event` | `AuditEvent` | append-only (no UPDATE/DELETE from the app) |

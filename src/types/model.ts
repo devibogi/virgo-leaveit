@@ -57,6 +57,8 @@ export interface Employee {
    * Default true; HR Admin can turn it off. false = excluded from the payroll export only.
    */
   includeInPayrollExport: boolean
+  /** Adóazonosító jel, 10 digits. Synthetic only. Column 2 of the payroll export. */
+  taxId: string
   /**
    * People who cover for this employee. One-way: only the requester's own deputies matter.
    * 1) Availability: planned leave is blocked on a day only if ALL deputies are away (approved leave).
@@ -81,27 +83,39 @@ export interface Team {
 
 // ---------- Leave types ----------
 
+/** Confirmed list (HR/payroll, 2026-11-13, D19). */
 export type LeaveTypeCode =
-  | 'ANNUAL' // regular leave (szabadság), consumes the annual entitlement pool
-  | 'SICK_LEAVE' // betegszabadság
+  | 'ANNUAL' // fizetett szabadság; the only type that consumes the annual entitlement
+  | 'SICK_LEAVE' // betegszabadság, 15 days/year (prorated), then táppénz
   | 'SICK_PAY' // táppénz
-  | 'PATERNITY'
-  | 'EXTRAORDINARY'
-  | 'UNPAID'
+  | 'UNPAID' // fizetés nélküli szabadság; approved by HR Admin
+  | 'FUNERAL' // temetési szabadság
+  | 'CHILD_SICK_PAY' // gyermekápolási táppénz
 
-/** Configuration per leave type. Values are provisional until HR/payroll confirm (OPEN_QUESTIONS). */
+/**
+ * Two groups only (D19). Drives (1) what non-HR viewers see: colleagues, team calendar,
+ * managers and deputies see only the category ("Szabadság" / "Beteg"); HR Admin sees the exact type;
+ * (2) the payroll export column group: LEAVE → "Szabadság", SICK → "Betegszabadság/táppénz".
+ */
+export type LeaveCategory = 'LEAVE' | 'SICK'
+
+/** Configuration per leave type. */
 export interface LeaveType {
   code: LeaveTypeCode
   label: string
-  /** Whether approved days reduce the annual leave balance. */
+  /** LEAVE: ANNUAL, UNPAID, FUNERAL. SICK: SICK_LEAVE, SICK_PAY, CHILD_SICK_PAY. */
+  category: LeaveCategory
+  /** Whether approved days reduce the annual leave balance. Confirmed: only ANNUAL. */
   deductsFromAnnualBalance: boolean
-  /** Whether AM/PM half-day requests are allowed for this type. */
+  /** Whether AM/PM half-day requests are allowed. Confirmed: never for SICK types. */
   halfDayAllowed: boolean
-  /** Payroll export code; null until the export schema is confirmed. */
+  /** Who decides. UNPAID → HR_ADMIN (HR wish, flow details Q25); all others → MANAGER. */
+  approverRole: 'MANAGER' | 'HR_ADMIN'
+  /** Optional extra payroll code; the export groups by `category`, so null is fine. */
   payrollCode: string | null
   /**
    * Whether the deputy-availability block applies (planned leave only).
-   * true: ANNUAL, EXTRAORDINARY, UNPAID. false: SICK_LEAVE, SICK_PAY, PATERNITY.
+   * true: ANNUAL, UNPAID. false: SICK_LEAVE, SICK_PAY, CHILD_SICK_PAY, FUNERAL (assumption, Q30).
    */
   deputyCheckApplies: boolean
 }
@@ -183,7 +197,10 @@ export interface LeaveRequest {
   employeeId: EmployeeId
   /** Snapshot at submission time (for reporting even if the employee moves). */
   legalEntityId: LegalEntityId
-  /** Snapshot of the direct manager at submission time; this person decides. */
+  /**
+   * Snapshot of the direct manager at submission time; this person decides when
+   * LeaveType.approverRole = MANAGER. For HR_ADMIN types (UNPAID) any HR Admin decides (Q25).
+   */
   approverId: EmployeeId
   leaveTypeCode: LeaveTypeCode
   startDate: IsoDate
@@ -238,13 +255,17 @@ export interface LeaveDay {
   leaveTypeCode: LeaveTypeCode
   /** Deducted from the annual balance: 1, 0.5, or 0 for types that don't deduct. */
   balanceDeduction: number
-  /** Payroll accounting value. Half-days: first active in month = 1, second = 0. */
+  /**
+   * Payroll accounting value (D19). Full day = 1. Half-days pair chronologically per month:
+   * the first of a pair = 0, the second = 1 (the pair is exported on the second half-day's date).
+   * An unpaired last half-day in the month: see Q26.
+   */
   payrollValue: number
 }
 
 export interface QuarterBalance {
   quarter: 1 | 2 | 3 | 4
-  /** Allocation formula is an open question; values are provisional. */
+  /** Even, time-proportional share of the annual entitlement (confirmed 2026-11-13). */
   allocated: number
   carriedIn: number
   used: number
@@ -343,7 +364,7 @@ export interface AuditEvent {
 /** Seed data / in-memory snapshot shape. Persistence is MariaDB (db/schema.sql). */
 export interface AppState {
   /** Bump when the shape changes; keep in sync with db/schema.sql. */
-  schemaVersion: 1
+  schemaVersion: 2
   legalEntities: LegalEntity[]
   teams: Team[]
   employees: Employee[]

@@ -36,7 +36,7 @@ Demonstrate the full end-to-end flow:
 - Edit workflow implemented as cancel + resubmit.
 - Half-day monthly payroll pairing calculation.
 - Three-working-day manager SLA indicator and reminder simulation.
-- CSV export using a provisional, clearly labelled schema.
+- Monthly payroll Excel export matching the payroll template.
 - Conflict insights / smart leave planning as an AI-assisted enhancement.
 
 ### Not in six-hour MVP unless specifically confirmed

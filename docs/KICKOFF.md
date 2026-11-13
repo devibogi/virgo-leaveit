@@ -33,14 +33,15 @@ Brand palette: Midnight #24243B · Violet #8275E8 · Mint #B9E5D3 · Cloud #F6F5
 ### Manager
 - Pending approval queue with due-date indicator.
 - Direct-team calendar and overlap warnings.
-- Request details including leave type.
+- Request details; leave shown only as "Szabadság" / "Beteg" (exact type is HR-only).
 - Approve / reject with optional comment.
 
 ### HR Admin
 - Employee directory, team and legal entity (Virgo Kft. / Virgo Zrt.).
 - Annual entitlements, manually entered child-related additional leave, balance corrections with audit reason.
 - Cross-entity overview.
-- Payroll export (exact schema pending HR).
+- Monthly payroll Excel export per template (`docs/samples/payroll_template_2026.csv`).
+- Approve unpaid leave.
 
 ## 5. Confirmed business rules
 - Full annual entitlement is shown in Q1–Q4 tracking; quarters are not independent grants.
@@ -54,8 +55,8 @@ Brand palette: Midnight #24243B · Violet #8275E8 · Mint #B9E5D3 · Cloud #F6F5
 - Approved requests cannot be edited in place: cancel before start and submit a new request.
 - Employee can cancel their own approved request before leave starts; HR Admin can revoke.
 - Prototype manager SLA: 3 working days; reminder on morning of final due date; no automatic approval/rejection.
-- Half-days: AM/PM separately; each active approved half-day deducts 0.5 from balance. In each calendar month, first active half-day chronologically has payroll value 1, second has payroll value 0. If the earlier one is cancelled before it starts, the remaining half-day becomes first and is recalculated.
-- Managers see only their direct team, including leave type. HR Admin can manage both legal entities. Same rules apply to both entities.
+- Half-days: AM/PM separately; each active approved half-day deducts 0.5 from balance. In each calendar month, half-days pair chronologically; the second one completes the pair and the day is exported on its date (D19). No half-days for sick types.
+- Managers see only their direct team, and only "Szabadság" / "Beteg" (D19). HR Admin can manage both legal entities. Same rules apply to both entities.
 - No leave may be booked on Hungarian public holidays / statutory non-working days.
 
 ## 6. Recommendation: Hungarian working-day calendar
@@ -119,12 +120,12 @@ Agree on one integration coordinator. Each stream must define a small contract a
 
 ## 11. Open questions for tomorrow
 ### HR / Payroll
-- Payroll export: required columns, grouping, period, file format, codes and handling of each leave type (awaiting Zsuzsanna).
-- Exact half-year / quarter allocation formula for Q1–Q4 display.
+- ~~Payroll export schema~~ answered 2026-11-13 (BUSINESS_RULES §6a); details Q26–Q29, Q31, Q33.
+- ~~Quarter allocation~~ answered: even, time-proportional.
 - Exactly 0.5 rounding case for mid-year proration.
 - Q4 age-based carryover: expiry date / use-by rule.
-- Detailed leave type entitlements and payroll mappings (sick leave vs sick pay, paternity, extraordinary, paid leave).
-- Half-day edge cases: multiple half-days, same-day AM/PM ordering, cancellation after export, pairing eligibility.
+- ~~Leave types and payroll mapping~~ answered 2026-11-13 (BUSINESS_RULES §6).
+- ~~Half-day edge cases~~ answered (D19); odd half-day Q26.
 ### Process
 - SLA clock: does the 3-working-day count start on submission date or next working day? What is cutoff time?
 - Reminder channel and exact send time.
