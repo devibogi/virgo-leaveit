@@ -57,6 +57,11 @@
 - AM and PM are stored distinctly.
 - Cancellation after start is blocked for employee.
 
+## Payroll export flag
+- New employee defaults to `includeInPayrollExport = true`.
+- Employee with `false` is missing from the payroll export but balance, requests and approvals work normally.
+- Changing the flag creates an audit event.
+
 ## Authorization
 - Employee sees only own detailed requests and balances.
 - Manager sees only direct team and leave type.

@@ -2,7 +2,8 @@
  * LeaveIt shared data model (prototype contract).
  *
  * Rules of thumb:
- * - Persisted entities are stored in AppState (localStorage for the demo).
+ * - Persisted entities are stored in MariaDB (db/schema.sql) behind a backend API;
+ *   AppState is the seed/in-memory snapshot shape.
  * - Derived views (balances, leave days, payroll values, due dates) are computed
  *   by domain functions and never persisted as the source of truth.
  * - Dates are ISO strings: IsoDate = "YYYY-MM-DD", IsoDateTime = full ISO 8601 with offset.
@@ -50,6 +51,11 @@ export interface Employee {
   birthDate: IsoDate // synthetic; used only for age-based additional leave
   employmentStart: IsoDate
   employmentEnd: IsoDate | null
+  /**
+   * Whether this employee's leave goes into the payroll (bérszámfejtés) export.
+   * Default true; HR Admin can turn it off. false = excluded from the payroll export only.
+   */
+  includeInPayrollExport: boolean
   /**
    * People who cover for this employee. One-way: only the requester's own deputies matter.
    * 1) Availability: planned leave is blocked on a day only if ALL deputies are away (approved leave).
@@ -303,6 +309,7 @@ export type AuditAction =
   | 'SLA_REMINDER_SENT' // simulated
   | 'EXPORT_CREATED'
   | 'DEPUTIES_UPDATED'
+  | 'EMPLOYEE_UPDATED' // e.g. includeInPayrollExport changed
 
 export interface AuditEvent {
   id: AuditEventId
@@ -321,8 +328,9 @@ export interface AuditEvent {
 
 // ---------- Persisted app state ----------
 
+/** Seed data / in-memory snapshot shape. Persistence is MariaDB (db/schema.sql). */
 export interface AppState {
-  /** Bump when the shape changes; persistence resets/migrates on mismatch. */
+  /** Bump when the shape changes; keep in sync with db/schema.sql. */
   schemaVersion: 1
   legalEntities: LegalEntity[]
   teams: Team[]

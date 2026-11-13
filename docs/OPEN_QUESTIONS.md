@@ -24,6 +24,8 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q18 | Does a manager's half-day or sick leave activate delegation? | HR | Open | `ActiveDelegation` | Any APPROVED leave of any type covering that date (incl. half-day) activates it for the whole day |
 | Q19 | Deputy's own request to the absent manager: who decides? | HR | Open | Approval routing | Waits for A (SLA reminder still runs); no auto-escalation |
 | Q20 | Manager away with all deputies also away (e.g. sick leave): fallback approver? | HR | Open | Approval routing | None; request waits; SLA reminder |
+| Q21 | Who can change `includeInPayrollExport`, and does it appear in the HR overview/export? | HR | Open | HR admin UI | HR Admin only; change logged as `EMPLOYEE_UPDATED`; HR overview shows it, payroll export filters on it |
+| Q22 | MariaDB hosting for the demo (local Docker vs shared server) | Project owner | Open | Setup | Local Docker per developer; credentials only in `.env` |
 
 ## Resolved (do not reopen)
 - **Mid-year proration rounding:** fraction ≥ 0.5 rounds up; < 0.5 rounds down.
