@@ -182,10 +182,16 @@ export default function App() {
           )
         ) : visibleSection === 'ENTITLEMENTS' ? (
           isHrAdmin ? (
-            <LeaveEntitlementAdminCrud
-              activeRole={activeRole}
-              onRequestRoleChange={setActiveRole}
-            />
+            <>
+              <MyEntitlementsView
+                activeRole={activeRole}
+                currentUserId={currentUser.id}
+              />
+              <LeaveEntitlementAdminCrud
+                activeRole={activeRole}
+                onRequestRoleChange={setActiveRole}
+              />
+            </>
           ) : (
             <MyEntitlementsView
               activeRole={activeRole}

@@ -20,7 +20,7 @@ export interface MyEntitlementsViewProps {
   apiClientOptions?: LeaveEntitlementApiClientOptions
 }
 
-/** Read-only: own entitlements for every role; team balances (numbers only) for managers. */
+/** Read-only: own entitlements for every role (HR Admin included); team balances (numbers only) for managers. */
 export function MyEntitlementsView({
   activeRole,
   currentUserId,
@@ -48,7 +48,7 @@ export function MyEntitlementsView({
     setLoading(true)
     setError(null)
     Promise.all([
-      apiClient.listEntitlements({ year }),
+      apiClient.listEntitlements({ employeeId: currentUserId, year }),
       isManager ? apiClient.listTeamSummary(year) : Promise.resolve([]),
     ])
       .then(([ownRows, teamRows]) => {
@@ -70,7 +70,7 @@ export function MyEntitlementsView({
     return () => {
       cancelled = true
     }
-  }, [apiClient, isManager, year])
+  }, [apiClient, currentUserId, isManager, year])
 
   const ownTotal = summarizeEntitlementBalance(own, currentUserId, year)
 
