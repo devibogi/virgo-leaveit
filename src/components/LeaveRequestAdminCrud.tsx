@@ -441,7 +441,7 @@ export function LeaveRequestAdminCrud({
               <table className="crud-table">
                 <thead>
                   <tr>
-                    <th>{leaveRequestAdminText.colIdAndEmployee}</th>
+                    {!isMine && <th>{leaveRequestAdminText.colIdAndEmployee}</th>}
                     <th>{leaveRequestAdminText.colTypeAndPortion}</th>
                     <th>{leaveRequestAdminText.colDates}</th>
                     <th>{leaveRequestAdminText.colApprover}</th>
@@ -457,6 +457,7 @@ export function LeaveRequestAdminCrud({
                 <tbody>
                   {requests.map((item) => (
                     <tr key={item.id}>
+                      {!isMine && (
                       <td>
                         <div className="mono-cell">
                           <strong>{item.employeeId}</strong>
@@ -465,6 +466,7 @@ export function LeaveRequestAdminCrud({
                           {item.id} · {legalEntityLabel[item.legalEntityId]}
                         </div>
                       </td>
+                      )}
                       <td>
                         <div>
                           <strong>{leaveTypeLabel[item.leaveTypeCode]}</strong>
