@@ -106,6 +106,8 @@ export {
   REQUEST_STATUSES,
   RequestStatusEnum,
   revokeLeaveRequestByHr,
+  DUPLICATE_REQUEST_MESSAGE,
+  findOverlappingRequest,
   validateLeaveRequest,
   type Approval,
   type Cancellation,

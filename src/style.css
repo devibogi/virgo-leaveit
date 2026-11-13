@@ -534,6 +534,17 @@ select:focus {
   color: #BE123C;
 }
 
+.alert-info {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.pending-box ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
 .alert-success {
   background: #F0FDF4;
   border: 1px solid #BBF7D0;

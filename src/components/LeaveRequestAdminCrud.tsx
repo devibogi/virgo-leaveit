@@ -203,6 +203,24 @@ export function LeaveRequestAdminCrud({
     }
   }
 
+  const myPending = isMine ? requests.filter((r) => r.status === 'PENDING') : []
+  const pendingBox =
+    myPending.length > 0 ? (
+      <div className="alert alert-info pending-box" role="status">
+        <strong>{myLeaveRequestText.pendingTitle} ({myPending.length})</strong>
+        <ul>
+          {myPending.map((r) => (
+            <li key={r.id}>
+              {leaveTypeLabel[r.leaveTypeCode]}: {formatDate(r.startDate)}
+              {r.endDate !== r.startDate ? ` – ${formatDate(r.endDate)}` : ''}
+              {r.dayPortion !== 'FULL' ? ` (${dayPortionLabel[r.dayPortion]})` : ''}
+            </li>
+          ))}
+        </ul>
+        <small>{myLeaveRequestText.pendingHint}</small>
+      </div>
+    ) : null
+
   return (
     <section className="admin-container">
       <div className="admin-grid admin-grid-single">
@@ -221,6 +239,8 @@ export function LeaveRequestAdminCrud({
           <p className="card-subtitle">
             {leaveRequestAdminText.createSubtitle}
           </p>
+
+          {pendingBox}
 
           <form onSubmit={(e) => void handleSubmit(e)} className="crud-form">
             <label className="form-field">
@@ -327,6 +347,8 @@ export function LeaveRequestAdminCrud({
         </div>
         </div>
         )}
+
+        {!formOpen && pendingBox}
 
         {isAuthorized && !error && (
           <LeaveCalendar

@@ -434,3 +434,30 @@ export function buildLeaveRequestFromDraft(
     ? { input, errors: [] }
     : { input: null, errors: validation.errors }
 }
+
+export const DUPLICATE_REQUEST_MESSAGE = 'Erre az időszakra már van leadott kérelmed.'
+
+/**
+ * Duplicate block (assumption, not HR-confirmed): a new request may not overlap a PENDING or
+ * APPROVED request of the same employee. An AM and a PM half-day on the same date do not overlap.
+ */
+export function findOverlappingRequest(
+  candidate: Pick<LeaveRequest, 'employeeId' | 'startDate' | 'endDate' | 'dayPortion'> & { id?: string },
+  existing: readonly LeaveRequest[],
+): LeaveRequest | null {
+  return (
+    existing.find(
+      (r) =>
+        r.id !== candidate.id &&
+        r.employeeId === candidate.employeeId &&
+        (r.status === 'PENDING' || r.status === 'APPROVED') &&
+        r.startDate <= candidate.endDate &&
+        candidate.startDate <= r.endDate &&
+        !(
+          r.dayPortion !== 'FULL' &&
+          candidate.dayPortion !== 'FULL' &&
+          r.dayPortion !== candidate.dayPortion
+        ),
+    ) ?? null
+  )
+}

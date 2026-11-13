@@ -1,6 +1,8 @@
 import {
   buildLeaveRequestFromDraft,
   canManageLeaveRequests,
+  DUPLICATE_REQUEST_MESSAGE,
+  findOverlappingRequest,
   isLeaveTypeCode,
   isLegalEntityId,
   isRequestStatus,
@@ -197,6 +199,14 @@ export function createLeaveRequestApiHandler(
               error: 'Validation failed',
               details: built.errors,
             },
+          }
+        }
+
+        const sameEmployee = await repository.findAll({ employeeId: built.input.employeeId })
+        if (findOverlappingRequest(built.input, sameEmployee)) {
+          return {
+            status: 409,
+            body: { error: 'Conflict', details: [DUPLICATE_REQUEST_MESSAGE] },
           }
         }
 

@@ -323,6 +323,8 @@ export const myLeaveRequestText = {
   listTitle: 'Saját kérelmeim',
   empty: 'Még nincs beadott szabadságkérelmed.',
   newButton: '+ Új kérelem',
+  pendingTitle: 'Jóváhagyásra váró kérelmeid',
+  pendingHint: 'Ezekre az időszakokra már adtál le kérelmet – ne add le újra.',
 }
 
 export const leaveRequestAdminText = {

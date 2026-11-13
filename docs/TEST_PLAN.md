@@ -40,6 +40,7 @@
 - Team overlap is detected.
 - Leave range crossing a holiday is handled according to agreed per-day validation.
 - Date range and half-day AM/PM validation.
+- Overlap with own PENDING/APPROVED request is blocked (409); AM + PM same day allowed; rejected/cancelled ignored.
 
 ## Deputy availability
 - No deputies assigned → never blocked.
