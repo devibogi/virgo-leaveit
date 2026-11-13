@@ -121,6 +121,16 @@ export function LeaveRequestAdminCrud({
     void loadRequests(employeeFilter, entityFilter, statusFilter)
   }, [loadRequests, employeeFilter, entityFilter, statusFilter])
 
+  const formOpen = (isMine && showForm) || editingId !== null
+  useEffect(() => {
+    if (!formOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') resetForm()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [formOpen])
+
   function resetForm() {
     setEditingId(null)
     setShowForm(false)
@@ -140,7 +150,6 @@ export function LeaveRequestAdminCrud({
     setDayPortion(item.dayPortion)
     setEmployeeComment(item.employeeComment ?? '')
     setFormErrors([])
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
 
@@ -208,9 +217,15 @@ export function LeaveRequestAdminCrud({
   return (
     <section className="admin-container">
       <div className="admin-grid admin-grid-single">
-        {/* Form Card: own page after "+ Új kérelem"; HR all-requests page only while editing */}
-        {((isMine && showForm) || editingId) && (
-        <div className="card">
+        {/* Form modal: own page after "+ Új kérelem"; HR all-requests page only while editing */}
+        {formOpen && (
+        <div className="modal-backdrop" onClick={() => !submitting && resetForm()}>
+        <div
+          className="card modal-card"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2 className="card-title">
             {editingId
               ? leaveRequestAdminText.editTitle()
@@ -318,6 +333,7 @@ export function LeaveRequestAdminCrud({
               )}
             </div>
           </form>
+        </div>
         </div>
         )}
 
