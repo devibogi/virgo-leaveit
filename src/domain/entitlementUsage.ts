@@ -1,8 +1,7 @@
 import type { EntitlementComponent, EntitlementId, LeaveEntitlement, LeaveDay } from '../types/model'
 
 /**
- * Consumption order across components. Only "carryover first" is a confirmed HR rule;
- * the rest is a PROTOTYPE ASSUMPTION (OPEN_QUESTIONS Q23).
+ * Consumption order across components. Confirmed HR rule 2026-11-13 (BUSINESS_RULES §1).
  */
 export const CONSUMPTION_ORDER: readonly EntitlementComponent[] = [
   'AGE_ADDITIONAL_CARRYOVER',

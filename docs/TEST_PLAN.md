@@ -9,7 +9,7 @@
 - Q1–Q3 carryover works; year-end carries only age-based additional leave.
 
 ## Entitlement usage cache
-- Carryover consumed first, then base, age, child (provisional, Q23); split per quarter of the leave date.
+- Carryover consumed first, then base, age, child (confirmed); split per quarter of the leave date.
 - Half-day can split across two components; `overrideDays` wins over `calculatedDays`.
 - Non-deducting types and other years ignored; excess beyond entitlement booked on BASE (Q24).
 - `usedYear = Q1+Q2+Q3+Q4` (also DB CHECK).

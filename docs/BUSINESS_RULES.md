@@ -11,6 +11,7 @@
 - Child-related additional leave is entered manually by HR based on the employee's annual declaration; do not calculate it automatically.
 - For a mid-year joiner, add the full-year base and additional entitlements first, prorate by employment time in the calendar year, then round: fraction > 0.5 rounds up; fraction < 0.5 rounds down. Exactly 0.5 is not specified; keep configurable / flag for HR confirmation. HR can apply a manual correction. Payroll-provided values may be used as a double-check.
 - Pending requests do not reserve or reduce available balance.
+- **Consumption order (confirmed 2026-11-13):** approved leave uses entitlement components in this order: age-based carryover from the previous year → base → age-based additional → child-related additional.
 
 ## 2. Requests and approvals
 - Every leave request requires manager approval; no automatic approval.

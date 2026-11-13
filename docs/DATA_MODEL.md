@@ -83,7 +83,7 @@ Schema: [`db/schema.sql`](../db/schema.sql). One table per persisted entity; der
 Stored on every `LeaveEntitlement` row for performance (D18, amends D3). Source of truth stays the approved requests × calendar.
 
 - **Meaning:** days of *this component* consumed by APPROVED, balance-deducting `LeaveDay`s, by the quarter the day falls in. `usedYear = Q1+Q2+Q3+Q4` (DB CHECK).
-- **Allocation:** days in date order fill components in `CONSUMPTION_ORDER` = carryover → base → age → child, each up to `overrideDays ?? calculatedDays`. A half-day may split. Excess goes on BASE (negative balance). Only "carryover first" is confirmed (Q23, Q24).
+- **Allocation:** days in date order fill components in `CONSUMPTION_ORDER` = carryover → base → age → child, each up to `overrideDays ?? calculatedDays`. A half-day may split. Order confirmed 2026-11-13 (BUSINESS_RULES §1). Excess goes on BASE (negative balance) — provisional, Q24.
 - **Only writer:** `recomputeEntitlementUsage()` in `src/domain/entitlementUsage.ts`. Always a **full recompute of all rows of one (employee, year)**, written in the **same DB transaction** as the change. Never increment/decrement, never edit by hand.
 - **Must recompute when:**
   - request becomes APPROVED, or leaves APPROVED (CANCELLED / REVOKED) → that employee, every year the request touches;

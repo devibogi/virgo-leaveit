@@ -26,7 +26,6 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 | Q20 | Manager away with all deputies also away (e.g. sick leave): fallback approver? | HR | Open | Approval routing | None; request waits; SLA reminder |
 | Q21 | Who can change `includeInPayrollExport`, and does it appear in the HR overview/export? | HR | Open | HR admin UI | HR Admin only; change logged as `EMPLOYEE_UPDATED`; HR overview shows it, payroll export filters on it |
 | Q22 | MariaDB hosting for the demo (local Docker vs shared server) | Project owner | Open | Setup | Local Docker per developer; credentials only in `.env` |
-| Q23 | Order in which entitlement components are consumed after carryover | HR | Open | Usage cache | carryover → base → age → child |
 | Q24 | Approved usage beyond total entitlement (e.g. after HR lowers an override): where is it booked? | HR | Open | Usage cache | On BASE; balance shown negative; HR resolves |
 
 ## Resolved (do not reopen)
@@ -36,4 +35,5 @@ Unresolved items only. Prototype assumptions must be easy to change and clearly 
 - **Deputy rule (2026-11-13):** planned leave only; blocked when all deputies have approved leave; one-way; multiple deputies; recheck at approval; employee sees conflict dates only (see BUSINESS_RULES §7).
 - **Manager delegation (2026-11-13):** a manager's deputies get MANAGER rights over the direct team only while the manager is on approved leave; separate UI view (BUSINESS_RULES §4).
 - **UI language (2026-11-13):** Hungarian.
+- **Q23 Consumption order (2026-11-13):** carryover → base → age-based → child-related (BUSINESS_RULES §1).
 - **Sign-in (2026-11-13):** company LDAP; roles from LeaveIt DB, matched by email (BUSINESS_RULES §4).
