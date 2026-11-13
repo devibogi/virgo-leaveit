@@ -33,6 +33,8 @@ export interface LeaveRequestRepository {
     hrActorId: string,
     reason: string,
   ): Promise<LeaveRequest | null>
+  /** Persists an already-decided request (status + approval) produced by decideLeaveRequest. */
+  saveDecision(decided: LeaveRequest): Promise<LeaveRequest | null>
 }
 
 export const SYNTHETIC_SEED_REQUESTS: readonly LeaveRequest[] = [
@@ -173,6 +175,13 @@ export class InMemoryLeaveRequestRepository implements LeaveRequestRepository {
     const revoked = revokeLeaveRequestByHr(existing, hrActorId, reason)
     const row = mapLeaveRequestToRow(revoked)
     this.store.set(id, row)
+    return mapRowToLeaveRequest(row)
+  }
+
+  async saveDecision(decided: LeaveRequest): Promise<LeaveRequest | null> {
+    if (!this.store.has(decided.id)) return null
+    const row = mapLeaveRequestToRow(decided)
+    this.store.set(decided.id, row)
     return mapRowToLeaveRequest(row)
   }
 }
@@ -320,6 +329,10 @@ export class MariaDbLeaveRequestRepository implements LeaveRequestRepository {
     }
     const revoked = revokeLeaveRequestByHr(existing, hrActorId, reason)
     return this.update(id, revoked)
+  }
+
+  async saveDecision(decided: LeaveRequest): Promise<LeaveRequest | null> {
+    return this.update(decided.id, decided)
   }
 }
 

@@ -6,6 +6,7 @@ import { LeaveRequestAdminCrud } from './components/LeaveRequestAdminCrud'
 import { LoginView } from './components/LoginView'
 import { MyEntitlementsView } from './components/MyEntitlementsView'
 import { MyTeamEmployeesView } from './components/MyTeamEmployeesView'
+import { IncomingRequestsView } from './components/IncomingRequestsView'
 import { TeamAdminCrud } from './components/TeamAdminCrud'
 import { PayrollExportView } from './components/PayrollExportView'
 import {
@@ -18,6 +19,7 @@ import {
   teamAdminText,
   payrollExportText,
   teamEntitlementText,
+  incomingRequestsText,
   roleLabel,
   themeText,
 } from './i18n/hu'
@@ -33,7 +35,7 @@ function initialTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'TEAM_ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS' | 'PAYROLL'
+type AdminSection = 'INCOMING' | 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'TEAM_ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS' | 'PAYROLL'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
@@ -112,20 +114,25 @@ export default function App() {
   // HR admin and manager roles work on company/team data only: own requests and own
   // entitlement pages are shown in the EMPLOYEE role only.
   const showOwnPages = activeRole === 'EMPLOYEE'
+  // Approver inbox: managers decide their reports' requests, HR admins decide UNPAID ones.
+  const canDecide = isManager || isHrAdmin
   const visibleSection: AdminSection =
     ((section === 'TEAMS' || section === 'PAYROLL' || section === 'REQUESTS' || section === 'ENTITLEMENTS_ADMIN') && !isHrAdmin) ||
     (section === 'EMPLOYEES' && !canSeeEmployees) ||
     (section === 'TEAM_ENTITLEMENTS' && !isManager) ||
+    (section === 'INCOMING' && !canDecide) ||
     ((section === 'MY_REQUESTS' || section === 'ENTITLEMENTS') && !showOwnPages)
       ? isHrAdmin
         ? 'REQUESTS'
         : isManager
-          ? 'TEAM_ENTITLEMENTS'
+          ? 'INCOMING'
           : 'MY_REQUESTS'
       : section
 
   const heading =
-    visibleSection === 'TEAMS'
+    visibleSection === 'INCOMING'
+      ? incomingRequestsText
+      : visibleSection === 'TEAMS'
       ? teamAdminText
       : visibleSection === 'PAYROLL'
         ? payrollExportText
@@ -224,6 +231,17 @@ export default function App() {
           </button>
           </>
           )}
+          {canDecide && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visibleSection === 'INCOMING'}
+            className={`section-tab ${visibleSection === 'INCOMING' ? 'section-tab-active' : ''}`}
+            onClick={() => setSection('INCOMING')}
+          >
+            {incomingRequestsText.tabLabel}
+          </button>
+          )}
           {isManager && (
           <button
             type="button"
@@ -320,6 +338,8 @@ export default function App() {
               currentUserId={currentUser.id}
             />
           )
+        ) : visibleSection === 'INCOMING' ? (
+          <IncomingRequestsView activeRole={activeRole} currentUserId={currentUser.id} />
         ) : visibleSection === 'ENTITLEMENTS_ADMIN' ? (
           <LeaveEntitlementAdminCrud
             activeRole={activeRole}

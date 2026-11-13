@@ -289,6 +289,45 @@ export function revokeLeaveRequestByHr(
   }
 }
 
+/**
+ * Approver decision on a PENDING request (BUSINESS_RULES §2). Only the snapshot approver
+ * (request.approverId) may decide, never on their own request. Rejection reason is optional
+ * (assumption, not HR-confirmed). Deputy delegation and the deputy re-check at approval are not wired yet.
+ */
+export function decideLeaveRequest(
+  request: LeaveRequest,
+  actorId: EmployeeId,
+  decision: 'APPROVED' | 'REJECTED',
+  comment: string | null = null,
+  at: IsoDateTime = new Date().toISOString(),
+): LeaveRequest {
+  const actor = actorId.trim()
+  if (request.status !== 'PENDING') {
+    throw new LeaveDecisionError(409, 'Csak jóváhagyásra váró kérelemről lehet dönteni.')
+  }
+  if (actor === request.employeeId) {
+    throw new LeaveDecisionError(403, 'Saját kérelemről a munkavállaló nem dönthet.')
+  }
+  if (actor !== request.approverId) {
+    throw new LeaveDecisionError(403, 'Erről a kérelemről csak a kijelölt jóváhagyó dönthet.')
+  }
+  const trimmed = comment?.trim() || null
+  return {
+    ...request,
+    status: decision,
+    approval: { decision, decidedBy: actor, onBehalfOf: null, decidedAt: at, comment: trimmed },
+  }
+}
+
+export class LeaveDecisionError extends Error {
+  readonly status: 403 | 409
+  constructor(status: 403 | 409, message: string) {
+    super(message)
+    this.name = 'LeaveDecisionError'
+    this.status = status
+  }
+}
+
 export function mapRowToLeaveRequest(row: LeaveRequestRow): LeaveRequest {
   const approval: Approval | null =
     row.decision && row.decided_by && row.decided_at

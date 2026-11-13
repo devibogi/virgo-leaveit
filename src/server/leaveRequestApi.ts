@@ -1,7 +1,9 @@
 import {
   buildLeaveRequestFromDraft,
   canManageLeaveRequests,
+  decideLeaveRequest,
   DUPLICATE_REQUEST_MESSAGE,
+  LeaveDecisionError,
   findOverlappingRequest,
   isLeaveTypeCode,
   isLegalEntityId,
@@ -100,8 +102,9 @@ export function createLeaveRequestApiHandler(
     const isCollection = pathname === '/api/requests'
     const revokeMatch = /^\/api\/requests\/([^/]+)\/revoke$/.exec(pathname)
     const itemMatch = /^\/api\/requests\/([^/]+)$/.exec(pathname)
+    const decisionMatch = /^\/api\/requests\/([^/]+)\/decision$/.exec(pathname)
 
-    if (!isCollection && !revokeMatch && !itemMatch) {
+    if (!isCollection && !revokeMatch && !itemMatch && !decisionMatch) {
       return null
     }
 
@@ -113,9 +116,12 @@ export function createLeaveRequestApiHandler(
       isCreate && !!actorRole && !canManageLeaveRequests(actorRole)
     // Every role may list its own requests; non-HR actors are forced to themselves.
     const isList = isCollection && method === 'GET'
+    // Approver inbox (?scope=incoming) and decisions: any role, restricted to approverId === actor.
+    const isIncomingList = isList && query.scope === 'incoming'
+    const isDecision = !!decisionMatch && method === 'POST'
     const isSelfServiceList =
-      isList && !!actorRole && !canManageLeaveRequests(actorRole)
-    if ((isSelfServiceCreate || isSelfServiceList) && !actorId) {
+      isList && !isIncomingList && !!actorRole && !canManageLeaveRequests(actorRole)
+    if ((isSelfServiceCreate || isSelfServiceList || isIncomingList || isDecision) && !actorId) {
       return {
         status: 403,
         body: {
@@ -124,7 +130,7 @@ export function createLeaveRequestApiHandler(
         },
       }
     }
-    if (!actorRole || (!isCreate && !isList && !canManageLeaveRequests(actorRole))) {
+    if (!actorRole || (!isCreate && !isList && !isDecision && !canManageLeaveRequests(actorRole))) {
       return {
         status: 403,
         body: {
@@ -167,12 +173,13 @@ export function createLeaveRequestApiHandler(
           ? query.leaveTypeCode
           : undefined
 
-        const items = await repository.findAll({
-          employeeId,
+        const found = await repository.findAll({
+          employeeId: isIncomingList ? undefined : employeeId,
           legalEntityId,
           status,
           leaveTypeCode,
         })
+        const items = isIncomingList ? found.filter((r) => r.approverId === actorId) : found
         // Display-only names so the UI never has to show employee IDs.
         const names = new Map(
           (await employeeRepository.findAll()).map((e) => [e.id, e.displayName]),
@@ -228,6 +235,43 @@ export function createLeaveRequestApiHandler(
           }
           throw err
         }
+      }
+    }
+
+    if (decisionMatch && method === 'POST') {
+      const id = decodeURIComponent(decisionMatch[1])
+      const payload = (sanitizedBody ?? {}) as Record<string, unknown>
+      const decision = payload.decision
+      if (decision !== 'APPROVED' && decision !== 'REJECTED') {
+        return {
+          status: 400,
+          body: { error: 'Validation failed', details: ["A döntés értéke APPROVED vagy REJECTED lehet."] },
+        }
+      }
+      const existing = await repository.findById(id)
+      if (!existing) {
+        return {
+          status: 404,
+          body: { error: 'Not found', details: [`A(z) '${id}' szabadságkérelem nem található.`] },
+        }
+      }
+      try {
+        const decided = decideLeaveRequest(
+          existing,
+          actorId!,
+          decision,
+          typeof payload.comment === 'string' ? payload.comment : null,
+        )
+        const saved = await repository.saveDecision(decided)
+        return { status: 200, body: saved }
+      } catch (err) {
+        if (err instanceof LeaveDecisionError) {
+          return {
+            status: err.status,
+            body: { error: err.status === 409 ? 'Conflict' : 'Forbidden', details: [err.message] },
+          }
+        }
+        throw err
       }
     }
 

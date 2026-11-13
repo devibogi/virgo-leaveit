@@ -93,6 +93,7 @@
 - Changing the flag creates an audit event.
 
 ## Authorization
+- Approver inbox lists only requests where approverId = actor; decision allowed only on PENDING (409), only by the approver, never by the requester (403); unknown id 404, invalid decision 400 (`leaveDecision.test.ts`, `leaveRequestApi.decision.test.ts`).
 - Employee sees only own detailed requests and balances.
 - Manager, deputy, colleagues and team calendar see only "Szabadság" / "Beteg", never the exact type.
 - HR Admin sees the exact type; employee sees own exact type.

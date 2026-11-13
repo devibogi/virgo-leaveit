@@ -24,6 +24,8 @@ export interface ListLeaveRequestsQuery {
   legalEntityId?: LegalEntityId
   status?: RequestStatus
   leaveTypeCode?: LeaveTypeCode
+  /** 'incoming' = requests where the signed-in user is the approver. */
+  scope?: 'incoming'
 }
 
 export interface LeaveRequestApiClientOptions {
@@ -83,6 +85,9 @@ export function createLeaveRequestApiClient(
       if (query?.leaveTypeCode) {
         search.set('leaveTypeCode', query.leaveTypeCode)
       }
+      if (query?.scope) {
+        search.set('scope', query.scope)
+      }
       const qs = search.toString()
       const url = `${baseUrl}/requests${qs ? `?${qs}` : ''}`
       const response = await fetchImpl(url, {
@@ -126,6 +131,22 @@ export function createLeaveRequestApiClient(
           credentials: 'same-origin',
           headers: buildHeaders(true),
           body: JSON.stringify(body),
+        },
+      )
+      return parseResponse<LeaveRequest>(response)
+    },
+
+    async decideRequest(
+      id: string,
+      input: { decision: 'APPROVED' | 'REJECTED'; comment?: string | null },
+    ): Promise<LeaveRequest> {
+      const response = await fetchImpl(
+        `${baseUrl}/requests/${encodeURIComponent(id)}/decision`,
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: buildHeaders(true),
+          body: JSON.stringify(input),
         },
       )
       return parseResponse<LeaveRequest>(response)

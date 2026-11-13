@@ -419,3 +419,28 @@ export const payrollExportText = {
     'július', 'augusztus', 'szeptember', 'október', 'november', 'december',
   ],
 } as const
+
+export const incomingRequestsText = {
+  tabLabel: 'Beérkező kérelmek',
+  eyebrow: 'VEZETŐ · JÓVÁHAGYÁS',
+  pageTitle: 'Beérkező szabadságkérelmek',
+  pageIntro:
+    'Azok a kérelmek, amelyeknek te vagy a jóváhagyója. A döntés után a kérelem az előzmények közé kerül.',
+  pendingTitle: 'Jóváhagyásra vár',
+  historyTitle: 'Korábbi döntések',
+  loading: 'Kérelmek betöltése...',
+  loadError: 'A kérelmek betöltése nem sikerült.',
+  decideError: 'A döntés mentése nem sikerült.',
+  emptyPending: 'Nincs jóváhagyásra váró kérelem.',
+  emptyHistory: 'Még nincs korábbi döntés.',
+  colEmployee: 'Munkavállaló',
+  colType: 'Típus / Napszak',
+  colDates: 'Időszak',
+  colComment: 'Megjegyzés',
+  colSubmitted: 'Beadva',
+  colStatus: 'Státusz',
+  colActions: 'Döntés',
+  approveButton: 'Jóváhagyás',
+  rejectButton: 'Elutasítás',
+  rejectReasonPrompt: 'Elutasítás indoklása (opcionális):',
+}
