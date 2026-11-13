@@ -62,8 +62,8 @@ Brand palette: Midnight #24243B · Violet #8275E8 · Mint #B9E5D3 · Cloud #F6F5
 For both leave validation and the 3-working-day approval SLA, do not calculate working days as simply Monday–Friday. Use a maintained Hungarian calendar dataset that includes public holidays, substitute rest days and officially transferred working Saturdays. For the prototype, use a versioned local JSON dataset and keep the calendar service separate from business rules. Count officially designated working Saturdays; skip weekends and statutory rest days. HR should approve the calendar source before production.
 
 ## 7. Proposed technical setup
-**Fast prototype proposal:** React + Vite + TypeScript; Tailwind; shadcn/ui or a small consistent component set; pure TypeScript domain modules; synthetic seed data; localStorage for demo persistence; GitHub shared repo; Vercel preview deploy if convenient.
-**Production caveat:** localStorage and client-side role switching are not secure. Real deployment needs server-side authentication/authorization, database, audit logging and secure integration credentials.
+**Fast prototype proposal:** React + Vite + TypeScript; Tailwind; shadcn/ui or a small consistent component set; pure TypeScript domain modules; synthetic seed data; MariaDB + Node API for persistence (decided 2026-11-13, D15); GitHub shared repo; Vercel preview deploy if convenient.
+**Production caveat:** Client-side role switching is not secure. Real deployment needs server-side authentication/authorization, database, audit logging and secure integration credentials.
 
 Suggested modules:
 - `domain/leaveTypes.ts`

@@ -42,6 +42,7 @@
   - C can never decide on C's own request (prototype: it waits for A, see Q19).
   - C acts in a **separate "Helyettesítés" view**, never mixed with C's own team.
   - The decision records `onBehalfOf = A`; audit shows who acted for whom.
+- **Payroll export flag (confirmed 2026-11-13):** each employee has "include in payroll (bérszámfejtés) export", default yes. If no, the employee's leave is left out of the payroll export; everything else is unchanged.
 - **UI language (confirmed 2026-11-13):** the whole user interface is Hungarian. Code, docs and commits stay English.
 
 ## 5. Non-working days and SLA calendar

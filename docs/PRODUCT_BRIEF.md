@@ -58,8 +58,8 @@ AI is an enhancement, not the source of truth. Good demo candidate: explain team
 - Optional subtle “Built for Virgo” attribution.
 
 ## 7. Proposed prototype stack (confirm as a team)
-React + Vite + TypeScript; Tailwind CSS; component library such as shadcn/ui; local synthetic data and localStorage for a fast demo; business rules in separate pure TypeScript modules. GitHub as source of truth; Vercel preview deployments optional.
-**Important:** localStorage and client-side role switching are prototype-only and are not secure production architecture.
+React + Vite + TypeScript; Tailwind CSS; component library such as shadcn/ui; synthetic data in MariaDB behind a Node API (D15); business rules in separate pure TypeScript modules. GitHub as source of truth; Vercel preview deployments optional.
+**Important:** Client-side role switching is prototype-only and are not secure production architecture.
 
 ## 8. Success criteria for demo
 - Complete request → validation → approval → balance/calendar update flow.

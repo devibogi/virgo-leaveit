@@ -50,6 +50,12 @@ export const deputyText = {
   ownRequestNotAllowed: 'Saját kérelmedről helyettesként nem dönthetsz.',
 } as const
 
+export const employeeText = {
+  includeInPayrollExport: 'Bérszámfejtésbe exportálandó',
+  yes: 'Igen',
+  no: 'Nem',
+} as const
+
 /** Hungarian date format, e.g. "2026. 11. 13.". */
 export const formatDate = (iso: string): string => {
   const [y, m, d] = iso.split('-')

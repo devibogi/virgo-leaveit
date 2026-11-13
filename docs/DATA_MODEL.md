@@ -5,7 +5,7 @@
 ## Conventions
 - IDs are stable strings (e.g. `emp-peter`, `req-0001`).
 - `IsoDate` = `YYYY-MM-DD` (no time zone); `IsoDateTime` = ISO 8601 with offset.
-- **Persisted** entities live in `AppState` (localStorage in the demo). **Derived** views are computed by domain functions and never stored as truth.
+- **Persisted** entities live in **MariaDB** ([`db/schema.sql`](../db/schema.sql)) behind a backend API; `AppState` is the seed/snapshot shape. **Derived** views are computed by domain functions and never stored as truth.
 - Balance deduction and payroll accounting are always separate fields.
 - Nothing is hard-deleted; status changes keep history.
 
@@ -14,7 +14,7 @@
 | Entity | Key fields | Notes |
 |---|---|---|
 | `LegalEntity` | `id` (`VIRGO_KFT` \| `VIRGO_ZRT`), `name` | Same leave rules for both. |
-| `Employee` | `id`, `displayName`, `email`, `legalEntityId`, `managerId`, `roles[]`, `birthDate`, `employmentStart`, `employmentEnd`, `deputyIds[]` | `deputyIds`: people who cover for this employee (one-way; empty = no deputy check). Also used for manager delegation: while a manager is on approved leave, their deputies get MANAGER rights over the manager's team (see `ActiveDelegation`). `managerId` is the **only** source for manager permissions (direct team = employees whose `managerId` = me). `roles` always includes `EMPLOYEE`; Katalin is `EMPLOYEE`+`MANAGER`, Piri is `EMPLOYEE`+`HR_ADMIN`. Synthetic data only. |
+| `Employee` | `id`, `displayName`, `email`, `legalEntityId`, `managerId`, `roles[]`, `birthDate`, `employmentStart`, `employmentEnd`, `includeInPayrollExport`, `deputyIds[]` | `includeInPayrollExport` (default `true`): `false` excludes the employee from the payroll (bérszámfejtés) export only; leave, balance and approvals work as usual. `deputyIds`: people who cover for this employee (one-way; empty = no deputy check). Also used for manager delegation: while a manager is on approved leave, their deputies get MANAGER rights over the manager's team (see `ActiveDelegation`). `managerId` is the **only** source for manager permissions (direct team = employees whose `managerId` = me). `roles` always includes `EMPLOYEE`; Katalin is `EMPLOYEE`+`MANAGER`, Piri is `EMPLOYEE`+`HR_ADMIN`. Synthetic data only. |
 | `Team` | `managerId` (key), `name` | Display name only. **Membership is derived:** team of M = employees whose `managerId` = M (= who approves their leave). Everyone is in exactly one team; a manager is in their own manager's team. No `teamId` on `Employee`. |
 | `LeaveType` | `code`, `label`, `deductsFromAnnualBalance`, `halfDayAllowed`, `payrollCode`, `deputyCheckApplies` | `deputyCheckApplies` true for planned leave (ANNUAL, EXTRAORDINARY, UNPAID), false for SICK_LEAVE, SICK_PAY, PATERNITY. Config data, not hard-coded logic. Values are provisional (see Open Questions). |
 | `LeaveEntitlement` | `employeeId`, `year`, `component`, `fullYearDays`, `calculatedDays`, `overrideDays`, `overrideReason`, `payrollReferenceDays` | One row per employee/year/component. Effective = `overrideDays ?? calculatedDays`. `payrollReferenceDays` is for double-checking only. |
@@ -52,8 +52,25 @@ Default: Mon–Fri working, Sat–Sun non-working; overrides win. The calendar s
 | `DateSuggestion` | Same inputs + requester's balance and own requests | Deterministic alternative windows (same working-day count, no conflict, enough balance), closest first. |
 | `DeputyConflictAiInput` | `DeputyCheckResult` + requested dates | The **only** payload allowed to reach the AI helper (wording only). |
 
-## Persistence
-`AppState { schemaVersion, legalEntities, teams, employees, leaveTypes, entitlements, requests, auditEvents }`. Bump `schemaVersion` on shape changes; the demo resets to seed data on mismatch.
+## Persistence (MariaDB)
+Schema: [`db/schema.sql`](../db/schema.sql). One table per persisted entity; derived views are **not** tables.
+
+| Table | From type | Notes |
+|---|---|---|
+| `legal_entity` | `LegalEntity` | |
+| `employee` | `Employee` | `include_in_payroll_export BOOLEAN NOT NULL DEFAULT TRUE`; `manager_id` self-FK |
+| `employee_role` | `Employee.roles[]` | PK (employee, role) |
+| `employee_deputy` | `Employee.deputyIds[]` | PK (employee, deputy); CHECK no self-deputy |
+| `team` | `Team` | PK `manager_id` |
+| `leave_type` | `LeaveType` | config rows |
+| `leave_entitlement` | `LeaveEntitlement` | UNIQUE (employee, year, component) |
+| `leave_request` | `LeaveRequest` + embedded `Approval`, `Cancellation` | nullable approval/cancellation columns |
+| `audit_event` | `AuditEvent` | append-only (no UPDATE/DELETE from the app) |
+
+- Charset `utf8mb4`, collation `utf8mb4_hungarian_ci` (Hungarian sorting).
+- Day values `DECIMAL(5,1)` (half-days). Timestamps stored as UTC `DATETIME(3)`; API returns ISO 8601.
+- The calendar dataset stays a versioned JSON file, not a table.
+- `AppState` = seed/fixture shape; bump `schemaVersion` together with schema changes.
 
 ## Design notes
 - All UI text is Hungarian and lives in `src/i18n/hu.ts`; type codes stay English.

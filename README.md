@@ -28,7 +28,7 @@ Technical foundation in place: React + Vite + TypeScript scaffold with a branded
 
 All dependency versions are pinned exactly; `package-lock.json` is committed. Use npm.
 
-Proposed but not added yet: Tailwind, shadcn/ui, routing, state management, localStorage persistence. Business rules will live in pure TypeScript modules under `src/domain/`.
+Proposed but not added yet: Tailwind, shadcn/ui, routing, state management. Persistence: MariaDB (`db/schema.sql`) behind a Node API in `server/` (not built yet); local DB via `docker compose up -d`. Business rules will live in pure TypeScript modules under `src/domain/`.
 
 ## Getting started
 ```sh
@@ -48,4 +48,4 @@ Tests live next to the code as `src/**/*.test.ts(x)`.
 - No ESLint yet: `typescript-eslint` does not support TypeScript 7.
 
 ## Data safety
-Use synthetic/fictitious data only. Do not commit employee personal data, real leave records, credentials, tokens or production exports. Client-side role switching/localStorage are demo-only, not production security.
+Use synthetic/fictitious data only. Do not commit employee personal data, real leave records, credentials, tokens or production exports. Client-side role switching is demo-only; DB credentials only in `.env` (see `.env.example`), not production security.

@@ -17,12 +17,14 @@ Priority definitions: **P0** demo must-have · **P1** valuable if time · **P2**
 | LI-11 | P1 | Half-day pairing | Each half-day deducts 0.5; monthly chronological first payroll=1, second=0; cancellation recalculates. |
 | LI-12 | P1 | Three-working-day SLA | Due date skips weekends/rest days and counts designated working Saturdays; reminder can be simulated. |
 | LI-13 | P1 | HR manual adjustment | HR changes entitlement with reason; audit event is created. |
-| LI-14 | P1 | CSV export | Export includes clearly labelled provisional fields; final schema awaits HR. |
+| LI-14 | P1 | CSV export | Export includes clearly labelled provisional fields; final schema awaits HR; only employees with `includeInPayrollExport = true`. |
 | LI-15 | P1 | AI conflict wording | Words the deputy conflict + suggested dates from `DeputyConflictAiInput` (dates only); never names the deputy, position or leave type; non-AI fallback text; never approves or calculates. |
 | LI-17 | P1 | Deputy availability check | Planned leave blocked on days all deputies have approved leave; checked at submit and re-checked at approval; employee/manager see conflict dates only; deterministic alternative dates (up to 3). |
 | LI-18 | P1 | Deputy assignment | HR Admin (assumption, Q13) edits an employee's deputies; no self-deputy; audit `DEPUTIES_UPDATED`. |
 | LI-19 | P1 | Manager delegation view | "Helyettesítés" view, separate from own team, visible only while an `ActiveDelegation` exists; approve/reject for the absent manager's team; own requests excluded; `onBehalfOf` recorded. |
 | LI-20 | P0 | Hungarian UI | All user-facing text from `src/i18n/hu.ts`; Hungarian date format. |
+| LI-21 | P0 | MariaDB + backend API | `db/schema.sql` applied to local MariaDB; Node API serves the data; seed script with synthetic data; credentials only in `.env`. |
+| LI-22 | P1 | Payroll export flag | HR can toggle "Bérszámfejtésbe exportálandó" per employee (default igen); audited; export respects it. |
 | LI-16 | P2 | Google Calendar/email/SSO | Integration feasibility and permissions confirmed before implementation. |
 
 ## Definition of Done
