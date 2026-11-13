@@ -24,8 +24,8 @@ services:
       - /app/node_modules
     environment:
       NODE_ENV: development
-      MARIADB_HOST: db
-      MARIADB_PORT: 3306
+      MARIADB_HOST: ${MARIADB_HOST:-db}
+      MARIADB_PORT: ${MARIADB_PORT:-3306}
       MARIADB_DATABASE: ${MARIADB_DATABASE:-leaveit}
       MARIADB_USER: ${MARIADB_USER:-leaveit}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD:-leaveit_local_pass}

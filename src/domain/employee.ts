@@ -31,12 +31,12 @@ export interface EmployeeRow {
   email: string
   legal_entity_id: LegalEntityId
   manager_id: string | null
-  roles_json: string
+  roles_json: string | Role[]
   birth_date: string
   employment_start: string
   employment_end: string | null
-  include_in_payroll_export: number | boolean
-  deputy_ids_json: string
+  include_in_payroll_export?: number | boolean
+  deputy_ids_json: string | EmployeeId[]
   tax_id?: string | null
 }
 
@@ -169,7 +169,10 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
 export function mapRowToEmployee(row: EmployeeRow): Employee {
   let roles: Role[] = ['EMPLOYEE']
   try {
-    const parsed = JSON.parse(row.roles_json) as unknown
+    const parsed =
+      typeof row.roles_json === 'string'
+        ? (JSON.parse(row.roles_json) as unknown)
+        : (row.roles_json as unknown)
     if (Array.isArray(parsed)) {
       roles = parsed as Role[]
     }
@@ -179,7 +182,10 @@ export function mapRowToEmployee(row: EmployeeRow): Employee {
 
   let deputyIds: EmployeeId[] = []
   try {
-    const parsed = JSON.parse(row.deputy_ids_json) as unknown
+    const parsed =
+      typeof row.deputy_ids_json === 'string'
+        ? (JSON.parse(row.deputy_ids_json) as unknown)
+        : (row.deputy_ids_json as unknown)
     if (Array.isArray(parsed)) {
       deputyIds = parsed as EmployeeId[]
     }
@@ -197,7 +203,10 @@ export function mapRowToEmployee(row: EmployeeRow): Employee {
     birthDate: row.birth_date,
     employmentStart: row.employment_start,
     employmentEnd: row.employment_end,
-    includeInPayrollExport: Boolean(row.include_in_payroll_export),
+    includeInPayrollExport:
+      row.include_in_payroll_export === undefined
+        ? true
+        : Boolean(row.include_in_payroll_export),
     deputyIds,
     taxId: row.tax_id ?? '',
   }

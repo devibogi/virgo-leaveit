@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS employees (
   birth_date DATE NOT NULL,
   employment_start DATE NOT NULL,
   employment_end DATE NULL,
+  include_in_payroll_export TINYINT(1) NOT NULL DEFAULT 1,
+  tax_id CHAR(10) NOT NULL DEFAULT '8400000000',
   deputy_ids_json JSON NOT NULL,
   PRIMARY KEY (id),
   INDEX idx_employees_manager_id (manager_id),
@@ -24,9 +26,11 @@ INSERT IGNORE INTO employees (
   birth_date,
   employment_start,
   employment_end,
+  include_in_payroll_export,
+  tax_id,
   deputy_ids_json
 ) VALUES
-  ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, '[]'),
-  ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, '["emp-piri"]'),
-  ('emp-peter', 'Kovács Péter', 'peter.kovacs@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1993-11-04', '2022-09-01', NULL, '["emp-anna"]'),
-  ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, '["emp-peter"]');
+  ('emp-piri', 'Varga Piri', 'piri.varga@virgo.example', 'VIRGO_KFT', NULL, '["EMPLOYEE","HR_ADMIN"]', '1984-03-12', '2019-02-01', NULL, 1, '8401010001', '[]'),
+  ('emp-katalin', 'Nagy Katalin', 'katalin.nagy@virgo.example', 'VIRGO_KFT', 'emp-piri', '["EMPLOYEE","MANAGER"]', '1986-07-22', '2020-05-15', NULL, 1, '8401010002', '["emp-piri"]'),
+  ('emp-peter', 'Kovács Péter', 'peter.kovacs@virgo.example', 'VIRGO_KFT', 'emp-katalin', '["EMPLOYEE"]', '1993-11-04', '2022-09-01', NULL, 1, '8401010003', '["emp-anna"]'),
+  ('emp-anna', 'Szabó Anna', 'anna.szabo@virgo.example', 'VIRGO_ZRT', 'emp-katalin', '["EMPLOYEE"]', '1995-01-19', '2024-03-01', NULL, 1, '8401010004', '["emp-peter"]');

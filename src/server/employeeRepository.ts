@@ -168,7 +168,7 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
     const whereClause =
       clauses.length > 0 ? ` WHERE ${clauses.join(' AND ')}` : ''
     const rows = await this.db.query<EmployeeRow>(
-      `SELECT id, display_name, email, legal_entity_id, manager_id, roles_json, birth_date, employment_start, employment_end, deputy_ids_json FROM employees${whereClause} ORDER BY display_name ASC`,
+      `SELECT id, display_name, email, legal_entity_id, manager_id, roles_json, birth_date, employment_start, employment_end, include_in_payroll_export, deputy_ids_json, tax_id FROM employees${whereClause} ORDER BY display_name ASC`,
       params,
     )
     return rows.map(mapRowToEmployee)
@@ -176,7 +176,7 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
 
   async findById(id: string): Promise<Employee | null> {
     const rows = await this.db.query<EmployeeRow>(
-      'SELECT id, display_name, email, legal_entity_id, manager_id, roles_json, birth_date, employment_start, employment_end, deputy_ids_json FROM employees WHERE id = ? LIMIT 1',
+      'SELECT id, display_name, email, legal_entity_id, manager_id, roles_json, birth_date, employment_start, employment_end, include_in_payroll_export, deputy_ids_json, tax_id FROM employees WHERE id = ? LIMIT 1',
       [id],
     )
     return rows[0] ? mapRowToEmployee(rows[0]) : null
@@ -193,8 +193,9 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
     await this.db.execute(
       `INSERT INTO employees (
         id, display_name, email, legal_entity_id, manager_id,
-        roles_json, birth_date, employment_start, employment_end, deputy_ids_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        roles_json, birth_date, employment_start, employment_end,
+        include_in_payroll_export, deputy_ids_json, tax_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         row.id,
         row.display_name,
@@ -205,7 +206,9 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
         row.birth_date,
         row.employment_start,
         row.employment_end,
+        row.include_in_payroll_export ?? 1,
         row.deputy_ids_json,
+        row.tax_id ?? '',
       ],
     )
     return validated
@@ -230,7 +233,9 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
         birth_date = ?,
         employment_start = ?,
         employment_end = ?,
-        deputy_ids_json = ?
+        include_in_payroll_export = ?,
+        deputy_ids_json = ?,
+        tax_id = ?
       WHERE id = ?`,
       [
         row.display_name,
@@ -241,7 +246,9 @@ export class MariaDbEmployeeRepository implements EmployeeRepository {
         row.birth_date,
         row.employment_start,
         row.employment_end,
+        row.include_in_payroll_export ?? 1,
         row.deputy_ids_json,
+        row.tax_id ?? '',
         row.id,
       ],
     )
