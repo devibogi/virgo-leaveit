@@ -1,16 +1,47 @@
-# Local dev MariaDB. Values come from .env (copy .env.example).
 services:
-  mariadb:
+  db:
     image: mariadb:11.4
+    restart: unless-stopped
     environment:
-      MARIADB_DATABASE: ${DB_NAME}
-      MARIADB_USER: ${DB_USER}
-      MARIADB_PASSWORD: ${DB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-leaveit_local_root}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-leaveit}
+      MARIADB_USER: ${MARIADB_USER:-leaveit}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-leaveit_local_pass}
     ports:
-      - "${DB_PORT}:3306"
+      - "${MARIADB_PORT:-3306}:3306"
     volumes:
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - leaveit-db:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+  app-dev:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      MARIADB_HOST: db
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-leaveit}
+      MARIADB_USER: ${MARIADB_USER:-leaveit}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-leaveit_local_pass}
+    depends_on:
+      - db
+
+  app-prod:
+    build:
+      context: .
+      target: prod
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    profiles:
+      - prod
+
 volumes:
-  leaveit-db:
+  mariadb_data:

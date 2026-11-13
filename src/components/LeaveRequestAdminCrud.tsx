@@ -1,0 +1,636 @@
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import {
+  createLeaveRequestApiClient,
+  TeamApiError,
+  type LeaveRequestApiClientOptions,
+} from '../api'
+import {
+  canManageLeaveRequests,
+  DAY_PORTIONS,
+  DayPortionEnum,
+  LEAVE_TYPE_CODES,
+  LeaveTypeCodeEnum,
+  LEGAL_ENTITIES,
+  LegalEntityEnum,
+  REQUEST_STATUSES,
+  RequestStatusEnum,
+  validateLeaveRequest,
+  type DayPortion,
+  type LeaveRequest,
+  type LeaveTypeCode,
+  type LegalEntityId,
+  type RequestStatus,
+  type Role,
+} from '../domain'
+import {
+  dayPortionLabel,
+  formatDate,
+  leaveRequestAdminText,
+  leaveTypeLabel,
+  legalEntityLabel,
+  roleLabel,
+  statusLabel,
+  teamAdminText,
+} from '../i18n/hu'
+
+export interface LeaveRequestAdminCrudProps {
+  activeRole: Role
+  onRequestRoleChange?: (role: Role) => void
+  apiClientOptions?: LeaveRequestApiClientOptions
+}
+
+export function LeaveRequestAdminCrud({
+  activeRole,
+  onRequestRoleChange,
+  apiClientOptions,
+}: LeaveRequestAdminCrudProps) {
+  const isAuthorized = canManageLeaveRequests(activeRole)
+
+  const apiClient = useMemo(
+    () =>
+      createLeaveRequestApiClient({
+        ...apiClientOptions,
+        getActorRole: () => activeRole,
+      }),
+    [activeRole, apiClientOptions],
+  )
+
+  const [requests, setRequests] = useState<LeaveRequest[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Filters
+  const [employeeFilter, setEmployeeFilter] = useState<string>('')
+  const [entityFilter, setEntityFilter] = useState<'' | LegalEntityId>('')
+  const [statusFilter, setStatusFilter] = useState<'' | RequestStatus>('')
+
+  // Form state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [reqId, setReqId] = useState<string>('')
+  const [employeeId, setEmployeeId] = useState<string>('emp-peter')
+  const [legalEntityId, setLegalEntityId] = useState<LegalEntityId>(
+    LegalEntityEnum.VIRGO_KFT,
+  )
+  const [approverId, setApproverId] = useState<string>('emp-katalin')
+  const [leaveTypeCode, setLeaveTypeCode] = useState<LeaveTypeCode>(
+    LeaveTypeCodeEnum.ANNUAL,
+  )
+  const [startDate, setStartDate] = useState<string>('2026-08-03')
+  const [endDate, setEndDate] = useState<string>('2026-08-07')
+  const [dayPortion, setDayPortion] = useState<DayPortion>(DayPortionEnum.FULL)
+  const [status, setStatus] = useState<RequestStatus>(RequestStatusEnum.PENDING)
+  const [employeeComment, setEmployeeComment] = useState<string>('')
+  const [revokeReason, setRevokeReason] = useState<string>(
+    'HR adminisztrátori korrekció',
+  )
+  const [formErrors, setFormErrors] = useState<string[]>([])
+  const [submitting, setSubmitting] = useState<boolean>(false)
+
+  const loadRequests = useCallback(
+    async (
+      emp: string,
+      entity: '' | LegalEntityId,
+      st: '' | RequestStatus,
+    ) => {
+      if (!isAuthorized) {
+        setRequests([])
+        return
+      }
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await apiClient.listRequests({
+          employeeId: emp.trim() || undefined,
+          legalEntityId: entity || undefined,
+          status: st || undefined,
+        })
+        setRequests(data)
+      } catch (err) {
+        if (err instanceof TeamApiError) {
+          setError(`${err.message}: ${err.details.join(' ')}`)
+        } else {
+          setError(leaveRequestAdminText.loadError)
+        }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [apiClient, isAuthorized],
+  )
+
+  useEffect(() => {
+    void loadRequests(employeeFilter, entityFilter, statusFilter)
+  }, [loadRequests, employeeFilter, entityFilter, statusFilter])
+
+  function resetForm() {
+    setEditingId(null)
+    setReqId('')
+    setEmployeeId('emp-peter')
+    setLegalEntityId(LegalEntityEnum.VIRGO_KFT)
+    setApproverId('emp-katalin')
+    setLeaveTypeCode(LeaveTypeCodeEnum.ANNUAL)
+    setStartDate('2026-08-03')
+    setEndDate('2026-08-07')
+    setDayPortion(DayPortionEnum.FULL)
+    setStatus(RequestStatusEnum.PENDING)
+    setEmployeeComment('')
+    setRevokeReason('HR adminisztrátori korrekció')
+    setFormErrors([])
+  }
+
+  function startEditing(item: LeaveRequest) {
+    setEditingId(item.id)
+    setReqId(item.id)
+    setEmployeeId(item.employeeId)
+    setLegalEntityId(item.legalEntityId)
+    setApproverId(item.approverId)
+    setLeaveTypeCode(item.leaveTypeCode)
+    setStartDate(item.startDate)
+    setEndDate(item.endDate)
+    setDayPortion(item.dayPortion)
+    setStatus(item.status)
+    setEmployeeComment(item.employeeComment ?? '')
+    setRevokeReason(item.cancellation?.reason ?? 'HR adminisztrátori korrekció')
+    setFormErrors([])
+  }
+
+  if (!isAuthorized) {
+    return (
+      <section className="admin-container">
+        <div className="card access-denied-card" role="alert">
+          <div className="access-denied-badge">403 · HR_ADMIN</div>
+          <h2 className="card-title">{teamAdminText.accessDeniedTitle}</h2>
+          <p className="card-subtitle">
+            {teamAdminText.accessDeniedBody} (Jelenlegi szerepkör:{' '}
+            <strong>
+              {roleLabel[activeRole]} [{activeRole}]
+            </strong>
+            )
+          </p>
+          {onRequestRoleChange && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onRequestRoleChange('HR_ADMIN')}
+            >
+              {teamAdminText.switchToHrAdmin}
+            </button>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setFormErrors([])
+
+    const targetId = editingId ?? reqId.trim()
+    const nowIso = new Date().toISOString()
+
+    const approval =
+      status === 'APPROVED' || status === 'REJECTED'
+        ? {
+            decision: status,
+            decidedBy: approverId.trim(),
+            onBehalfOf: null,
+            decidedAt: nowIso,
+            comment: null,
+          }
+        : null
+
+    const cancellation =
+      status === 'REVOKED'
+        ? {
+            kind: 'REVOKED' as const,
+            cancelledBy: 'emp-piri',
+            cancelledAt: nowIso,
+            reason: revokeReason.trim(),
+          }
+        : status === 'CANCELLED'
+          ? {
+              kind: 'CANCELLED' as const,
+              cancelledBy: employeeId.trim(),
+              cancelledAt: nowIso,
+              reason: revokeReason.trim() || null,
+            }
+          : null
+
+    const payload = {
+      id: targetId,
+      employeeId: employeeId.trim(),
+      legalEntityId,
+      approverId: approverId.trim(),
+      leaveTypeCode,
+      startDate: startDate.trim(),
+      endDate: endDate.trim(),
+      dayPortion,
+      status,
+      employeeComment: employeeComment.trim() || null,
+      approval,
+      cancellation,
+    }
+
+    const validation = validateLeaveRequest(payload)
+    if (!validation.valid) {
+      setFormErrors(validation.errors)
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      if (editingId) {
+        await apiClient.updateRequest(editingId, payload)
+      } else {
+        await apiClient.createRequest(payload)
+      }
+      resetForm()
+      await loadRequests(employeeFilter, entityFilter, statusFilter)
+    } catch (err) {
+      if (err instanceof TeamApiError) {
+        setFormErrors(err.details.length > 0 ? err.details : [err.message])
+      } else {
+        setFormErrors([leaveRequestAdminText.saveError])
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleRevoke(id: string) {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await apiClient.revokeRequest(id, {
+        reason: revokeReason.trim() || 'HR adminisztrátori visszavonás',
+        actorId: 'emp-piri',
+      })
+      await loadRequests(employeeFilter, entityFilter, statusFilter)
+    } catch (err) {
+      if (err instanceof TeamApiError) {
+        setError(`${err.message}: ${err.details.join(' ')}`)
+      } else {
+        setError(leaveRequestAdminText.revokeError)
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <section className="admin-container">
+      <div className="admin-grid">
+        {/* Form Card */}
+        <div className="card">
+          <h2 className="card-title">
+            {editingId
+              ? leaveRequestAdminText.editTitle(editingId)
+              : leaveRequestAdminText.createTitle}
+          </h2>
+          <p className="card-subtitle">
+            {leaveRequestAdminText.createSubtitle}
+          </p>
+
+          <form onSubmit={(e) => void handleSubmit(e)} className="crud-form">
+            <label className="form-field">
+              <span>{leaveRequestAdminText.idLabel}</span>
+              <input
+                type="text"
+                placeholder={leaveRequestAdminText.idPlaceholder}
+                value={reqId}
+                onChange={(e) => setReqId(e.target.value)}
+                disabled={submitting || editingId !== null}
+              />
+            </label>
+
+            <div className="form-row-2">
+              <label className="form-field">
+                <span>{leaveRequestAdminText.employeeIdLabel}</span>
+                <input
+                  type="text"
+                  placeholder={leaveRequestAdminText.employeeIdPlaceholder}
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>{leaveRequestAdminText.approverIdLabel}</span>
+                <input
+                  type="text"
+                  placeholder={leaveRequestAdminText.approverIdPlaceholder}
+                  value={approverId}
+                  onChange={(e) => setApproverId(e.target.value)}
+                  disabled={submitting}
+                />
+              </label>
+            </div>
+
+            <div className="form-row-2">
+              <label className="form-field">
+                <span>{leaveRequestAdminText.legalEntityLabel}</span>
+                <select
+                  value={legalEntityId}
+                  onChange={(e) =>
+                    setLegalEntityId(e.target.value as LegalEntityId)
+                  }
+                  disabled={submitting}
+                >
+                  {LEGAL_ENTITIES.map((le) => (
+                    <option key={le.id} value={le.id}>
+                      {le.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="form-field">
+                <span>{leaveRequestAdminText.leaveTypeLabel}</span>
+                <select
+                  value={leaveTypeCode}
+                  onChange={(e) =>
+                    setLeaveTypeCode(e.target.value as LeaveTypeCode)
+                  }
+                  disabled={submitting}
+                >
+                  {LEAVE_TYPE_CODES.map((code) => (
+                    <option key={code} value={code}>
+                      {leaveTypeLabel[code]} ({code})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="form-row-2">
+              <label className="form-field">
+                <span>{leaveRequestAdminText.startDateLabel}</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>{leaveRequestAdminText.endDateLabel}</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  disabled={submitting}
+                />
+              </label>
+            </div>
+
+            <div className="form-row-2">
+              <label className="form-field">
+                <span>{leaveRequestAdminText.dayPortionLabel}</span>
+                <select
+                  value={dayPortion}
+                  onChange={(e) => setDayPortion(e.target.value as DayPortion)}
+                  disabled={submitting}
+                >
+                  {DAY_PORTIONS.map((portion) => (
+                    <option key={portion} value={portion}>
+                      {dayPortionLabel[portion]} ({portion})
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="form-field">
+                <span>{leaveRequestAdminText.statusLabel}</span>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as RequestStatus)}
+                  disabled={submitting}
+                >
+                  {REQUEST_STATUSES.map((st) => (
+                    <option key={st} value={st}>
+                      {statusLabel[st]} ({st})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <label className="form-field">
+              <span>{leaveRequestAdminText.employeeCommentLabel}</span>
+              <input
+                type="text"
+                placeholder={leaveRequestAdminText.employeeCommentPlaceholder}
+                value={employeeComment}
+                onChange={(e) => setEmployeeComment(e.target.value)}
+                disabled={submitting}
+              />
+            </label>
+
+            <label className="form-field">
+              <span>{leaveRequestAdminText.revokeReasonLabel}</span>
+              <input
+                type="text"
+                placeholder={leaveRequestAdminText.revokeReasonPlaceholder}
+                value={revokeReason}
+                onChange={(e) => setRevokeReason(e.target.value)}
+                disabled={submitting}
+              />
+            </label>
+
+            {formErrors.length > 0 && (
+              <div className="alert alert-error" role="alert">
+                {formErrors.map((msg, idx) => (
+                  <div key={idx}>{msg}</div>
+                ))}
+              </div>
+            )}
+
+            <div className="form-actions">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={submitting}
+              >
+                {editingId
+                  ? leaveRequestAdminText.saveButton
+                  : leaveRequestAdminText.createButton}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetForm}
+                  disabled={submitting}
+                >
+                  {leaveRequestAdminText.cancelButton}
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* Table Card */}
+        <div className="card">
+          <div className="card-header-row">
+            <div>
+              <h2 className="card-title">{leaveRequestAdminText.listTitle}</h2>
+              <p className="card-subtitle">
+                <strong>
+                  {leaveRequestAdminText.totalCount(requests.length)}
+                </strong>
+              </p>
+            </div>
+
+            <div className="filter-bar">
+              <select
+                value={entityFilter}
+                onChange={(e) =>
+                  setEntityFilter(e.target.value as '' | LegalEntityId)
+                }
+                aria-label={leaveRequestAdminText.legalEntityLabel}
+              >
+                <option value="">
+                  {leaveRequestAdminText.allEntitiesFilter}
+                </option>
+                {LEGAL_ENTITIES.map((le) => (
+                  <option key={le.id} value={le.id}>
+                    {le.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as '' | RequestStatus)
+                }
+                aria-label={leaveRequestAdminText.statusLabel}
+              >
+                <option value="">
+                  {leaveRequestAdminText.allStatusesFilter}
+                </option>
+                {REQUEST_STATUSES.map((st) => (
+                  <option key={st} value={st}>
+                    {statusLabel[st]}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="search"
+                placeholder={leaveRequestAdminText.filterEmployeePlaceholder}
+                value={employeeFilter}
+                onChange={(e) => setEmployeeFilter(e.target.value)}
+                aria-label={leaveRequestAdminText.filterEmployeePlaceholder}
+              />
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() =>
+                  void loadRequests(employeeFilter, entityFilter, statusFilter)
+                }
+                disabled={loading}
+              >
+                {leaveRequestAdminText.refreshButton}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="alert alert-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="empty-state">{leaveRequestAdminText.loading}</div>
+          ) : requests.length === 0 ? (
+            <div className="empty-state">{leaveRequestAdminText.empty}</div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="crud-table">
+                <thead>
+                  <tr>
+                    <th>{leaveRequestAdminText.colIdAndEmployee}</th>
+                    <th>{leaveRequestAdminText.colTypeAndPortion}</th>
+                    <th>{leaveRequestAdminText.colDates}</th>
+                    <th>{leaveRequestAdminText.colApprover}</th>
+                    <th>{leaveRequestAdminText.colStatus}</th>
+                    <th>{leaveRequestAdminText.colDetails}</th>
+                    <th className="actions-col">
+                      {leaveRequestAdminText.colActions}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <div className="mono-cell">
+                          <strong>{item.employeeId}</strong>
+                        </div>
+                        <div className="sub-cell">
+                          {item.id} · {legalEntityLabel[item.legalEntityId]}
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <strong>{leaveTypeLabel[item.leaveTypeCode]}</strong>
+                        </div>
+                        <div className="sub-cell">
+                          {dayPortionLabel[item.dayPortion]} ({item.dayPortion})
+                        </div>
+                      </td>
+                      <td className="sub-cell">
+                        <div>{formatDate(item.startDate)}</div>
+                        <div>– {formatDate(item.endDate)}</div>
+                      </td>
+                      <td className="mono-cell">{item.approverId}</td>
+                      <td>
+                        <span className="badge badge-entity">
+                          {statusLabel[item.status]} ({item.status})
+                        </span>
+                      </td>
+                      <td className="sub-cell">
+                        <div>{item.employeeComment ?? '—'}</div>
+                        {item.cancellation?.reason && (
+                          <div>
+                            <strong>Visszavonás:</strong>{' '}
+                            {item.cancellation.reason}
+                          </div>
+                        )}
+                      </td>
+                      <td className="actions-cell">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => startEditing(item)}
+                          disabled={submitting}
+                        >
+                          {leaveRequestAdminText.editButton}
+                        </button>
+                        {item.status !== 'REVOKED' && (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => void handleRevoke(item.id)}
+                            disabled={submitting}
+                          >
+                            {leaveRequestAdminText.revokeButton}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}

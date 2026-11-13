@@ -12,5 +12,27 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "src/types/model.ts",
+    "src/domain/index.ts",
+    "src/domain/auth.ts",
+    "src/domain/legalEntity.ts",
+    "src/domain/leaveType.ts",
+    "src/domain/entitlementUsage.ts",
+    "src/domain/leaveEntitlement.ts",
+    "src/domain/leaveRequest.ts",
+    "src/domain/team.ts",
+    "src/domain/employee.ts",
+    "src/api/openapi.ts",
+    "src/server/authApi.ts",
+    "src/server/teamRepository.ts",
+    "src/server/teamApi.ts",
+    "src/server/employeeRepository.ts",
+    "src/server/employeeApi.ts",
+    "src/server/leaveEntitlementRepository.ts",
+    "src/server/leaveEntitlementApi.ts",
+    "src/server/leaveRequestRepository.ts",
+    "src/server/leaveRequestApi.ts"
+  ]
 }

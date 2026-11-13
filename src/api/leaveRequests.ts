@@ -1,0 +1,142 @@
+import type {
+  CreateLeaveRequestInput,
+  LeaveRequest,
+  LeaveTypeCode,
+  LegalEntityId,
+  RequestStatus,
+  Role,
+} from '../domain/leaveRequest.ts'
+import { TeamApiError, type ErrorResponse } from './teams.ts'
+
+export type CreateLeaveRequestPayload = CreateLeaveRequestInput
+export type UpdateLeaveRequestPayload = Omit<CreateLeaveRequestInput, 'id'>
+
+export interface ListLeaveRequestsQuery {
+  employeeId?: string
+  legalEntityId?: LegalEntityId
+  status?: RequestStatus
+  leaveTypeCode?: LeaveTypeCode
+}
+
+export interface LeaveRequestApiClientOptions {
+  baseUrl?: string
+  fetchFn?: typeof fetch
+  getActorRole?: () => Role
+}
+
+export function createLeaveRequestApiClient(
+  options: LeaveRequestApiClientOptions = {},
+) {
+  const baseUrl = (options.baseUrl ?? '/api').replace(/\/$/, '')
+  const fetchImpl = options.fetchFn ?? fetch
+  const getRole = options.getActorRole ?? (() => 'HR_ADMIN' as Role)
+
+  function buildHeaders(includeJsonContentType = false): Record<string, string> {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'X-Actor-Role': getRole(),
+    }
+    if (includeJsonContentType) {
+      headers['Content-Type'] = 'application/json'
+    }
+    return headers
+  }
+
+  async function parseResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      let errorPayload: ErrorResponse = {
+        error: `HTTP ${response.status}`,
+        details: [response.statusText || 'Request failed'],
+      }
+      try {
+        errorPayload = (await response.json()) as ErrorResponse
+      } catch {
+        // Fallback if body is not JSON
+      }
+      throw new TeamApiError(response.status, errorPayload)
+    }
+
+    if (response.status === 204) {
+      return undefined as T
+    }
+
+    return (await response.json()) as T
+  }
+
+  return {
+    async listRequests(query?: ListLeaveRequestsQuery): Promise<LeaveRequest[]> {
+      const search = new URLSearchParams()
+      if (query?.employeeId) {
+        search.set('employeeId', query.employeeId)
+      }
+      if (query?.legalEntityId) {
+        search.set('legalEntityId', query.legalEntityId)
+      }
+      if (query?.status) {
+        search.set('status', query.status)
+      }
+      if (query?.leaveTypeCode) {
+        search.set('leaveTypeCode', query.leaveTypeCode)
+      }
+      const qs = search.toString()
+      const url = `${baseUrl}/requests${qs ? `?${qs}` : ''}`
+      const response = await fetchImpl(url, {
+        method: 'GET',
+        headers: buildHeaders(false),
+      })
+      return parseResponse<LeaveRequest[]>(response)
+    },
+
+    async getRequestById(id: string): Promise<LeaveRequest> {
+      const response = await fetchImpl(
+        `${baseUrl}/requests/${encodeURIComponent(id)}`,
+        {
+          method: 'GET',
+          headers: buildHeaders(false),
+        },
+      )
+      return parseResponse<LeaveRequest>(response)
+    },
+
+    async createRequest(body: CreateLeaveRequestPayload): Promise<LeaveRequest> {
+      const response = await fetchImpl(`${baseUrl}/requests`, {
+        method: 'POST',
+        headers: buildHeaders(true),
+        body: JSON.stringify(body),
+      })
+      return parseResponse<LeaveRequest>(response)
+    },
+
+    async updateRequest(
+      id: string,
+      body: UpdateLeaveRequestPayload,
+    ): Promise<LeaveRequest> {
+      const response = await fetchImpl(
+        `${baseUrl}/requests/${encodeURIComponent(id)}`,
+        {
+          method: 'PUT',
+          headers: buildHeaders(true),
+          body: JSON.stringify(body),
+        },
+      )
+      return parseResponse<LeaveRequest>(response)
+    },
+
+    async revokeRequest(
+      id: string,
+      input: { reason: string; actorId?: string },
+    ): Promise<LeaveRequest> {
+      const response = await fetchImpl(
+        `${baseUrl}/requests/${encodeURIComponent(id)}/revoke`,
+        {
+          method: 'POST',
+          headers: buildHeaders(true),
+          body: JSON.stringify(input),
+        },
+      )
+      return parseResponse<LeaveRequest>(response)
+    },
+  }
+}
+
+export const leaveRequestApi = createLeaveRequestApiClient()

@@ -1,4 +1,4 @@
-import type { EntitlementComponent, EntitlementId, LeaveEntitlement, LeaveDay } from '../types/model'
+import type { EntitlementComponent, EntitlementId, LeaveEntitlement, LeaveDay } from '../types/model.ts'
 
 /**
  * Consumption order across components. Confirmed HR rule 2026-11-13 (BUSINESS_RULES §1).

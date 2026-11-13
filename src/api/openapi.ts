@@ -1,0 +1,296 @@
+export const openApiDocument = {
+  openapi: '3.0.3',
+  info: {
+    title: 'LeaveIt API',
+    description:
+      'REST API for the LeaveIt leave management prototype (Team management endpoints). Team is keyed by managerId (one team per manager) and requires HR_ADMIN role.',
+    version: '0.2.0',
+  },
+  servers: [
+    {
+      url: '/api',
+      description: 'Local / Docker development server',
+    },
+  ],
+  tags: [
+    {
+      name: 'Teams',
+      description: 'HR Admin team management operations (HR_ADMIN role required)',
+    },
+  ],
+  paths: {
+    '/teams': {
+      parameters: [{ $ref: '#/components/parameters/ActorRoleHeader' }],
+      get: {
+        tags: ['Teams'],
+        summary: 'List all teams',
+        operationId: 'listTeams',
+        parameters: [
+          {
+            name: 'managerId',
+            in: 'query',
+            required: false,
+            description: 'Filter teams by manager employee ID',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'List of teams',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Team' },
+                },
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden (requires HR_ADMIN role)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ['Teams'],
+        summary: 'Create a new team for a manager',
+        operationId: 'createTeam',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CreateTeamRequest' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Team created successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Team' },
+              },
+            },
+          },
+          '400': {
+            description: 'Invalid request payload',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden (requires HR_ADMIN role)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '409': {
+            description: 'Team for the given managerId already exists',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/teams/{managerId}': {
+      parameters: [
+        { $ref: '#/components/parameters/ActorRoleHeader' },
+        { $ref: '#/components/parameters/ManagerIdParam' },
+      ],
+      get: {
+        tags: ['Teams'],
+        summary: 'Get a team by managerId',
+        operationId: 'getTeamByManagerId',
+        responses: {
+          '200': {
+            description: 'Team details',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Team' },
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden (requires HR_ADMIN role)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '404': {
+            description: 'Team not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+      put: {
+        tags: ['Teams'],
+        summary: "Update an existing team's display name",
+        operationId: 'updateTeam',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateTeamRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Updated team',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Team' },
+              },
+            },
+          },
+          '400': {
+            description: 'Invalid request payload',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden (requires HR_ADMIN role)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '404': {
+            description: 'Team not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        tags: ['Teams'],
+        summary: 'Delete a team by managerId',
+        operationId: 'deleteTeam',
+        responses: {
+          '204': {
+            description: 'Team deleted successfully',
+          },
+          '403': {
+            description: 'Forbidden (requires HR_ADMIN role)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '404': {
+            description: 'Team not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  components: {
+    parameters: {
+      ActorRoleHeader: {
+        name: 'X-Actor-Role',
+        in: 'header',
+        required: true,
+        description: 'Active role of the caller (must be HR_ADMIN)',
+        schema: { $ref: '#/components/schemas/Role' },
+      },
+      ManagerIdParam: {
+        name: 'managerId',
+        in: 'path',
+        required: true,
+        description: 'Manager employee identifier (primary key of Team)',
+        schema: { type: 'string', minLength: 1, maxLength: 64 },
+      },
+    },
+    schemas: {
+      Role: {
+        type: 'string',
+        enum: ['EMPLOYEE', 'MANAGER', 'HR_ADMIN'],
+      },
+      Team: {
+        type: 'object',
+        required: ['managerId', 'name'],
+        properties: {
+          managerId: { type: 'string', maxLength: 64, example: 'emp-katalin' },
+          name: {
+            type: 'string',
+            maxLength: 255,
+            example: 'Fejlesztési csapat',
+          },
+        },
+      },
+      CreateTeamRequest: {
+        type: 'object',
+        required: ['managerId', 'name'],
+        properties: {
+          managerId: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 64,
+            example: 'emp-katalin',
+          },
+          name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 255,
+            example: 'Fejlesztési csapat',
+          },
+        },
+      },
+      UpdateTeamRequest: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 255,
+            example: 'Platform és Fejlesztés',
+          },
+        },
+      },
+      ErrorResponse: {
+        type: 'object',
+        required: ['error', 'details'],
+        properties: {
+          error: { type: 'string', example: 'Validation failed' },
+          details: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['A csapat neve kötelező.'],
+          },
+        },
+      },
+    },
+  },
+} as const
