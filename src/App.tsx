@@ -13,6 +13,7 @@ import {
   entitlementAdminText,
   leaveRequestAdminText,
   myLeaveRequestText,
+  myEntitlementText,
   roleLabel,
   teamAdminText,
   viewLabel,
@@ -20,7 +21,7 @@ import {
 import type { Employee, Role } from './types/model'
 
 const ALL_ROLES: readonly Role[] = ['EMPLOYEE', 'MANAGER', 'HR_ADMIN']
-type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'EMPLOYEES' | 'TEAMS'
+type AdminSection = 'MY_REQUESTS' | 'REQUESTS' | 'ENTITLEMENTS' | 'ENTITLEMENTS_ADMIN' | 'EMPLOYEES' | 'TEAMS'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null)
@@ -45,7 +46,7 @@ export default function App() {
   // Employees page: HR Admin manages everyone; managers see their direct reports read-only.
   const canSeeEmployees = activeRole !== 'EMPLOYEE'
   const visibleSection: AdminSection =
-    ((section === 'TEAMS' || section === 'REQUESTS') && !isHrAdmin) ||
+    ((section === 'TEAMS' || section === 'REQUESTS' || section === 'ENTITLEMENTS_ADMIN') && !isHrAdmin) ||
     (section === 'EMPLOYEES' && !canSeeEmployees)
       ? 'MY_REQUESTS'
       : section
@@ -55,8 +56,10 @@ export default function App() {
       ? teamAdminText
       : visibleSection === 'EMPLOYEES'
         ? employeeAdminText
-        : visibleSection === 'ENTITLEMENTS'
+        : visibleSection === 'ENTITLEMENTS_ADMIN'
           ? entitlementAdminText
+          : visibleSection === 'ENTITLEMENTS'
+          ? myEntitlementText
           : visibleSection === 'REQUESTS'
             ? leaveRequestAdminText
             : myLeaveRequestText
@@ -142,8 +145,19 @@ export default function App() {
             className={`section-tab ${visibleSection === 'ENTITLEMENTS' ? 'section-tab-active' : ''}`}
             onClick={() => setSection('ENTITLEMENTS')}
           >
+            {myEntitlementText.tabLabel}
+          </button>
+          {isHrAdmin && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visibleSection === 'ENTITLEMENTS_ADMIN'}
+            className={`section-tab ${visibleSection === 'ENTITLEMENTS_ADMIN' ? 'section-tab-active' : ''}`}
+            onClick={() => setSection('ENTITLEMENTS_ADMIN')}
+          >
             {entitlementAdminText.tabLabel}
           </button>
+          )}
           {canSeeEmployees && (
           <button
             type="button"
@@ -194,24 +208,16 @@ export default function App() {
               currentUserId={currentUser.id}
             />
           )
+        ) : visibleSection === 'ENTITLEMENTS_ADMIN' ? (
+          <LeaveEntitlementAdminCrud
+            activeRole={activeRole}
+            onRequestRoleChange={setActiveRole}
+          />
         ) : visibleSection === 'ENTITLEMENTS' ? (
-          isHrAdmin ? (
-            <>
-              <MyEntitlementsView
-                activeRole={activeRole}
-                currentUserId={currentUser.id}
-              />
-              <LeaveEntitlementAdminCrud
-                activeRole={activeRole}
-                onRequestRoleChange={setActiveRole}
-              />
-            </>
-          ) : (
-            <MyEntitlementsView
-              activeRole={activeRole}
-              currentUserId={currentUser.id}
-            />
-          )
+          <MyEntitlementsView
+            activeRole={activeRole}
+            currentUserId={currentUser.id}
+          />
         ) : (
           <LeaveRequestAdminCrud
             key={visibleSection}

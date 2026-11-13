@@ -203,7 +203,7 @@ export function LeaveRequestAdminCrud({
 
   return (
     <section className="admin-container">
-      <div className="admin-grid">
+      <div className={`admin-grid ${isMine || editingId ? '' : 'admin-grid-single'}`}>
         {/* Form Card: own page always; HR all-requests page only while editing */}
         {(isMine || editingId) && (
         <div className="card">

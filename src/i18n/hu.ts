@@ -215,6 +215,11 @@ export const employeeAdminText = {
 } as const
 
 export const myEntitlementText = {
+  tabLabel: 'Saját szabadságkeretem',
+  eyebrow: 'SAJÁT SZABADSÁGKERET',
+  pageTitle: 'Saját szabadságkeretem',
+  pageIntro:
+    'A saját szabadságkereted komponensenként (összes / felhasznált / fennmaradó nap); vezetőként a közvetlen beosztottjaid napjai is.',
   ownTitle: (year: number) => `Saját szabadságkeretem (${year})`,
   summaryLine: (total: number, used: number, remaining: number) =>
     `Összesen: ${total} nap · Felhasznált: ${used} nap · Fennmaradó: ${remaining} nap`,
@@ -233,7 +238,8 @@ export const myEntitlementText = {
 } as const
 
 export const entitlementAdminText = {
-  tabLabel: 'Szabadságkeretek (Entitlements)',
+  tabLabel: 'Összes szabadságkeret (Entitlements)',
+  newButton: '+ Új szabadságkeret',
   eyebrow: 'HR ADMINISZTRÁCIÓ · SZABADSÁGKERETEK',
   pageTitle: 'Szabadságkeretek (LeaveEntitlement) kezelése',
   pageIntro:

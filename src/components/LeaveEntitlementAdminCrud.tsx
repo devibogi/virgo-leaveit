@@ -62,6 +62,9 @@ export function LeaveEntitlementAdminCrud({
 
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null)
+  // The create form is hidden by default; opened by the "new" button or by editing.
+  const [formOpen, setFormOpen] = useState<boolean>(false)
+  const showForm = formOpen || editingId !== null
   const [entId, setEntId] = useState<string>('')
   const [employeeId, setEmployeeId] = useState<string>('emp-peter')
   const [year, setYear] = useState<string>('2026')
@@ -110,6 +113,7 @@ export function LeaveEntitlementAdminCrud({
 
   function resetForm() {
     setEditingId(null)
+    setFormOpen(false)
     setEntId('')
     setEmployeeId('emp-peter')
     setYear('2026')
@@ -237,8 +241,9 @@ export function LeaveEntitlementAdminCrud({
 
   return (
     <section className="admin-container">
-      <div className="admin-grid">
-        {/* Create / Edit Form Card */}
+      <div className={`admin-grid ${showForm ? '' : 'admin-grid-single'}`}>
+        {/* Create / Edit Form Card: hidden until "new" or edit */}
+        {showForm && (
         <div className="card">
           <h2 className="card-title">
             {editingId
@@ -386,19 +391,18 @@ export function LeaveEntitlementAdminCrud({
                   ? entitlementAdminText.saveButton
                   : entitlementAdminText.createButton}
               </button>
-              {editingId && (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={resetForm}
-                  disabled={submitting}
-                >
-                  {entitlementAdminText.cancelButton}
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={resetForm}
+                disabled={submitting}
+              >
+                {entitlementAdminText.cancelButton}
+              </button>
             </div>
           </form>
         </div>
+        )}
 
         {/* Table Card */}
         <div className="card">
@@ -411,6 +415,15 @@ export function LeaveEntitlementAdminCrud({
             </div>
 
             <div className="filter-bar">
+              {!showForm && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setFormOpen(true)}
+                >
+                  {entitlementAdminText.newButton}
+                </button>
+              )}
               <select
                 value={componentFilter}
                 onChange={(e) =>

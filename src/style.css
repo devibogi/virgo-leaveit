@@ -189,6 +189,10 @@ h1 span {
   align-items: start;
 }
 
+.admin-grid.admin-grid-single {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 900px) {
   .admin-grid {
     grid-template-columns: 1fr;
