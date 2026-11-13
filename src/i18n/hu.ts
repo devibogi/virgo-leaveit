@@ -305,6 +305,7 @@ export const myLeaveRequestText = {
     'Új szabadságkérelem beadása a saját nevedre és a korábbi kérelmeid állapotának követése.',
   listTitle: 'Saját kérelmeim',
   empty: 'Még nincs beadott szabadságkérelmed.',
+  newButton: '+ Új kérelem',
 }
 
 export const leaveRequestAdminText = {

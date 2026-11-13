@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { buildMonthCalendar, LEAVE_TYPE_CODES, type LeaveRequest } from '../domain'
 import { calendarText, dayPortionLabel, leaveTypeLabel, statusLabel } from '../i18n/hu'
 
@@ -6,10 +6,12 @@ export interface LeaveCalendarProps {
   requests: readonly LeaveRequest[]
   /** Show the employee on each entry (HR all-requests page). */
   showEmployee?: boolean
+  /** Extra header controls (e.g. "+ Új kérelem"). */
+  actions?: ReactNode
 }
 
 /** Month view: holidays/rest days, weekends and leave per type (exact type: own page or HR Admin only). */
-export function LeaveCalendar({ requests, showEmployee = false }: LeaveCalendarProps) {
+export function LeaveCalendar({ requests, showEmployee = false, actions }: LeaveCalendarProps) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
@@ -30,6 +32,7 @@ export function LeaveCalendar({ requests, showEmployee = false }: LeaveCalendarP
           <p className="card-subtitle">{calendarText.subtitle}</p>
         </div>
         <div className="filter-bar">
+          {actions}
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => shift(-1)} aria-label={calendarText.prev}>‹</button>
           <strong className="cal-month">{year}. {calendarText.months[month - 1]}</strong>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => shift(1)} aria-label={calendarText.next}>›</button>

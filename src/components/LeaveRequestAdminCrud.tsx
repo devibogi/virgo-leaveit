@@ -52,6 +52,7 @@ export function LeaveRequestAdminCrud({
 }: LeaveRequestAdminCrudProps) {
   const isMine = mode === 'MINE'
   const isAuthorized = isMine || canManageLeaveRequests(activeRole)
+  const [showForm, setShowForm] = useState(false)
 
   const apiClient = useMemo(
     () =>
@@ -122,6 +123,7 @@ export function LeaveRequestAdminCrud({
 
   function resetForm() {
     setEditingId(null)
+    setShowForm(false)
     setLeaveTypeCode(LeaveTypeCodeEnum.ANNUAL)
     setStartDate('2026-08-03')
     setEndDate('2026-08-07')
@@ -204,9 +206,22 @@ export function LeaveRequestAdminCrud({
 
   return (
     <section className="admin-container">
-      <div className={`admin-grid ${isMine || editingId ? '' : 'admin-grid-single'}`}>
-        {/* Form Card: own page always; HR all-requests page only while editing */}
-        {(isMine || editingId) && (
+      {isAuthorized && !error && (
+        <LeaveCalendar
+          requests={requests}
+          showEmployee={!isMine}
+          actions={
+            isMine && !showForm && !editingId ? (
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+                {myLeaveRequestText.newButton}
+              </button>
+            ) : null
+          }
+        />
+      )}
+      <div className="admin-grid admin-grid-single">
+        {/* Form Card: own page after "+ Új kérelem"; HR all-requests page only while editing */}
+        {((isMine && showForm) || editingId) && (
         <div className="card">
           <h2 className="card-title">
             {editingId
@@ -303,7 +318,7 @@ export function LeaveRequestAdminCrud({
                   ? leaveRequestAdminText.saveButton
                   : leaveRequestAdminText.createButton}
               </button>
-              {editingId && (
+              {(editingId || showForm) && (
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -494,9 +509,6 @@ export function LeaveRequestAdminCrud({
           </div>
         )}
       </div>
-      {isAuthorized && !error && (
-        <LeaveCalendar requests={requests} showEmployee={!isMine} />
-      )}
     </section>
   )
 }

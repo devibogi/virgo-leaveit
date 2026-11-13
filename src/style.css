@@ -570,7 +570,7 @@ select:focus {
 }
 
 /* ---------- Leave calendar ---------- */
-.leave-calendar { margin-top: 24px; }
+.leave-calendar { margin-bottom: 24px; }
 .cal-month { min-width: 150px; text-align: center; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 16px; }
 .cal-chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid #E4E2F0; }
