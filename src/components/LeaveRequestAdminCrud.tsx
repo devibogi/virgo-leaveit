@@ -73,9 +73,6 @@ export function LeaveRequestAdminCrud({
   const [endDate, setEndDate] = useState<string>('2026-08-07')
   const [dayPortion, setDayPortion] = useState<DayPortion>(DayPortionEnum.FULL)
   const [employeeComment, setEmployeeComment] = useState<string>('')
-  const [revokeReason, setRevokeReason] = useState<string>(
-    'HR adminisztrátori korrekció',
-  )
   const [formErrors, setFormErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState<boolean>(false)
 
@@ -122,7 +119,6 @@ export function LeaveRequestAdminCrud({
     setEndDate('2026-08-07')
     setDayPortion(DayPortionEnum.FULL)
     setEmployeeComment('')
-    setRevokeReason('HR adminisztrátori korrekció')
     setFormErrors([])
   }
 
@@ -133,7 +129,6 @@ export function LeaveRequestAdminCrud({
     setEndDate(item.endDate)
     setDayPortion(item.dayPortion)
     setEmployeeComment(item.employeeComment ?? '')
-    setRevokeReason(item.cancellation?.reason ?? 'HR adminisztrátori korrekció')
     setFormErrors([])
   }
 
@@ -202,11 +197,14 @@ export function LeaveRequestAdminCrud({
   }
 
   async function handleRevoke(id: string) {
+    // Reason is mandatory for REVOKED (BUSINESS_RULES); asked per revoke, not a form field.
+    const reason = window.prompt(leaveRequestAdminText.revokeReasonPrompt)?.trim()
+    if (!reason) return
     setSubmitting(true)
     setError(null)
     try {
       await apiClient.revokeRequest(id, {
-        reason: revokeReason.trim() || 'HR adminisztrátori visszavonás',
+        reason,
         actorId: 'emp-piri',
       })
       await loadRequests(employeeFilter, entityFilter, statusFilter)
@@ -299,17 +297,6 @@ export function LeaveRequestAdminCrud({
                 placeholder={leaveRequestAdminText.employeeCommentPlaceholder}
                 value={employeeComment}
                 onChange={(e) => setEmployeeComment(e.target.value)}
-                disabled={submitting}
-              />
-            </label>
-
-            <label className="form-field">
-              <span>{leaveRequestAdminText.revokeReasonLabel}</span>
-              <input
-                type="text"
-                placeholder={leaveRequestAdminText.revokeReasonPlaceholder}
-                value={revokeReason}
-                onChange={(e) => setRevokeReason(e.target.value)}
                 disabled={submitting}
               />
             </label>
