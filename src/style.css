@@ -595,6 +595,7 @@ select:focus {
   color: #1F6E50;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .actions-col {
@@ -605,6 +606,17 @@ select:focus {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* A flex <td> drops out of table layout and breaks row borders; keep it a table cell. */
+td.actions-cell {
+  display: table-cell;
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.actions-cell > * + * {
+  margin-left: 8px;
 }
 
 .empty-state {
@@ -666,4 +678,7 @@ body { background: var(--bg); color: var(--text); }
 
 .text-danger {
   color: #BE123C;
+}
+.modal-backdrop-top {
+  z-index: 110;
 }

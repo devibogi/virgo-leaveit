@@ -2,6 +2,8 @@ import {
   buildLeaveRequestFromDraft,
   canManageLeaveRequests,
   cancelLeaveRequestByEmployee,
+  checkDeputyAvailability,
+  deputyConflictMessage,
   decideLeaveRequest,
   DUPLICATE_REQUEST_MESSAGE,
   LeaveDecisionError,
@@ -223,6 +225,24 @@ export function createLeaveRequestApiHandler(
           }
         }
 
+        const requester = await employeeRepository.findById(built.input.employeeId)
+        const deputyIds = requester?.deputyIds ?? []
+        const deputyCheck = checkDeputyAvailability(
+          built.input,
+          deputyIds,
+          deputyIds.length ? await repository.findAll({ status: 'APPROVED' }) : [],
+        )
+        if (deputyCheck.blocked) {
+          return {
+            status: 409,
+            body: {
+              error: 'Conflict',
+              details: [deputyConflictMessage(deputyCheck.conflictDates)],
+              conflictDates: deputyCheck.conflictDates,
+            },
+          }
+        }
+
         try {
           const created = await repository.create(built.input)
           return {
@@ -259,6 +279,21 @@ export function createLeaveRequestApiHandler(
         return {
           status: 404,
           body: { error: 'Not found', details: [`A(z) '${id}' szabadságkérelem nem található.`] },
+        }
+      }
+      if (decision === 'APPROVED' && existing.status === 'PENDING') {
+        const requester = await employeeRepository.findById(existing.employeeId)
+        const deputyIds = requester?.deputyIds ?? []
+        const recheck = checkDeputyAvailability(
+          existing,
+          deputyIds,
+          deputyIds.length ? await repository.findAll({ status: 'APPROVED' }) : [],
+        )
+        if (recheck.blocked) {
+          return {
+            status: 409,
+            body: { error: 'Conflict', details: [deputyConflictMessage(recheck.conflictDates)], conflictDates: recheck.conflictDates },
+          }
         }
       }
       try {

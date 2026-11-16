@@ -6,6 +6,7 @@ import {
   type LeaveRequestListItem,
 } from '../api'
 import { EmployeeSelect, useEmployeeDirectory } from './employeeDirectory'
+import { DEPUTY_CONFLICT_PREFIX } from '../domain/deputyCheck'
 import {
   canManageLeaveRequests,
   DAY_PORTIONS,
@@ -87,6 +88,7 @@ export function LeaveRequestAdminCrud({
   const [dayPortion, setDayPortion] = useState<DayPortion>(DayPortionEnum.FULL)
   const [employeeComment, setEmployeeComment] = useState<string>('')
   const [formErrors, setFormErrors] = useState<string[]>([])
+  const [deputyConflict, setDeputyConflict] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState<boolean>(false)
 
   const loadRequests = useCallback(
@@ -135,11 +137,13 @@ export function LeaveRequestAdminCrud({
   useEffect(() => {
     if (!formOpen) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') resetForm()
+      if (e.key !== 'Escape') return
+      if (deputyConflict) setDeputyConflict(null)
+      else resetForm()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [formOpen])
+  }, [formOpen, deputyConflict])
 
   function resetForm() {
     setShowForm(false)
@@ -177,7 +181,12 @@ export function LeaveRequestAdminCrud({
       resetForm()
       await loadRequests(employeeFilter, entityFilter, statusFilter)
     } catch (err) {
-      if (err instanceof TeamApiError) {
+      const deputyMsg = err instanceof TeamApiError
+        ? err.details.find((d) => d.startsWith(DEPUTY_CONFLICT_PREFIX))
+        : undefined
+      if (deputyMsg) {
+        setDeputyConflict(deputyMsg)
+      } else if (err instanceof TeamApiError) {
         setFormErrors(err.details.length > 0 ? err.details : [err.message])
       } else {
         setFormErrors([leaveRequestAdminText.saveError])
@@ -249,6 +258,25 @@ export function LeaveRequestAdminCrud({
   return (
     <section className="admin-container">
       <div className="admin-grid admin-grid-single">
+        {deputyConflict && (
+          <div className="modal-backdrop modal-backdrop-top" onClick={() => setDeputyConflict(null)}>
+            <div
+              className="card modal-card"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="deputy-conflict-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="card-title" id="deputy-conflict-title">Nincs elérhető helyettes</h2>
+              <div className="alert alert-error" role="alert">{deputyConflict}</div>
+              <div className="form-actions">
+                <button type="button" className="btn btn-primary" autoFocus onClick={() => setDeputyConflict(null)}>
+                  Rendben
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Form modal: own page after "+ Új kérelem"; HR all-requests page only while editing */}
         {formOpen && (
         <div className="modal-backdrop" onClick={() => !submitting && resetForm()}>

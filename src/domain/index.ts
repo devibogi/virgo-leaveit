@@ -127,3 +127,4 @@ export {
 } from './leaveRequest.ts'
 export * from './calendar.ts'
 export * from './entitlementDefaults.ts'
+export * from './deputyCheck.ts'
